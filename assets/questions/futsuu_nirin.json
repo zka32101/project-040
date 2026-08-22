@@ -1,0 +1,147 @@
+[
+  {
+    "id": "futsuu_001",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車の二人乗り（タンデム）は、普通自動二輪車免許を受けてから何年を経過すれば認められるか。",
+    "choices": ["6ヶ月", "1年", "2年", "3年"],
+    "answer": 1,
+    "explanation": "普通自動二輪車の二人乗りは、免許を受けてから1年を経過していることが条件の一つです。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "futsuu_002",
+    "licenseCategory": ["futsuuNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "高速道路での二輪車の二人乗りが認められるのは、免許を受けてから何年を経過した場合か。",
+    "choices": ["1年", "2年", "3年", "認められない"],
+    "answer": 1,
+    "explanation": "高速道路での二人乗りは、免許を受けてから2年を経過していることが条件です（年齢条件もあり）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "futsuu_003",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車（自動二輪車）の積載制限として、荷台に積める荷物の高さの上限はどれか（地上からの高さ）。",
+    "choices": ["2.0メートル", "2.5メートル", "3.0メートル", "制限なし"],
+    "answer": 0,
+    "explanation": "積載物の高さは、地上から2メートル以下と定められています。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "futsuu_004",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin"],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "二段階右折が必要な交差点で、二輪車が右折する正しい方法はどれか。",
+    "choices": [
+      "あらかじめ道路の中央に寄り、交差点の中心の直近内側を徐行して通行する",
+      "あらかじめ道路の左端に寄り、交差点の向こう側まで直進してから向きを変える",
+      "右折専用レーンに入り、通常の四輪車と同じ方法で右折する",
+      "交差点の手前で一時停止し、対向車が途切れてから斜めに右折する"
+    ],
+    "answer": 1,
+    "explanation": "二段階右折は、あらかじめ道路の左端に寄り、交差点の向こう側まで直進してから向きを変えて進行します。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoStageRightTurn"
+  },
+  {
+    "id": "futsuu_005",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通自動二輪車で法定速度が指定されていない一般道路を走行する場合の最高速度はどれか。",
+    "choices": ["時速40キロメートル", "時速50キロメートル", "時速60キロメートル", "時速70キロメートル"],
+    "answer": 2,
+    "explanation": "一般道路（標識・標示による指定がない場合）の法定最高速度は時速60キロメートルです。",
+    "isTrapQuestion": true,
+    "trapNumberType": "speedLimit"
+  },
+  {
+    "id": "futsuu_006",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車に乗車するときに着用しなければならないヘルメットの条件として正しいものはどれか。",
+    "choices": [
+      "工事用のヘルメットでもよい",
+      "自転車用ヘルメットでもよい",
+      "乗車用として基準に適合したものを着用しなければならない",
+      "同乗者はヘルメットを着用しなくてもよい"
+    ],
+    "answer": 2,
+    "explanation": "運転者・同乗者ともに、乗車用ヘルメットとして基準に適合したものを着用しなければなりません。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "futsuu_007",
+    "licenseCategory": ["futsuuNirin"],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "前車との車間距離について、二輪車が急ブレーキをかけても追突しない距離を保つ必要があるのはどのような場合か。",
+    "choices": [
+      "高速道路のみ",
+      "前車と同一の速度で進行するときはいつでも",
+      "雨天時のみ",
+      "夜間のみ"
+    ],
+    "answer": 1,
+    "explanation": "前車と同一速度で進行するときは、その前車が急に停止しても追突しないだけの車間距離を保たなければなりません。",
+    "isTrapQuestion": true,
+    "trapNumberType": "followingDistance"
+  },
+  {
+    "id": "futsuu_008",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車を運転するときの正しいブレーキ操作の説明として適切なものはどれか。",
+    "choices": [
+      "前輪ブレーキだけを使うのがよい",
+      "後輪ブレーキだけを使うのがよい",
+      "前輪・後輪ブレーキを同時にバランスよく使うのがよい",
+      "急な場合以外はブレーキを使わない方がよい"
+    ],
+    "answer": 2,
+    "explanation": "前輪・後輪ブレーキを同時に、バランスよく使うことが基本です。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "futsuu_009",
+    "licenseCategory": ["futsuuNirin", "atGentei"],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "高速道路での二輪車の法定最高速度（他の指定がない場合）はどれか。",
+    "choices": ["時速80キロメートル", "時速90キロメートル", "時速100キロメートル", "時速120キロメートル"],
+    "answer": 2,
+    "explanation": "高速道路の法定最高速度は、普通自動二輪車を含む普通車と同様に時速100キロメートルです。",
+    "isTrapQuestion": true,
+    "trapNumberType": "speedLimit"
+  },
+  {
+    "id": "futsuu_010",
+    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車のスタンドを立てたまま発進すると、どのような危険があるか。",
+    "choices": [
+      "特に危険はない",
+      "スタンドが路面に接触してバランスを崩す危険がある",
+      "エンジンが止まるだけで危険はない",
+      "スピードが出せなくなるだけである"
+    ],
+    "answer": 1,
+    "explanation": "スタンドを出したまま発進すると、旋回時などにスタンドが路面に接触してバランスを崩す危険があります。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  }
+]

@@ -1,0 +1,23 @@
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+*.iml
+.idea/
+.vscode/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+android/.gradle/
+android/local.properties
+*.g.dart.bak
+
+# Firebase / RevenueCat secrets — add real files locally, never commit
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+.env
