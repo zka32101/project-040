@@ -1,0 +1,79 @@
+[
+  {
+    "id": "gentsuki_001",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 1,
+    "questionText": "原動機付自転車の法定最高速度（一般道路）はどれか。",
+    "choices": ["時速30キロメートル", "時速40キロメートル", "時速50キロメートル", "時速60キロメートル"],
+    "answer": 0,
+    "explanation": "原動機付自転車の法定最高速度は時速30キロメートルです。",
+    "isTrapQuestion": true,
+    "trapNumberType": "speedLimit"
+  },
+  {
+    "id": "gentsuki_002",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 1,
+    "questionText": "原動機付自転車は二人乗りができるか。",
+    "choices": ["できる", "できない", "高速道路のみできる", "夜間のみできる"],
+    "answer": 1,
+    "explanation": "原動機付自転車は、条件を満たしても二人乗りをすることはできません。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "gentsuki_003",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 1,
+    "questionText": "原動機付自転車は高速道路を通行できるか。",
+    "choices": ["できる", "できない", "自動車専用道路のみできる", "深夜のみできる"],
+    "answer": 1,
+    "explanation": "原動機付自転車は高速道路（自動車専用道路含む）を通行できません。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "gentsuki_004",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 1,
+    "questionText": "原動機付自転車に乗車する際、着用が義務付けられているものはどれか。",
+    "choices": ["軍手", "乗車用ヘルメット", "サングラス", "耳栓"],
+    "answer": 1,
+    "explanation": "原動機付自転車の運転者は、乗車用ヘルメットの着用が義務付けられています。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "gentsuki_005",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 2,
+    "questionText": "原動機付自転車が二段階右折をしなければならない交差点として正しいものはどれか。",
+    "choices": [
+      "片側3車線以上の道路が交差する交差点など、標識で指定された交差点",
+      "すべての交差点",
+      "住宅街の交差点のみ",
+      "二段階右折は原付には適用されない"
+    ],
+    "answer": 0,
+    "explanation": "原動機付自転車は、片側3車線以上の道路が交差する交差点など、指定された交差点で二段階右折をしなければなりません。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoStageRightTurn"
+  },
+  {
+    "id": "gentsuki_006",
+    "licenseCategory": ["gentsuki"],
+    "stageTag": "",
+    "difficulty": 1,
+    "questionText": "原動機付自転車の積載物の重量制限はどれか。",
+    "choices": ["30キログラムまで", "60キログラムまで", "90キログラムまで", "制限はない"],
+    "answer": 0,
+    "explanation": "原動機付自転車の積載重量は30キログラムまでと定められています。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  }
+]

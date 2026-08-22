@@ -1,0 +1,128 @@
+[
+  {
+    "id": "ogata_001",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型自動二輪車で高速道路の二人乗りが認められるのは、免許を受けてから何年を経過した場合か（年齢条件を満たす場合）。",
+    "choices": ["1年", "2年", "3年", "5年"],
+    "answer": 1,
+    "explanation": "大型自動二輪車も普通自動二輪車と同様、高速道路の二人乗りは免許取得から2年経過が条件です。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "ogata_002",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型自動二輪車で二段階右折が禁止されている交差点はどれか。",
+    "choices": [
+      "「二段階右折禁止」の標識がある交差点",
+      "すべての交差点",
+      "信号のない交差点",
+      "住宅街の交差点"
+    ],
+    "answer": 0,
+    "explanation": "「二段階右折禁止」の標識がある交差点や、片側3車線以上の道路が交差する交差点などでは、通常の右折方法を取ります。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoStageRightTurn"
+  },
+  {
+    "id": "ogata_003",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型自動二輪車の積載物の幅の制限として正しいものはどれか。",
+    "choices": [
+      "車体の幅を超えてはならない",
+      "車体の幅にそれぞれ0.15メートルを加えた幅まで",
+      "車体の幅の2倍まで",
+      "制限はない"
+    ],
+    "answer": 1,
+    "explanation": "積載物の幅は、車体の幅にそれぞれ0.15メートルを加えた幅を超えてはいけません。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "ogata_004",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型自動二輪車の車体特性として正しい記述はどれか。",
+    "choices": [
+      "重量があるため低速時のバランスがより重要になる",
+      "軽量なので取り回しを意識する必要はない",
+      "普通自動二輪車よりも制動距離は常に短い",
+      "重量の影響は走行に一切ない"
+    ],
+    "answer": 0,
+    "explanation": "大型自動二輪車は車重があるため、低速時やUターン時のバランス保持がより重要です。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "ogata_005",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型自動二輪車で前車に追従して走行する場合の車間距離の考え方として正しいものはどれか。",
+    "choices": [
+      "速度に関係なく常に一定の距離でよい",
+      "速度が上がるほど、より長い車間距離が必要になる",
+      "車間距離は法律上考慮しなくてよい",
+      "前車がバイクの場合のみ車間距離を考える"
+    ],
+    "answer": 1,
+    "explanation": "速度が上がるほど制動距離も伸びるため、より長い車間距離を保つ必要があります。",
+    "isTrapQuestion": true,
+    "trapNumberType": "followingDistance"
+  },
+  {
+    "id": "ogata_006",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型自動二輪車を発進させる際、最初に確認すべきこととして適切なものはどれか。",
+    "choices": [
+      "エンジン音の大きさ",
+      "周囲の安全とミラー・目視での確認",
+      "ガソリンの残量のみ",
+      "タイヤの空気圧のみ"
+    ],
+    "answer": 1,
+    "explanation": "発進前は周囲の安全をミラーおよび目視で必ず確認します。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "ogata_007",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "高速道路における大型自動二輪車の法定最高速度（指定のない場合）はどれか。",
+    "choices": ["時速80キロメートル", "時速90キロメートル", "時速100キロメートル", "時速110キロメートル"],
+    "answer": 2,
+    "explanation": "高速道路の法定最高速度は時速100キロメートルです（普通自動二輪車と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "speedLimit"
+  },
+  {
+    "id": "ogata_008",
+    "licenseCategory": ["ogataNirin"],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型自動二輪車の任意保険について正しい記述はどれか。",
+    "choices": [
+      "自賠責保険に加入していれば任意保険は不要",
+      "任意保険は法律上の義務ではないが加入が強く推奨される",
+      "任意保険は普通自動二輪車のみ加入できる",
+      "任意保険は250cc以下にのみ適用される"
+    ],
+    "answer": 1,
+    "explanation": "自賠責保険は加入義務がありますが、対人・対物の補償を厚くする任意保険への加入も強く推奨されます。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  }
+]
