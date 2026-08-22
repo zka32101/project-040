@@ -12,7 +12,6 @@ class BikeUnlockView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(bikeUnlockControllerProvider);
-    final logsAsync = ref.watch(answerLogsProvider);
 
     // 通算正解数が変わったら解放判定を再実行。
     ref.listen(answerLogsProvider, (prev, next) {
@@ -28,8 +27,6 @@ class BikeUnlockView extends ConsumerWidget {
       appBar: AppBar(title: const Text('バイク解放')),
       body: progressAsync.when(
         data: (progress) {
-          final totalCorrect =
-              logsAsync.valueOrNull?.where((l) => l.isCorrect).length ?? 0;
           return GridView.builder(
             padding: const EdgeInsets.all(20),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

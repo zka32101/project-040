@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/question.dart';
+import '../services/ad_gate_service.dart';
 import '../viewmodels/providers.dart';
 
 /// ひっかけ道場：二輪特有の間違えやすい数字を対戦形式で反復。
