@@ -5,12 +5,14 @@ import '../core/constants/license_category.dart';
 import '../models/bike_unlock_progress.dart';
 import '../models/pass_prediction_score.dart';
 import '../models/question.dart';
+import '../models/question_mastery_status.dart';
 import '../models/trap_dojo_session.dart';
 import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
+import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
 
@@ -30,6 +32,8 @@ final adGateServiceProvider = Provider<AdGateService>((ref) => AdGateService());
 
 final predictionScoreServiceProvider =
     Provider<PredictionScoreService>((ref) => PredictionScoreService());
+
+final masteryServiceProvider = Provider<MasteryService>((ref) => LocalMasteryService());
 
 /// 認証未接続のため固定uid。
 /// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
@@ -124,6 +128,13 @@ final savedPredictionScoreProvider =
   return ref.read(dataServiceProvider).loadPredictionScore(uid);
 });
 
+/// ユーザーが「記憶した」フラグを持つ問題のリスト。
+final masteredQuestionsProvider =
+    FutureProvider<List<QuestionMasteryStatus>>((ref) {
+  final uid = ref.read(currentUidProvider);
+  return ref.read(masteryServiceProvider).loadMasteredQuestions(uid);
+});
+
 // ---------------------------------------------------------------------------
 // Daily Quota / 出題フロー（Aha Moment最短動線の心臓部）
 // ---------------------------------------------------------------------------
@@ -193,6 +204,8 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     ref.read(adGateServiceProvider).enterContext(AdBlockingContext.answeringQuestion);
 
     final user = ref.read(userControllerProvider).valueOrNull;
+    final uid = ref.read(currentUidProvider);
+
     final all = await ref.read(
       questionsProvider(
         QuestionQuery(
@@ -201,8 +214,17 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
         ),
       ).future,
     );
-    all.shuffle();
-    final quota = all.take(freeDailyQuotaLimit).toList();
+
+    // マスター済み問題を除外
+    final masteredIds = await ref.read(masteryServiceProvider).loadMasteredQuestions(uid);
+    final masteredIdSet = {for (final m in masteredIds) m.questionId};
+    final filtered = all.where((q) => !masteredIdSet.contains(q.id)).toList();
+
+    // マスター済み問題が全てなら、全問題から開始
+    final questionsList = filtered.isEmpty ? all : filtered;
+
+    questionsList.shuffle();
+    final quota = questionsList.take(freeDailyQuotaLimit).toList();
     state = state.copyWith(questions: quota, loading: false);
   }
 
