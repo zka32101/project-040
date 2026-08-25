@@ -986,5 +986,43 @@
     "explanation": "雨での高速走行は非常に危険なため、まず速度を落とすことが最優先。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "o053",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高速走行時のタイヤ点検で最も重要なのは。",
+    "choices": [
+      "タイヤの色",
+      "タイヤの溝の深さと空気圧",
+      "タイヤのデザイン",
+      "タイヤの材質"
+    ],
+    "answer": 1,
+    "explanation": "高速走行ではタイヤの溝と空気圧が、安全性に直結する最重要項目。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o054",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での加速時に必要な技術は。",
+    "choices": [
+      "最大出力で加速する",
+      "段階的な加速制御",
+      "急激なアクセル操作",
+      "アクセルと同時にブレーキ"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は、段階的な加速制御で安全性を確保する必要がある。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]
