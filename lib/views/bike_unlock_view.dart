@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/license_category.dart';
 import '../viewmodels/providers.dart';
+import '../widgets/gold_glow_animation.dart';
 
 /// 憧れバイク解放：正解を積むと乗れるバイクのシルエットが解放される
 /// （原付→125→250→400→大型、進捗グリッド）。
@@ -59,7 +60,7 @@ class _BikeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final card = Card(
       color: unlocked
           ? Theme.of(context).colorScheme.primaryContainer
           : Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -88,5 +89,14 @@ class _BikeTile extends StatelessWidget {
         ),
       ),
     );
+
+    // 解放されたバイクはゴールドグロー演出
+    return unlocked
+        ? GoldGlowAnimation(
+            duration: const Duration(milliseconds: 1500),
+            maxBlur: 15.0,
+            child: card,
+          )
+        : card;
   }
 }
