@@ -1,146 +1,1017 @@
 [
   {
-    "id": "futsuu_001",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
+    "id": "f001",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
     "stageTag": "第一段階",
     "difficulty": 1,
-    "questionText": "二輪車の二人乗り（タンデム）は、普通自動二輪車免許を受けてから何年を経過すれば認められるか。",
-    "choices": ["6ヶ月", "1年", "2年", "3年"],
+    "questionText": "二輪車の走行中、以下の場合のうち、最も危険なのはどれか。",
+    "choices": [
+      "乾いた路面での走行",
+      "濡れた路面での走行",
+      "砂利道での走行",
+      "コンクリート舗装の走行"
+    ],
     "answer": 1,
-    "explanation": "普通自動二輪車の二人乗りは、免許を受けてから1年を経過していることが条件の一つです。",
-    "isTrapQuestion": true,
-    "trapNumberType": "twoPersonRiding"
+    "explanation": "濡れた路面は二輪車のタイヤグリップが大幅に低下し、スリップのリスクが最も高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   },
   {
-    "id": "futsuu_002",
-    "licenseCategory": ["futsuuNirin", "atGentei"],
+    "id": "f002",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
     "stageTag": "第一段階",
     "difficulty": 2,
-    "questionText": "高速道路での二輪車の二人乗りが認められるのは、免許を受けてから何年を経過した場合か。",
-    "choices": ["1年", "2年", "3年", "認められない"],
-    "answer": 1,
-    "explanation": "高速道路での二人乗りは、免許を受けてから2年を経過していることが条件です（年齢条件もあり）。",
-    "isTrapQuestion": true,
-    "trapNumberType": "twoPersonRiding"
-  },
-  {
-    "id": "futsuu_003",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
-    "stageTag": "第一段階",
-    "difficulty": 2,
-    "questionText": "二輪車（自動二輪車）の積載制限として、荷台に積める荷物の高さの上限はどれか（地上からの高さ）。",
-    "choices": ["2.0メートル", "2.5メートル", "3.0メートル", "制限なし"],
+    "questionText": "二人乗りができるようになるには、普通二輪免許を取得してから、最低何年間の実乗経験が必要か。",
+    "choices": [
+      "1年間以上",
+      "2年間以上",
+      "3年間以上",
+      "規定はなく、いつでも可能"
+    ],
     "answer": 0,
-    "explanation": "積載物の高さは、地上から2メートル以下と定められています。",
+    "explanation": "普通二輪免許取得後、1年間の実乗経験を経た後に二人乗りが許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "f003",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪車の最大積載量は、以下のうちどれか。",
+    "choices": [
+      "20kg",
+      "30kg",
+      "50kg",
+      "70kg"
+    ],
+    "answer": 0,
+    "explanation": "普通二輪車の最大積載量は20kgと定められている。これを超える積載は違反になる。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
   {
-    "id": "futsuu_004",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin"],
-    "stageTag": "第二段階",
-    "difficulty": 3,
-    "questionText": "二段階右折が必要な交差点で、二輪車が右折する正しい方法はどれか。",
-    "choices": [
-      "あらかじめ道路の中央に寄り、交差点の中心の直近内側を徐行して通行する",
-      "あらかじめ道路の左端に寄り、交差点の向こう側まで直進してから向きを変える",
-      "右折専用レーンに入り、通常の四輪車と同じ方法で右折する",
-      "交差点の手前で一時停止し、対向車が途切れてから斜めに右折する"
+    "id": "f004",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
     ],
-    "answer": 1,
-    "explanation": "二段階右折は、あらかじめ道路の左端に寄り、交差点の向こう側まで直進してから向きを変えて進行します。",
-    "isTrapQuestion": true,
-    "trapNumberType": "twoStageRightTurn"
-  },
-  {
-    "id": "futsuu_005",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
     "stageTag": "第二段階",
     "difficulty": 2,
-    "questionText": "普通自動二輪車で法定速度が指定されていない一般道路を走行する場合の最高速度はどれか。",
-    "choices": ["時速40キロメートル", "時速50キロメートル", "時速60キロメートル", "時速70キロメートル"],
-    "answer": 2,
-    "explanation": "一般道路（標識・標示による指定がない場合）の法定最高速度は時速60キロメートルです。",
-    "isTrapQuestion": true,
-    "trapNumberType": "speedLimit"
-  },
-  {
-    "id": "futsuu_006",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
-    "stageTag": "第一段階",
-    "difficulty": 1,
-    "questionText": "二輪車に乗車するときに着用しなければならないヘルメットの条件として正しいものはどれか。",
+    "questionText": "交差点で左折する場合、二輪車として最も安全な走行方法は。",
     "choices": [
-      "工事用のヘルメットでもよい",
-      "自転車用ヘルメットでもよい",
-      "乗車用として基準に適合したものを着用しなければならない",
-      "同乗者はヘルメットを着用しなくてもよい"
+      "左に傾きながら曲がる",
+      "速度を落とした後、できるだけ小さくカーブを描く",
+      "あらかじめ左側に寄り、十分に速度を落とした上で回転半径を大きくとって曲がる",
+      "左折表示を出せば速度を落とさなくてもよい"
     ],
     "answer": 2,
-    "explanation": "運転者・同乗者ともに、乗車用ヘルメットとして基準に適合したものを着用しなければなりません。",
+    "explanation": "二輪車の左折は、重心移動を最小限にするため、事前に左側に寄り十分に速度を落とし、大きな回転半径をとることが安全。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
   },
   {
-    "id": "futsuu_007",
-    "licenseCategory": ["futsuuNirin"],
-    "stageTag": "第二段階",
-    "difficulty": 3,
-    "questionText": "前車との車間距離について、二輪車が急ブレーキをかけても追突しない距離を保つ必要があるのはどのような場合か。",
-    "choices": [
-      "高速道路のみ",
-      "前車と同一の速度で進行するときはいつでも",
-      "雨天時のみ",
-      "夜間のみ"
+    "id": "f005",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
     ],
-    "answer": 1,
-    "explanation": "前車と同一速度で進行するときは、その前車が急に停止しても追突しないだけの車間距離を保たなければなりません。",
-    "isTrapQuestion": true,
-    "trapNumberType": "followingDistance"
-  },
-  {
-    "id": "futsuu_008",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
     "stageTag": "第一段階",
     "difficulty": 1,
-    "questionText": "二輪車を運転するときの正しいブレーキ操作の説明として適切なものはどれか。",
+    "questionText": "普通二輪車の速度制限で正しいのはどれか。",
     "choices": [
-      "前輪ブレーキだけを使うのがよい",
-      "後輪ブレーキだけを使うのがよい",
-      "前輪・後輪ブレーキを同時にバランスよく使うのがよい",
-      "急な場合以外はブレーキを使わない方がよい"
+      "時速100km以下",
+      "時速60km以下",
+      "制限がない",
+      "時速80km以下"
     ],
-    "answer": 2,
-    "explanation": "前輪・後輪ブレーキを同時に、バランスよく使うことが基本です。",
+    "answer": 0,
+    "explanation": "道路交通法により、普通二輪車の最高速度は100km/hに制限されている。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
   },
   {
-    "id": "futsuu_009",
-    "licenseCategory": ["futsuuNirin", "atGentei"],
-    "stageTag": "第二段階",
+    "id": "f006",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
     "difficulty": 2,
-    "questionText": "高速道路での二輪車の法定最高速度（他の指定がない場合）はどれか。",
-    "choices": ["時速80キロメートル", "時速90キロメートル", "時速100キロメートル", "時速120キロメートル"],
+    "questionText": "ヘルメットについて正しいのはどれか。",
+    "choices": [
+      "着用義務はなく、装着は任意である",
+      "運転者のみ着用義務があり、乗客には着用義務はない",
+      "運転者と乗客の両方に着用義務がある",
+      "顎ひもを外して着用すれば問題ない"
+    ],
     "answer": 2,
-    "explanation": "高速道路の法定最高速度は、普通自動二輪車を含む普通車と同様に時速100キロメートルです。",
-    "isTrapQuestion": true,
-    "trapNumberType": "speedLimit"
+    "explanation": "道路交通法によりヘルメットの着用は運転者、乗客の両方に義務づけられており、適切に装着することが必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   },
   {
-    "id": "futsuu_010",
-    "licenseCategory": ["futsuuNirin", "kogataGentsukiNirin", "atGentei"],
-    "stageTag": "第一段階",
-    "difficulty": 1,
-    "questionText": "二輪車のスタンドを立てたまま発進すると、どのような危険があるか。",
+    "id": "f007",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "交差点で右折する場合、最も安全なのはどれか。",
     "choices": [
-      "特に危険はない",
-      "スタンドが路面に接触してバランスを崩す危険がある",
-      "エンジンが止まるだけで危険はない",
-      "スピードが出せなくなるだけである"
+      "交差点の右側に寄り、速度を保ったまま右折する",
+      "十分に速度を落とし、交差点の中央付近を大きく迂回するように右折する",
+      "右折表示を出してから速度を落とす",
+      "他の車両を無視して先に進む"
     ],
     "answer": 1,
-    "explanation": "スタンドを出したまま発進すると、旋回時などにスタンドが路面に接触してバランスを崩す危険があります。",
+    "explanation": "二輪車の右折は、スピードを十分に落として重心移動を最小限にしながら、交差点の中央付近を大きく迂回するように右折することが安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f008",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "雨の日に二輪車を運転する際の注意点として正しいのはどれか。",
+    "choices": [
+      "タイヤの溝は関係なく、速度に注意するだけで良い",
+      "ヘッドライトはつけず、視認性に頼る",
+      "段差や溝を避け、走行速度を低下させる",
+      "水たまりを高速で通過してもタイヤは滑らない"
+    ],
+    "answer": 2,
+    "explanation": "雨の日は路面が濡れてグリップが低下するため、段差や溝を避け、通常より走行速度を落とすことが重要。",
+    "isTrapQuestion": true,
+    "trapNumberType": "weatherSafety"
+  },
+  {
+    "id": "f009",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車でバックする際に正しいのはどれか。",
+    "choices": [
+      "バックミラーだけで確認すればよい",
+      "周囲を確認し、後ろに人がいないか確認してからバックする",
+      "速度は関係なく自由に動かせる",
+      "バックランプはなくても問題ない"
+    ],
+    "answer": 1,
+    "explanation": "バックする際は必ず周囲を確認し、後ろに障害物や人がいないことを確認してから慎重にバックする必要がある。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f010",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "以下のうち、二輪車に必ず装備されていなければならないものはどれか。",
+    "choices": [
+      "エアコン",
+      "ヘッドライト",
+      "カーステレオ",
+      "サンシェード"
+    ],
+    "answer": 1,
+    "explanation": "ヘッドライトは道路交通法によって二輪車に必須の装備である。その他のものは装備義務がない。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f011",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車の乗降について正しいのはどれか。",
+    "choices": [
+      "走行中でも乗り降りできる",
+      "停止している場合に限り、左側から乗り降りする",
+      "右側から乗り降りする",
+      "乗り降りの方向に制限はない"
+    ],
+    "answer": 1,
+    "explanation": "二輪車の乗降は、停止している場合に限り、左側（車線側）から行うことが安全とされている。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f012",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "カーブを走行する際、二輪車として最も危険なのはどれか。",
+    "choices": [
+      "緩いカーブで高速走行",
+      "急カーブで低速走行",
+      "カーブ内で急ブレーキをかける",
+      "カーブ前にしっかり減速する"
+    ],
+    "answer": 2,
+    "explanation": "カーブ内で急ブレーキをかけると、タイヤのグリップが極限に達し、スリップやスピンの危険性が高まる。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakeTechnique"
+  },
+  {
+    "id": "f013",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "信号のない交差点で二輪車が右折する場合、最優先すべきはどれか。",
+    "choices": [
+      "自分の安全確認",
+      "他の車両の動き確認",
+      "歩行者の確認",
+      "全て同時に確認する"
+    ],
+    "answer": 3,
+    "explanation": "信号のない交差点での右折は、自分の安全、他の車両、歩行者の全てを同時に確認することが必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f014",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "山道を下るときの正しいブレーキ操作は。",
+    "choices": [
+      "フットブレーキだけを使用する",
+      "エンジンブレーキを活用し、フットブレーキは軽く使う",
+      "ニュートラルに入れてエンジンをかけたまま下る",
+      "ギアを最高ギアに入れたまま下る"
+    ],
+    "answer": 1,
+    "explanation": "山道下降時は、エンジンブレーキを活用することでブレーキの過熱を防ぎ、フットブレーキは軽く使うことが安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f015",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車のサイドスタンドについて正しいのはどれか。",
+    "choices": [
+      "エンジンがかかったままでも駐車できる",
+      "駐車時は必ず左側に立てる",
+      "サイドスタンドだけでは安定しないため、必ずセンタースタンドと併用する",
+      "走行中に下ろしても問題ない"
+    ],
+    "answer": 1,
+    "explanation": "二輪車のサイドスタンドは左側に立て、エンジンは必ず切った状態で駐車する。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f016",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪車での二段階右折の方法について正しいのはどれか。",
+    "choices": [
+      "交差点で直進し、次の交差点で右折する",
+      "一度停止してから右折する",
+      "ハンドサイン出して右折する",
+      "速度を落とさず右折する"
+    ],
+    "answer": 0,
+    "explanation": "二段階右折は、大きな交差点で直進して一度交差点を越え、次の交差点で右折する方法である。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f017",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車で横風の影響を受けやすいのはどれか。",
+    "choices": [
+      "橋の上",
+      "トンネル内",
+      "信号待ちの停止中",
+      "市街地の走行"
+    ],
+    "answer": 0,
+    "explanation": "橋の上は遮るものがないため、横風の影響を最も受けやすく、二輪車は特に注意が必要。",
+    "isTrapQuestion": true,
+    "trapNumberType": "weatherSafety"
+  },
+  {
+    "id": "f018",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車が正しいラインで旋回するためには。",
+    "choices": [
+      "曲がり始めでハンドルを最大に切る",
+      "曲がり始める前に十分に減速し、視点を先に進む先に置く",
+      "速度を変えずに曲がる",
+      "曲がった後に急ブレーキをかける"
+    ],
+    "answer": 1,
+    "explanation": "正しいラインで旋回するには、事前に十分に減速し、視点を進む先に置くことで安全な軌跡が得られる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f019",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪車の乗客についての規制で正しいのはどれか。",
+    "choices": [
+      "乗客の年齢に制限はない",
+      "乗客は16歳以上でなければならない",
+      "乗客は20歳以上でなければならない",
+      "乗客の数は2人まで可能"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪車では、乗客は16歳以上であることが法で定められている。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "f020",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車でスリップが起きた場合、最も危険な対処はどれか。",
+    "choices": [
+      "ハンドル操作を続ける",
+      "急激なハンドル修正をする",
+      "アクセルを急に緩める",
+      "クラッチを切ってニュートラルにする"
+    ],
+    "answer": 1,
+    "explanation": "スリップ中の急激なハンドル修正は、かえってスリップを悪化させる可能性があり最も危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakeTechnique"
+  },
+  {
+    "id": "f021",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪免許で運転できる最大排気量は。",
+    "choices": [
+      "50cc以下",
+      "125cc以下",
+      "250cc以下",
+      "400cc以下"
+    ],
+    "answer": 2,
+    "explanation": "普通二輪免許では250cc以下の二輪車を運転できる。これを超える排気量は大型二輪免許が必要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f022",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車でハイビームを使用すべき場合はどれか。",
+    "choices": [
+      "昼間の走行",
+      "市街地での走行",
+      "夜間で対向車や先行車がない場合",
+      "常にハイビーム使用が正しい"
+    ],
+    "answer": 2,
+    "explanation": "ハイビームは夜間で対向車や先行車がない場合に使用し、相手車両が見える場合はロービームに切り替える。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f023",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車で急ハンドルを切った場合に起きやすいのはどれか。",
+    "choices": [
+      "エンストする",
+      "転倒やスリップ",
+      "ガソリン漏れ",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "急ハンドルはタイヤのグリップ限界を超え、転倒やスリップの危険性を大幅に高める。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f024",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車の点検項目で最も重要なのはどれか。",
+    "choices": [
+      "ワイパーの状態",
+      "タイヤの空気圧と溝",
+      "ラジオの機能",
+      "シートの色"
+    ],
+    "answer": 1,
+    "explanation": "タイヤの空気圧と溝は二輪車の安全運転に直結する最重要な点検項目。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f025",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車で夜間走行する際の注意点で正しいのはどれか。",
+    "choices": [
+      "ヘッドライトをつけていれば他の装備は不要",
+      "反射材や懐中電灯も装備すると視認性が高まる",
+      "ハイビームのみで十分",
+      "夜間走行は避けるべき"
+    ],
+    "answer": 1,
+    "explanation": "夜間走行では、ヘッドライトに加えて反射材や懐中電灯を装備することで、より高い視認性が確保できる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f026",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪車での白線の横断について正しいのはどれか。",
+    "choices": [
+      "白線は踏んでも問題ない",
+      "白線を踏まないよう走行する",
+      "白線は装飾的なマーク",
+      "白線は安全と示す"
+    ],
+    "answer": 1,
+    "explanation": "二輪車は白線（特に破線）を踏むとスリップのリスクが高まるため、可能な限り避けるべき。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f027",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車のガード下を走行する際の注意点は。",
+    "choices": [
+      "速度を上げて素早く通過する",
+      "低速で慎重に走行し、落下物に注意する",
+      "ライトを消して走行する",
+      "特に注意する必要はない"
+    ],
+    "answer": 1,
+    "explanation": "ガード下は落下物のリスクや視認性が低下するため、低速で慎重に走行することが重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f028",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車での駐輪について正しいのはどれか。",
+    "choices": [
+      "駐輪禁止場所に停めても大丈夫",
+      "許可された駐輪場のみ使用する",
+      "道路脇なら駐輪できる",
+      "駐輪場所に関する規制はない"
+    ],
+    "answer": 1,
+    "explanation": "二輪車は必ず許可された駐輪場のみ使用し、駐輪禁止場所への停車は違反になる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f029",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車でバックミラーが見えない死角への対処で最適なのはどれか。",
+    "choices": [
+      "ミラーのみに頼る",
+      "肩越しに目視確認も併用する",
+      "死角は気にせず進む",
+      "速度を上げて避ける"
+    ],
+    "answer": 1,
+    "explanation": "ミラーだけでは死角が存在するため、肩越しの目視確認を併用することで安全性が高まる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f030",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪車の税区分で正しいのはどれか。",
+    "choices": [
+      "軽自動車扱い",
+      "普通車扱い",
+      "二輪の軽自動車税",
+      "税金はかからない"
+    ],
+    "answer": 2,
+    "explanation": "普通二輪車は軽自動車税の対象であり、毎年申告が必要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f031",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での信号待ち中の最安全な位置はどれか。",
+    "choices": [
+      "交差点の中央",
+      "停止線の直前",
+      "停止線より手前で、必要に応じて逃げ場がある位置",
+      "対向車との間"
+    ],
+    "answer": 2,
+    "explanation": "信号待ち中は、万が一他の車両が突入した場合に逃げられるよう、停止線より手前で必要に応じて移動できる位置が安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f032",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪車でのヘルメット着用に関する規則で正しいのはどれか。",
+    "choices": [
+      "乗車中のヘルメット脱着は自由",
+      "走行中も脱着できる",
+      "走行中はヘルメットを被ったままにする必要がある",
+      "ヘルメット着用は強制ではない"
+    ],
+    "answer": 2,
+    "explanation": "走行中のヘルメット脱着は極めて危険であり、走行中は常にヘルメットを被ったままにすること。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f033",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での長距離走行時の休息について正しいのはどれか。",
+    "choices": [
+      "疲れを感じるまで走る",
+      "定期的に休息をとり、眠気対策を行う",
+      "走り続けることで体が慣れる",
+      "走行中の居眠りは起こらない"
+    ],
+    "answer": 1,
+    "explanation": "長距離走行時は定期的に休息をとり、眠気や疲労を適切に管理することが安全運転の鍵。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f034",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車の前後ブレーキの配分で最適なのはどれか。",
+    "choices": [
+      "前ブレーキのみ使用",
+      "後ろブレーキのみ使用",
+      "状況に応じて前後ブレーキをバランスよく使用",
+      "ブレーキは使わずエンジンブレーキだけ"
+    ],
+    "answer": 2,
+    "explanation": "二輪車の制動は、状況に応じて前後ブレーキをバランスよく使い分けることが安全で効果的。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f035",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での高速道路利用について正しいのはどれか。",
+    "choices": [
+      "普通二輪でも高速利用可能",
+      "普通二輪は高速利用禁止",
+      "条件付きで利用可能",
+      "夜間のみ利用可能"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪（250cc以下）は日本の高速道路利用が禁止されている。大型二輪免許が必要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f036",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車での車線変更で最も重要なのはどれか。",
+    "choices": [
+      "ハンドサイン",
+      "目視確認と合図の両方",
+      "速度変更",
+      "エンジン音での通知"
+    ],
+    "answer": 1,
+    "explanation": "車線変更時は、必ず目視確認をしながらウインカーで十分に合図することが必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f037",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での積載物の規制について正しいのはどれか。",
+    "choices": [
+      "積載制限はなく自由",
+      "最大積載量は20kgであり、且つシートより高くない",
+      "シートより高ければ大丈夫",
+      "重さに制限はなく、外観さえ大丈夫"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪の積載物は最大20kgであり、且つシートの高さを超えてはいけない。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f038",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車での走行中の手放し運転について正しいのはどれか。",
+    "choices": [
+      "短時間なら許可される",
+      "停止線前なら許可される",
+      "道路交通法により禁止されている",
+      "片手なら許可される"
+    ],
+    "answer": 2,
+    "explanation": "二輪車の手放し運転は道路交通法によって禁止されており、安全な操作が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f039",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での雪道走行で最も危険なのはどれか。",
+    "choices": [
+      "通常速度での走行",
+      "急ハンドルと急ブレーキの組み合わせ",
+      "ゆっくり走行",
+      "ヘッドライト点灯"
+    ],
+    "answer": 1,
+    "explanation": "雪道では急ハンドルと急ブレーキが極めて危険であり、スリップや転倒の直接的な原因となる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f040",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での保険加入について正しいのはどれか。",
+    "choices": [
+      "保険加入は任意であり必須ではない",
+      "自賠責保険への加入が法で義務づけられている",
+      "任意保険のみで十分",
+      "登録バイクには保険が自動で付与される"
+    ],
+    "answer": 1,
+    "explanation": "自賠責保険への加入は道路交通法により全ての二輪車に義務づけられている。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f041",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での急勾配下り坂での走行について正しいのはどれか。",
+    "choices": [
+      "フットブレーキで素早く減速",
+      "エンジンブレーキを活用し、フットブレーキは軽く",
+      "ニュートラルでエンジンをかけたまま下る",
+      "クラッチを切ってフリーで下る"
+    ],
+    "answer": 1,
+    "explanation": "急勾配での下りはエンジンブレーキを活用し、ブレーキの過熱を防ぎながら安全に下る。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f042",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪車での乗客の荷物についての規制で正しいのはどれか。",
+    "choices": [
+      "荷物に制限はない",
+      "乗客が持つ荷物も積載量に含まれる",
+      "乗客の荷物は積載量に含まれない",
+      "手で持っていれば問題ない"
+    ],
+    "answer": 1,
+    "explanation": "乗客が持つ荷物も総積載量20kg以内に含まれるため、事前の確認が必要。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f043",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での霧の中での走行で最も重要なのはどれか。",
+    "choices": [
+      "ハイビームで進む",
+      "低速走行とライト、霧灯で視認性を確保",
+      "速度を変えずハイビーム",
+      "霧の中は避けるべき"
+    ],
+    "answer": 1,
+    "explanation": "霧の中では低速走行し、ライトや霧灯を活用して視認性を確保することが安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f044",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車での一時停止標識について正しいのはどれか。",
+    "choices": [
+      "徐行で進んでもよい",
+      "完全に停止する必要がある",
+      "停止する必要はなく確認するだけ",
+      "夜間は停止不要"
+    ],
+    "answer": 1,
+    "explanation": "一時停止標識がある場所では、完全に停止してから周囲を確認して進むことが必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f045",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での複数車線での位置取りについて正しいのはどれか。",
+    "choices": [
+      "常に右車線を走行",
+      "常に左車線を走行",
+      "走行方向に応じた適切な車線選択",
+      "車線の選択に規制はない"
+    ],
+    "answer": 2,
+    "explanation": "複数車線では、走行方向や交通流に応じた適切な車線選択が安全で、通常は左側車線を走行する。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f046",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "二輪車での児童や幼児の乗車について正しいのはどれか。",
+    "choices": [
+      "制限がなく誰でも乗車可能",
+      "一定年齢以上で、安全装置の着用が必須",
+      "児童乗車は全て禁止",
+      "親の判断に任せられる"
+    ],
+    "answer": 1,
+    "explanation": "二輪車への児童乗車は6歳以上が条件であり、適切なヘルメット着用が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f047",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での定期点検の頻度について正しいのはどれか。",
+    "choices": [
+      "点検義務はない",
+      "1年に1回の定期点検が必須",
+      "3年に1回で十分",
+      "走行距離で判断される"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪は1年に1回の定期点検が法で義務づけられている。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f048",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車での飲酒運転について正しいのはどれか。",
+    "choices": [
+      "少量なら許可される",
+      "完全に禁止されている",
+      "判断は個人に任せられる",
+      "夜間走行なら許可"
+    ],
+    "answer": 1,
+    "explanation": "飲酒運転は道路交通法により完全に禁止されており、いかなる状況でも許可されない。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f049",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での緊急時の対処で最も重要なのはどれか。",
+    "choices": [
+      "急ブレーキをかける",
+      "周囲の状況判断と段階的な減速",
+      "ハンドルを一気に切る",
+      "エンジンをすぐに切る"
+    ],
+    "answer": 1,
+    "explanation": "緊急時でも周囲を判断し、段階的に減速することで二輪車の安定性を保つ。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f050",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での安全走行のための基本姿勢について正しいのはどれか。",
+    "choices": [
+      "身体の力を抜き、リラックスして走行",
+      "背中を丸めてハンドルに乗る",
+      "背中を張り、視線を先に置き、腕に力を入れずに走行",
+      "ハンドルに強く握りしめて走行"
+    ],
+    "answer": 2,
+    "explanation": "安全な走行姿勢は、背中を張り、視線を先に置き、ハンドルに過度な力を入れないことが基本。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
   }
