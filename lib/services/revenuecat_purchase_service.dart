@@ -62,7 +62,7 @@ class RevenueCatPurchaseService implements PurchaseService {
     try {
       await Purchases.restorePurchases();
       // 復元後、エンタイトルメントを確認して現在のステータスを返す
-      return _checkCurrentEntitlements();
+      return await _checkCurrentEntitlements();
     } catch (e) {
       rethrow;
     }

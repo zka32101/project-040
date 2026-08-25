@@ -21,11 +21,6 @@ class AppTheme {
         brightness: brightness,
       ),
       scaffoldBackgroundColor: isDark ? const Color(0xFF0E1220) : const Color(0xFFF7F7FA),
-      cardTheme: CardTheme(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        margin: const EdgeInsets.symmetric(vertical: 8),
-      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(48), // 44pt+ 確保
