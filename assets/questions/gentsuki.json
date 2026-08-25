@@ -758,5 +758,43 @@
     "explanation": "スリップ予防には段階的な減速と慎重運転が最も効果的。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "g041",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での走行中、坂道で速度が落ちてきた。最も安全な対処は。",
+    "choices": [
+      "アクセルを大きく開ける",
+      "ニュートラルに入れて下る",
+      "段階的にギアを下げて登る",
+      "バックギアで下る"
+    ],
+    "answer": 2,
+    "explanation": "坂道ではギアを下げることで、エンジンの力を効果的に使える。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g042",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付が通行できない道路はどれか。",
+    "choices": [
+      "一般道",
+      "高速道路",
+      "大多喜町内の一般道",
+      "市街地"
+    ],
+    "answer": 1,
+    "explanation": "原付（50cc以下）は高速道路での走行が禁止されている。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
   }
 ]
