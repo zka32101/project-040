@@ -758,5 +758,81 @@
     "explanation": "スリップ予防には段階的な減速と慎重運転が最も効果的。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "g041",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での走行中、坂道で速度が落ちてきた。最も安全な対処は。",
+    "choices": [
+      "アクセルを大きく開ける",
+      "ニュートラルに入れて下る",
+      "段階的にギアを下げて登る",
+      "バックギアで下る"
+    ],
+    "answer": 2,
+    "explanation": "坂道ではギアを下げることで、エンジンの力を効果的に使える。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g042",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付が通行できない道路はどれか。",
+    "choices": [
+      "一般道",
+      "高速道路",
+      "大多喜町内の一般道",
+      "市街地"
+    ],
+    "answer": 1,
+    "explanation": "原付（50cc以下）は高速道路での走行が禁止されている。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g043",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での右折禁止標識を見た場合の対処は。",
+    "choices": [
+      "右折する",
+      "右折できない",
+      "徐行して右折する",
+      "夜間なら右折可能"
+    ],
+    "answer": 1,
+    "explanation": "右折禁止標識がある場所での右折は違反。別のルートを選択する必要がある。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g044",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での交差点での危険回避で最も重要なのは。",
+    "choices": [
+      "速度を上げる",
+      "進路確認と段階的な減速",
+      "クラクション多用",
+      "ハンドル操作のみ"
+    ],
+    "answer": 1,
+    "explanation": "交差点では進路確認と段階的な減速で、危険を最小化できる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]

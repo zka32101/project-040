@@ -1014,5 +1014,290 @@
     "explanation": "安全な走行姿勢は、背中を張り、視線を先に置き、ハンドルに過度な力を入れないことが基本。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "f051",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車で加速中にリアタイヤがスリップしてきた。最も危険な対処方法はどれか。",
+    "choices": [
+      "急激にアクセルを戻す",
+      "段階的にアクセルを戻す",
+      "ブレーキペダルを踏む",
+      "クラッチを切る"
+    ],
+    "answer": 2,
+    "explanation": "スリップ中にブレーキを踏むと、さらにスリップが悪化する。段階的にアクセルを戻すのが正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakeTechnique"
+  },
+  {
+    "id": "f052",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪車に乗る際、正しいギアの選択は。",
+    "choices": [
+      "発進時は1速、加速時に上げていく",
+      "常に3速で走行する",
+      "最高速で最初から走行する",
+      "ギア選択に制限はない"
+    ],
+    "answer": 0,
+    "explanation": "安全な発進と加速のために、低ギアから段階的にギアを上げることが基本。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f053",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車でハンドルを握る時の正しい手の位置は。",
+    "choices": [
+      "力を入れてしっかり握る",
+      "軽く握り、腕の力を抜く",
+      "片手で握る",
+      "手のひらで押さえる"
+    ],
+    "answer": 1,
+    "explanation": "ハンドルは軽く握り、腕の力を抜くことで、体の動きに柔軟に対応できる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f054",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪で走行中、前輪がスリップした場合の対処方法は。",
+    "choices": [
+      "急ブレーキをかける",
+      "ハンドルを急に戻す",
+      "エンジンの力を保ちながら安定させる",
+      "アクセルを踏む"
+    ],
+    "answer": 2,
+    "explanation": "前輪スリップ時は、ハンドル操作とアクセルを控えめに、タイヤグリップの回復を待つ。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f055",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "高速道路での二輪車の走行において、危険な状況はどれか。",
+    "choices": [
+      "トレーラーの横風の影響",
+      "大型車の間での走行",
+      "路肩走行",
+      "全て該当する"
+    ],
+    "answer": 3,
+    "explanation": "普通二輪は高速走行禁止だが、もし走行するなら全ての状況が危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f056",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪車の横幅制限はどれか。",
+    "choices": [
+      "1.0m以下",
+      "1.5m以下",
+      "2.0m以下",
+      "制限なし"
+    ],
+    "answer": 0,
+    "explanation": "普通二輪は最大横幅1.0m以下と定められている。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f057",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "夜間走行で見通しの効かない交差点に接近する場合の正しい対処は。",
+    "choices": [
+      "速度を落とさず進む",
+      "クラクションを鳴らす",
+      "速度を落とし、早めにハイビームを点灯",
+      "ハイビーム走行を続ける"
+    ],
+    "answer": 2,
+    "explanation": "見通しが悪い場所では、速度を落とし、ハイビームで前方をしっかり確認することが重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f058",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車の走行中、対向車が急に割り込んできた場合の最適な対処は。",
+    "choices": [
+      "速度を上げて避ける",
+      "急ブレーキをかけ、ハンドル操作で回避",
+      "段階的にブレーキをかけ、方向転換で回避",
+      "クラクションのみ"
+    ],
+    "answer": 2,
+    "explanation": "急ブレーキは危険。段階的なブレーキと方向転換が安全な回避方法。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f059",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での急カーブでの最安全な走行は。",
+    "choices": [
+      "高速で内側に傾ける",
+      "カーブ前に減速し、外側のラインで走行",
+      "ニュートラルで走行",
+      "アクセル全開で走行"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前に減速し、外側のラインで大きく回ることが安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f060",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車でのガソリンスタンド走行で注意すべきはどれか。",
+    "choices": [
+      "高速で走行する",
+      "低速で走行し、急ハンドルを避ける",
+      "停止線を無視する",
+      "他の車を無視する"
+    ],
+    "answer": 1,
+    "explanation": "ガソリンスタンドは火災の危険があるため、低速走行と急操作の回避が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f061",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での踏切通過時の正しい方法は。",
+    "choices": [
+      "高速で通過する",
+      "一度停止し、左右確認後、徐行で通過",
+      "踏切内で停止しても大丈夫",
+      "段差を避けて走行"
+    ],
+    "answer": 1,
+    "explanation": "踏切は停止して確認後、徐行で通過することが法規と安全のため必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f062",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車での走行中、タイヤがパンクした場合の対処は。",
+    "choices": [
+      "最寄りの修理工場まで走行する",
+      "徐々に速度を落とし、安全な場所で停止",
+      "急ブレーキをかける",
+      "走行を続ける"
+    ],
+    "answer": 1,
+    "explanation": "タイヤパンク時は、徐々に速度を落とし、安全な場所に停止することが重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f063",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "二輪車での長時間走行時の疲労対策で最も有効なのはどれか。",
+    "choices": [
+      "連続走行",
+      "定期的な休息と水分補給",
+      "カフェイン摂取のみ",
+      "速度を上げる"
+    ],
+    "answer": 1,
+    "explanation": "長時間走行での疲労は、定期的な休息と水分補給で対処することが効果的。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f064",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "二輪車での逆行走行について正しいのはどれか。",
+    "choices": [
+      "許可される",
+      "指定場所で許可される",
+      "完全禁止",
+      "夜間のみ許可"
+    ],
+    "answer": 2,
+    "explanation": "逆行走行は道路交通法により完全に禁止されている。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f065",
+    "licenseCategory": [
+      "futsuuNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での荷物積載時の走行で最も危険なのはどれか。",
+    "choices": [
+      "バランスの取れた積載",
+      "後ろに重いものを積む",
+      "前に重いものを積む",
+      "両側にバランスよく積む"
+    ],
+    "answer": 2,
+    "explanation": "前に重い荷物を積むと、前輪の操舵性が失われ、最も危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
   }
 ]

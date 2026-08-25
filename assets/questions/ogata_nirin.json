@@ -948,5 +948,81 @@
     "explanation": "橋上やトンネル出口では横風の影響が大きく、特に高速走行時は注意が必須。",
     "isTrapQuestion": true,
     "trapNumberType": "weatherSafety"
+  },
+  {
+    "id": "o051",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での高速走行中、横風に遭遇した。最適な対処は。",
+    "choices": [
+      "ハンドルを固く握り、直線を保つ",
+      "柔軟にハンドルを握り、バイクの動きに対応",
+      "速度を上げて風の影響を減らす",
+      "ブレーキを踏む"
+    ],
+    "answer": 1,
+    "explanation": "横風では、ハンドルを柔軟に握り、バイクの自然な動きに対応することが安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o052",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高速走行中、雨に遭遇した。最優先の対処は。",
+    "choices": [
+      "速度を落とす",
+      "ウインドシールドを使う",
+      "ハイビーム点灯",
+      "加速する"
+    ],
+    "answer": 0,
+    "explanation": "雨での高速走行は非常に危険なため、まず速度を落とすことが最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o053",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高速走行時のタイヤ点検で最も重要なのは。",
+    "choices": [
+      "タイヤの色",
+      "タイヤの溝の深さと空気圧",
+      "タイヤのデザイン",
+      "タイヤの材質"
+    ],
+    "answer": 1,
+    "explanation": "高速走行ではタイヤの溝と空気圧が、安全性に直結する最重要項目。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o054",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での加速時に必要な技術は。",
+    "choices": [
+      "最大出力で加速する",
+      "段階的な加速制御",
+      "急激なアクセル操作",
+      "アクセルと同時にブレーキ"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は、段階的な加速制御で安全性を確保する必要がある。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]
