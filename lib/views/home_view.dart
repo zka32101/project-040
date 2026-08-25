@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/license_category.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/pass_prediction_meter.dart';
+import 'analytics_dashboard_view.dart';
 import 'bike_unlock_view.dart';
 import 'daily_quota_view.dart';
 import 'exam_date_setting_view.dart';
@@ -114,6 +115,21 @@ class HomeView extends ConsumerWidget {
                       },
                       loading: () => const SizedBox.shrink(),
                       error: (_, __) => const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: const Icon(Icons.insights, size: 32),
+                        title: const Text('学習分析'),
+                        subtitle: const Text('弱点と伸びを確認'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AnalyticsDashboardView(),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ],
