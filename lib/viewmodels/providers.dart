@@ -5,6 +5,7 @@ import '../core/constants/license_category.dart';
 import '../models/bike_unlock_progress.dart';
 import '../models/pass_prediction_score.dart';
 import '../models/question.dart';
+import '../models/achievement_badge.dart';
 import '../models/question_mastery_status.dart';
 import '../models/trap_dojo_session.dart';
 import '../models/user.dart';
@@ -12,6 +13,7 @@ import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
+import '../services/achievement_service.dart';
 import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
@@ -34,6 +36,9 @@ final predictionScoreServiceProvider =
     Provider<PredictionScoreService>((ref) => PredictionScoreService());
 
 final masteryServiceProvider = Provider<MasteryService>((ref) => LocalMasteryService());
+
+final achievementServiceProvider =
+    Provider<AchievementService>((ref) => LocalAchievementService());
 
 /// 認証未接続のため固定uid。
 /// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
@@ -133,6 +138,12 @@ final masteredQuestionsProvider =
     FutureProvider<List<QuestionMasteryStatus>>((ref) {
   final uid = ref.read(currentUidProvider);
   return ref.read(masteryServiceProvider).loadMasteredQuestions(uid);
+});
+
+/// ユーザーが獲得したバッジのリスト。
+final unlockedBadgesProvider = FutureProvider<List<AchievementBadge>>((ref) {
+  final uid = ref.read(currentUidProvider);
+  return ref.read(achievementServiceProvider).loadUnlockedBadges(uid);
 });
 
 // ---------------------------------------------------------------------------
@@ -255,6 +266,9 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     if (!state.ahaMomentShown && newCorrectCount >= 3) {
       await _revealPredictionMeter();
     }
+
+    // バッジチェック：新しく獲得したバッジを自動的にロック解除
+    await _checkAndUnlockBadges();
   }
 
   Future<void> _revealPredictionMeter() async {
@@ -296,6 +310,46 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
       ref
           .read(adGateServiceProvider)
           .enterContext(AdBlockingContext.answeringQuestion);
+    }
+  }
+
+  Future<void> _checkAndUnlockBadges() async {
+    try {
+      final uid = ref.read(currentUidProvider);
+      final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+
+      // 質問メタデータを構築（簡略版）
+      // 実装では、全質問から カテゴリ・ステージ情報を抽出する
+      final questionMetadata = <String, dynamic>{
+        'trapQuestions': <String>[],
+        'categories': <String, List<String>>{
+          'futsuuNirin': <String>[],
+          'gentsuki': <String>[],
+          'ogataNirin': <String>[],
+        },
+      };
+
+      final newBadges = await ref.read(achievementServiceProvider)
+          .checkAndUnlockBadges(uid, logs, questionMetadata);
+
+      if (newBadges.isNotEmpty) {
+        // バッジプロバイダーを無効化して再読み込みをトリガー
+        ref.invalidate(unlockedBadgesProvider);
+
+        // アナリティクスに送信
+        for (final badge in newBadges) {
+          await ref.read(analyticsServiceProvider).logEvent(
+                'badge_unlocked',
+                parameters: {
+                  'badge_type': badge.badgeType.name,
+                  'badge_name': badge.badgeType.displayName,
+                  'criteria': badge.criteria,
+                },
+              );
+        }
+      }
+    } catch (e) {
+      // バッジチェック失敗はスキップ（ゲームプレイを妨害しない）
     }
   }
 
