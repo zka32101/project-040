@@ -5,12 +5,16 @@ import '../core/constants/license_category.dart';
 import '../models/bike_unlock_progress.dart';
 import '../models/pass_prediction_score.dart';
 import '../models/question.dart';
+import '../models/achievement_badge.dart';
+import '../models/question_mastery_status.dart';
 import '../models/trap_dojo_session.dart';
 import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
+import '../services/achievement_service.dart';
+import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
 
@@ -30,6 +34,11 @@ final adGateServiceProvider = Provider<AdGateService>((ref) => AdGateService());
 
 final predictionScoreServiceProvider =
     Provider<PredictionScoreService>((ref) => PredictionScoreService());
+
+final masteryServiceProvider = Provider<MasteryService>((ref) => LocalMasteryService());
+
+final achievementServiceProvider =
+    Provider<AchievementService>((ref) => LocalAchievementService());
 
 /// 認証未接続のため固定uid。
 /// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
@@ -124,6 +133,19 @@ final savedPredictionScoreProvider =
   return ref.read(dataServiceProvider).loadPredictionScore(uid);
 });
 
+/// ユーザーが「記憶した」フラグを持つ問題のリスト。
+final masteredQuestionsProvider =
+    FutureProvider<List<QuestionMasteryStatus>>((ref) {
+  final uid = ref.read(currentUidProvider);
+  return ref.read(masteryServiceProvider).loadMasteredQuestions(uid);
+});
+
+/// ユーザーが獲得したバッジのリスト。
+final unlockedBadgesProvider = FutureProvider<List<AchievementBadge>>((ref) {
+  final uid = ref.read(currentUidProvider);
+  return ref.read(achievementServiceProvider).loadUnlockedBadges(uid);
+});
+
 // ---------------------------------------------------------------------------
 // Daily Quota / 出題フロー（Aha Moment最短動線の心臓部）
 // ---------------------------------------------------------------------------
@@ -193,6 +215,8 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     ref.read(adGateServiceProvider).enterContext(AdBlockingContext.answeringQuestion);
 
     final user = ref.read(userControllerProvider).valueOrNull;
+    final uid = ref.read(currentUidProvider);
+
     final all = await ref.read(
       questionsProvider(
         QuestionQuery(
@@ -201,8 +225,17 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
         ),
       ).future,
     );
-    all.shuffle();
-    final quota = all.take(freeDailyQuotaLimit).toList();
+
+    // マスター済み問題を除外
+    final masteredIds = await ref.read(masteryServiceProvider).loadMasteredQuestions(uid);
+    final masteredIdSet = {for (final m in masteredIds) m.questionId};
+    final filtered = all.where((q) => !masteredIdSet.contains(q.id)).toList();
+
+    // マスター済み問題が全てなら、全問題から開始
+    final questionsList = filtered.isEmpty ? all : filtered;
+
+    questionsList.shuffle();
+    final quota = questionsList.take(freeDailyQuotaLimit).toList();
     state = state.copyWith(questions: quota, loading: false);
   }
 
@@ -233,6 +266,9 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     if (!state.ahaMomentShown && newCorrectCount >= 3) {
       await _revealPredictionMeter();
     }
+
+    // バッジチェック：新しく獲得したバッジを自動的にロック解除
+    await _checkAndUnlockBadges();
   }
 
   Future<void> _revealPredictionMeter() async {
@@ -274,6 +310,81 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
       ref
           .read(adGateServiceProvider)
           .enterContext(AdBlockingContext.answeringQuestion);
+    }
+  }
+
+  Future<void> _checkAndUnlockBadges() async {
+    try {
+      final uid = ref.read(currentUidProvider);
+      final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+
+      // 質問メタデータを構築：全トレーニング段階から問題をロード
+      final trapQuestionIds = <String>[];
+      final stageMap = <String, List<String>>{
+        '第一段階': <String>[],
+        '第二段階': <String>[],
+      };
+      final categoryMap = <String, List<String>>{
+        'futsuuNirin': <String>[],
+        'gentsuki': <String>[],
+        'ogataNirin': <String>[],
+      };
+
+      // 各カテゴリ×各段階で問題をロード
+      for (final category in ['futsuuNirin', 'gentsuki', 'ogataNirin']) {
+        for (final stage in ['第一段階', '第二段階']) {
+          try {
+            final questions = await ref
+                .read(dataServiceProvider)
+                .loadQuestions(licenseCategory: category, stageTag: stage);
+
+            for (final q in questions) {
+              // トラップ問題を記録
+              if (q.isTrapQuestion) {
+                trapQuestionIds.add(q.id);
+              }
+              // ステージごとに記録
+              if (stageMap.containsKey(stage)) {
+                stageMap[stage]!.add(q.id);
+              }
+              // カテゴリごとに記録
+              if (q.licenseCategory.contains(category)) {
+                categoryMap[category]!.add(q.id);
+              }
+            }
+          } catch (e) {
+            // 個別の問題読み込みエラーはスキップ
+          }
+        }
+      }
+
+      final questionMetadata = <String, dynamic>{
+        'trapQuestions': trapQuestionIds,
+        'stages': stageMap,
+        'categories': categoryMap,
+      };
+
+      final newBadges = await ref.read(achievementServiceProvider)
+          .checkAndUnlockBadges(uid, logs, questionMetadata);
+
+      if (newBadges.isNotEmpty) {
+        // バッジプロバイダーを無効化して再読み込みをトリガー
+        ref.invalidate(unlockedBadgesProvider);
+
+        // アナリティクスに送信
+        for (final badge in newBadges) {
+          await ref.read(analyticsServiceProvider).logEvent(
+                'badge_unlocked',
+                parameters: {
+                  'badge_type': badge.badgeType.name,
+                  'badge_name': badge.badgeType.displayName,
+                  'criteria': badge.criteria,
+                },
+              );
+        }
+      }
+    } catch (e) {
+      // バッジチェック失敗はスキップ（ゲームプレイを妨害しない）
     }
   }
 

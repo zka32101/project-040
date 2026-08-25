@@ -58,15 +58,17 @@ class DailyQuotaView extends ConsumerWidget {
   }
 }
 
-class _QuestionBody extends StatelessWidget {
+class _QuestionBody extends ConsumerWidget {
   const _QuestionBody({required this.state, required this.controller});
 
   final DailyQuotaState state;
   final DailyQuotaController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final question = state.currentQuestion!;
+    final masteredAsync = ref.watch(masteredQuestionsProvider);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -101,9 +103,57 @@ class _QuestionBody extends StatelessWidget {
               },
             ),
           ),
+          const SizedBox(height: 16),
+          // 「記憶した」ボタン
+          masteredAsync.when(
+            data: (masteredList) {
+              final isMastered = masteredList.any((m) => m.questionId == question.id);
+              return SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _toggleMastery(context, ref, question.id, isMastered),
+                  icon: Icon(isMastered ? Icons.check_circle : Icons.radio_button_unchecked),
+                  label: Text(isMastered ? '記憶した ✓' : '記憶した'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isMastered
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+              );
+            },
+            loading: () => const Center(child: SizedBox.shrink()),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _toggleMastery(
+    BuildContext context,
+    WidgetRef ref,
+    String questionId,
+    bool isMastered,
+  ) async {
+    final uid = ref.read(currentUidProvider);
+    final masteryService = ref.read(masteryServiceProvider);
+
+    try {
+      if (isMastered) {
+        await masteryService.unmarkAsMastered(uid, questionId);
+      } else {
+        await masteryService.markAsMastered(uid, questionId);
+      }
+      // プロバイダーを無効化して再読み込みをトリガー
+      ref.invalidate(masteredQuestionsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('エラーが発生しました: $e')),
+        );
+      }
+    }
   }
 }
 
