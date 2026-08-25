@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/achievement_badge.dart';
@@ -38,8 +40,9 @@ class LocalAchievementService implements AchievementService {
 
     // 1. 第一段階 90%以上
     if (!existingTypes.contains(BadgeType.passLevelOne)) {
-      final accuracy = _calculateAccuracyForStage(answerLogs, '第一段階');
-      if (accuracy >= 0.90 && _countAttempts(answerLogs, '第一段階') >= 10) {
+      final accuracy = _calculateAccuracyForStage(answerLogs, '第一段階', questionMetadata);
+      final attempts = _countAttemptsForStage(answerLogs, '第一段階', questionMetadata);
+      if (accuracy >= 0.90 && attempts >= 10) {
         newBadges.add(
           AchievementBadge(
             uid: uid,
@@ -53,8 +56,9 @@ class LocalAchievementService implements AchievementService {
 
     // 2. 第二段階 90%以上
     if (!existingTypes.contains(BadgeType.passLevelTwo)) {
-      final accuracy = _calculateAccuracyForStage(answerLogs, '第二段階');
-      if (accuracy >= 0.90 && _countAttempts(answerLogs, '第二段階') >= 10) {
+      final accuracy = _calculateAccuracyForStage(answerLogs, '第二段階', questionMetadata);
+      final attempts = _countAttemptsForStage(answerLogs, '第二段階', questionMetadata);
+      if (accuracy >= 0.90 && attempts >= 10) {
         newBadges.add(
           AchievementBadge(
             uid: uid,
@@ -90,8 +94,8 @@ class LocalAchievementService implements AchievementService {
       if (!existingTypes.contains(badgeType)) {
         final accuracy =
             _calculateAccuracyForCategory(answerLogs, category, questionMetadata);
-        if (accuracy >= 0.95 &&
-            _countAttempts(answerLogs, category) >= 15) {
+        final attempts = _countAttemptsForCategory(answerLogs, category, questionMetadata);
+        if (accuracy >= 0.95 && attempts >= 15) {
           newBadges.add(
             AchievementBadge(
               uid: uid,
@@ -182,12 +186,22 @@ class LocalAchievementService implements AchievementService {
     await prefs.setStringList(key, jsonList);
   }
 
-  double _calculateAccuracyForStage(List<UserAnswerLog> logs, String stage) {
+  double _calculateAccuracyForStage(
+    List<UserAnswerLog> logs,
+    String stage,
+    Map<String, dynamic> questionMetadata,
+  ) {
     if (logs.isEmpty) return 0.0;
-    // Note: 実装では questionMetadata から stage 情報を参照する必要があるが、
-    // ここでは簡略版として全ログから計算
-    final correct = logs.where((l) => l.isCorrect).length;
-    return correct / logs.length;
+    final stageIds = (questionMetadata['stages']?[stage] as List<String>?) ?? [];
+    if (stageIds.isEmpty) {
+      // フォールバック：メタデータがない場合は全ログから計算
+      final correct = logs.where((l) => l.isCorrect).length;
+      return correct / logs.length;
+    }
+    final stageLogs = logs.where((l) => stageIds.contains(l.questionId)).toList();
+    if (stageLogs.isEmpty) return 0.0;
+    final correct = stageLogs.where((l) => l.isCorrect).length;
+    return correct / stageLogs.length;
   }
 
   double _calculateAccuracyForTrap(
@@ -218,9 +232,30 @@ class LocalAchievementService implements AchievementService {
     return correct / categoryLogs.length;
   }
 
-  int _countAttempts(List<UserAnswerLog> logs, String keywordOrCategory) {
-    // 実装では questionMetadata を参照して フィルタリング
-    return logs.length; // 簡略版
+  int _countAttemptsForStage(
+    List<UserAnswerLog> logs,
+    String stage,
+    Map<String, dynamic> questionMetadata,
+  ) {
+    final stageIds = (questionMetadata['stages']?[stage] as List<String>?) ?? [];
+    if (stageIds.isEmpty) {
+      // フォールバック：メタデータがない場合は全ログから計算
+      return logs.length;
+    }
+    return logs.where((l) => stageIds.contains(l.questionId)).length;
+  }
+
+  int _countAttemptsForCategory(
+    List<UserAnswerLog> logs,
+    String category,
+    Map<String, dynamic> questionMetadata,
+  ) {
+    final categoryIds = (questionMetadata['categories']?[category] as List<String>?) ?? [];
+    if (categoryIds.isEmpty) {
+      // フォールバック：メタデータがない場合は全ログから計算
+      return logs.length;
+    }
+    return logs.where((l) => categoryIds.contains(l.questionId)).length;
   }
 
   int _countTrapAttempts(
@@ -233,17 +268,18 @@ class LocalAchievementService implements AchievementService {
 
   String _getStorageKey(String uid) => '${_storageKeyPrefix}$uid';
 
-  // JSON エンコード/デコード（手動版、json パッケージなしで動作）
+  /// JSON エンコード：Map を JSON 文字列に変換
   String _jsonEncode(Map<String, dynamic> map) {
-    // 簡略版: toJson() 済みのマップを文字列化
-    // 実装では json パッケージを使用することを推奨
-    return map.toString();
+    return jsonEncode(map);
   }
 
-  Map<String, dynamic> _jsonDecode(String json) {
-    // 簡略版: 手動パース（本番環境では json パッケージ使用）
-    // これは実装上の妥協版です
+  /// JSON デコード：JSON 文字列を Map に変換
+  Map<String, dynamic> _jsonDecode(String jsonString) {
     try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
       return {};
     } catch (e) {
       return {};

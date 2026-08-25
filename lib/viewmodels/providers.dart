@@ -318,15 +318,50 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
       final uid = ref.read(currentUidProvider);
       final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
 
-      // 質問メタデータを構築（簡略版）
-      // 実装では、全質問から カテゴリ・ステージ情報を抽出する
+      // 質問メタデータを構築：全トレーニング段階から問題をロード
+      final trapQuestionIds = <String>[];
+      final stageMap = <String, List<String>>{
+        '第一段階': <String>[],
+        '第二段階': <String>[],
+      };
+      final categoryMap = <String, List<String>>{
+        'futsuuNirin': <String>[],
+        'gentsuki': <String>[],
+        'ogataNirin': <String>[],
+      };
+
+      // 各カテゴリ×各段階で問題をロード
+      for (final category in ['futsuuNirin', 'gentsuki', 'ogataNirin']) {
+        for (final stage in ['第一段階', '第二段階']) {
+          try {
+            final questions = await ref
+                .read(dataServiceProvider)
+                .loadQuestions(licenseCategory: category, stageTag: stage);
+
+            for (final q in questions) {
+              // トラップ問題を記録
+              if (q.isTrapQuestion) {
+                trapQuestionIds.add(q.id);
+              }
+              // ステージごとに記録
+              if (stageMap.containsKey(stage)) {
+                stageMap[stage]!.add(q.id);
+              }
+              // カテゴリごとに記録
+              if (q.licenseCategory.contains(category)) {
+                categoryMap[category]!.add(q.id);
+              }
+            }
+          } catch (e) {
+            // 個別の問題読み込みエラーはスキップ
+          }
+        }
+      }
+
       final questionMetadata = <String, dynamic>{
-        'trapQuestions': <String>[],
-        'categories': <String, List<String>>{
-          'futsuuNirin': <String>[],
-          'gentsuki': <String>[],
-          'ogataNirin': <String>[],
-        },
+        'trapQuestions': trapQuestionIds,
+        'stages': stageMap,
+        'categories': categoryMap,
       };
 
       final newBadges = await ref.read(achievementServiceProvider)
