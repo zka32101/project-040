@@ -25,6 +25,9 @@ dependencies:
   # 課金（期間パス・非消費型）
   purchases_flutter: ^6.29.1
 
+  # 広告（Google Mobile Ads）
+  google_mobile_ads: ^6.0.0
+
   # 演出
   lottie: ^3.1.0
 
