@@ -8,7 +8,10 @@ class AppUser {
     this.examDate,
     this.streakCount = 0,
     this.purchaseStatus = PurchaseStatus.free,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   final String uid;
 
@@ -22,6 +25,12 @@ class AppUser {
   final int streakCount;
   final PurchaseStatus purchaseStatus;
 
+  /// データ作成日時（コンフリクト解決用）
+  final DateTime createdAt;
+
+  /// データ最終更新日時（コンフリクト解決用・Last-Write-Wins）
+  final DateTime updatedAt;
+
   /// 無料枠：区分1つまで無料。2区分目以降は単一/全区分パスが必要。
   bool get hasFreeCategoryOnly =>
       purchaseStatus == PurchaseStatus.free && licenseCategories.length <= 1;
@@ -32,6 +41,8 @@ class AppUser {
     DateTime? examDate,
     int? streakCount,
     PurchaseStatus? purchaseStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return AppUser(
       uid: uid,
@@ -40,6 +51,8 @@ class AppUser {
       examDate: examDate ?? this.examDate,
       streakCount: streakCount ?? this.streakCount,
       purchaseStatus: purchaseStatus ?? this.purchaseStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? DateTime.now(), // Always update timestamp on modification
     );
   }
 
@@ -57,6 +70,12 @@ class AppUser {
       (e) => e.name == (json['purchaseStatus'] as String? ?? 'free'),
       orElse: () => PurchaseStatus.free,
     ),
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : null,
+    updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -66,5 +85,7 @@ class AppUser {
     'examDate': examDate?.toIso8601String(),
     'streakCount': streakCount,
     'purchaseStatus': purchaseStatus.name,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
   };
 }

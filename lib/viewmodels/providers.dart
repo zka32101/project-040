@@ -31,6 +31,8 @@ import '../services/sound_effects_service.dart';
 import '../services/study_analytics_service.dart';
 import '../services/sync_queue_service.dart';
 import '../services/connectivity_service.dart';
+import '../services/conflict_resolution_service.dart';
+import '../services/user_deletion_service.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -83,6 +85,12 @@ final syncStatusProvider = StreamProvider<SyncStatus>((ref) async* {
   final queueService = await ref.watch(syncQueueServiceProvider.future);
   yield* queueService.statusStream();
 });
+
+final conflictResolutionServiceProvider =
+    Provider<ConflictResolutionService>((ref) => DefaultConflictResolutionService());
+
+final userDeletionServiceProvider =
+    Provider<UserDeletionService>((ref) => FirebaseUserDeletionService());
 
 // ---------------------------------------------------------------------------
 // Authentication
