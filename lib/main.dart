@@ -6,6 +6,9 @@ import 'app.dart';
 import 'firebase_options.dart';
 import 'services/firebase_analytics_service.dart';
 import 'services/firestore_data_service.dart';
+import 'services/firestore_sync_service.dart';
+import 'services/hybrid_data_service.dart';
+import 'services/local_data_service.dart';
 import 'viewmodels/providers.dart';
 
 // RevenueCat API キー（iOS/Android）
@@ -33,8 +36,13 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        // Firestore をデータサービスとして使用
-        dataServiceProvider.overrideWithValue(FirestoreDataService()),
+        // ハイブリッドデータサービス：Firestore 優先、ローカルにフォールバック
+        dataServiceProvider.overrideWithValue(
+          HybridDataService(
+            localDataService: LocalDataService(),
+            firestoreSyncService: LocalFirestoreSyncService(),
+          ),
+        ),
 
         // Firebase Analytics を計測サービスとして使用
         analyticsServiceProvider
