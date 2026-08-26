@@ -62,16 +62,20 @@ class SettingsView extends ConsumerWidget {
               },
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('通知'),
-            trailing: Switch(
-              value: true,
-              onChanged: (_) {
-                // TODO: 通知許可プレプロンプト→OS許可の実装
-                // （価値説明→OS許可、企画設計書 R①）
-              },
-            ),
+          Consumer(
+            builder: (context, ref, _) {
+              return ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: const Text('通知'),
+                trailing: Switch(
+                  value: true,
+                  onChanged: (_) async {
+                    // 通知許可プレプロンプト：価値説明 → OS許可リクエスト
+                    _showNotificationPrePrompt(context, ref);
+                  },
+                ),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
@@ -99,5 +103,43 @@ class SettingsView extends ConsumerWidget {
       case null:
         return '無料版';
     }
+  }
+
+  void _showNotificationPrePrompt(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('毎日の学習をサポート'),
+        content: const Text(
+          '通知をオンにすると、毎日のノルマ開始時刻に\nリマインダーが届きます。\n\nより効果的に学習を継続できます。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('後で'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              // OS許可をリクエスト
+              final notificationService =
+                  ref.read(notificationServiceProvider);
+              final granted =
+                  await notificationService.requestNotificationPermission();
+
+              if (granted && dialogContext.mounted) {
+                // 許可が取得できたらテスト通知を送信
+                await notificationService.sendTestNotification();
+
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(content: Text('通知がオンになりました')),
+                );
+              }
+            },
+            child: const Text('有効にする'),
+          ),
+        ],
+      ),
+    );
   }
 }
