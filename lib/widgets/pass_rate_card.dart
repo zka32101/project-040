@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/license_category.dart';
 import '../models/pass_prediction_score.dart';
+import '../views/pass_rate_analysis_view.dart';
 import '../viewmodels/providers.dart';
 
 /// 合格率予測カード。
@@ -27,10 +28,16 @@ class PassRateCard extends ConsumerWidget {
         final correctCount = logs.where((l) => l.isCorrect).length;
         final accuracy = totalAttempts > 0 ? correctCount / totalAttempts : 0.0;
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PassRateAnalysisView()),
+            );
+          },
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ヘッダー
@@ -83,6 +90,7 @@ class PassRateCard extends ConsumerWidget {
               ],
             ),
           ),
+            ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
