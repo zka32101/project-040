@@ -19,6 +19,7 @@ import '../services/analytics_cache_service.dart';
 import '../services/analytics_isolate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_sync_service.dart';
 import '../services/local_data_service.dart';
 import '../services/achievement_service.dart';
 import '../services/mastery_service.dart';
@@ -59,6 +60,9 @@ final soundEffectsServiceProvider = FutureProvider<SoundEffectsService>((ref) as
 
 final notificationServiceProvider =
     Provider<NotificationService>((ref) => LocalNotificationService());
+
+final fireStoreSyncServiceProvider =
+    Provider<FirestoreSyncService>((ref) => LocalFirestoreSyncService());
 
 // ---------------------------------------------------------------------------
 // Authentication
