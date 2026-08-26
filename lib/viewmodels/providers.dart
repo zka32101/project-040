@@ -13,6 +13,7 @@ import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
 import '../services/analytics_cache_service.dart';
+import '../services/analytics_isolate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
 import '../services/achievement_service.dart';
@@ -557,9 +558,9 @@ class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
 
     // キャッシュなし or 指紋が異なる：新規計算
     final index = await ref.watch(questionIndexProvider.future);
-    final service = ref.read(studyAnalyticsServiceProvider);
 
-    final snapshot = await service.aggregate(
+    // 大規模ログセットの場合は isolate に移譲（UI ブロッキング回避）
+    final snapshot = await AnalyticsIsolateService.aggregateWithThreshold(
       uid: uid,
       logs: logs,
       index: index,
