@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/license_category.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/pass_prediction_meter.dart';
+import '../widgets/pass_rate_card.dart';
 import 'analytics_dashboard_view.dart';
 import 'bike_unlock_view.dart';
 import 'daily_quota_view.dart';
@@ -57,6 +58,8 @@ class HomeView extends ConsumerWidget {
                       score: scoreAsync.valueOrNull,
                       answeredCount: answerLogsAsync.valueOrNull?.length ?? 0,
                     ),
+                    const SizedBox(height: 16),
+                    const PassRateCard(),
                     const SizedBox(height: 16),
                     _ExamCountdownCard(examDate: user?.examDate),
                     const SizedBox(height: 16),
