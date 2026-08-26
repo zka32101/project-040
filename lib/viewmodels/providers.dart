@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/analytics_events.dart';
@@ -259,6 +260,17 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     final uid = ref.read(currentUidProvider);
     final now = DateTime.now();
 
+    // ハプティクスフィードバック
+    try {
+      if (isCorrect) {
+        await HapticFeedback.mediumImpact();
+      } else {
+        await HapticFeedback.lightImpact();
+      }
+    } catch (_) {
+      // Haptics not available on this device
+    }
+
     await ref.read(dataServiceProvider).appendAnswerLog(
           UserAnswerLog(
             uid: uid,
@@ -471,6 +483,14 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
           AnalyticsEvents.bikeUnlocked,
           parameters: {'bike_id': progress.bikeId},
         );
+
+        // バイク解放時のハプティクスフィードバック
+        try {
+          await HapticFeedback.heavyImpact();
+        } catch (_) {
+          // Haptics not available on this device
+        }
+
         updated.add(unlocked);
       } else {
         updated.add(progress);
