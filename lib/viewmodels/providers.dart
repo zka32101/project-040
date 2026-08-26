@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +18,7 @@ import '../services/ad_gate_service.dart';
 import '../services/analytics_cache_service.dart';
 import '../services/analytics_isolate_service.dart';
 import '../services/analytics_service.dart';
+import '../services/auth_service.dart';
 import '../services/local_data_service.dart';
 import '../services/achievement_service.dart';
 import '../services/mastery_service.dart';
@@ -57,9 +60,37 @@ final soundEffectsServiceProvider = FutureProvider<SoundEffectsService>((ref) as
 final notificationServiceProvider =
     Provider<NotificationService>((ref) => LocalNotificationService());
 
-/// 認証未接続のため固定uid。
-/// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
-final currentUidProvider = Provider<String>((ref) => 'local_user');
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+/// ユーザー認証準備（アプリ起動時に一度だけ実行）
+/// Firebase 初期化は main.dart で既に済んでいる前提
+/// app.dart でこのプロバイダーを ref.read() して、Auth初期化を保証する
+final authReadyProvider = FutureProvider<String>((ref) async {
+  // Firebase Auth Service を初期化し、匿名ログインを実行
+  final authService = FirebaseAuthService();
+  await authService.initialize();
+
+  final uid = authService.currentUid;
+  if (uid == null) {
+    throw Exception('Failed to get UID after Firebase Auth initialization');
+  }
+
+  return uid;
+});
+
+/// Auth状態の変化を監視（StreamProvider）
+final authStateProvider = StreamProvider<User?>((ref) async* {
+  yield* FirebaseAuth.instance.authStateChanges();
+});
+
+/// 現在ログイン中のユーザーUID
+/// 同期的にアクセス。authReadyProvider が初期化を保証していること前提。
+final currentUidProvider = Provider<String>((ref) {
+  final currentUser = FirebaseAuth.instance.currentUser;
+  return currentUser?.uid ?? 'unknown_uid';
+});
 
 // ---------------------------------------------------------------------------
 // User
