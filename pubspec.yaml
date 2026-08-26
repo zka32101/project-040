@@ -34,6 +34,9 @@ dependencies:
   # ローカル永続化（Firebase未接続時のフォールバック／オフラインキャッシュ）
   shared_preferences: ^2.2.2
 
+  # ハッシング（分析キャッシュの指紋計算用）
+  crypto: ^3.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

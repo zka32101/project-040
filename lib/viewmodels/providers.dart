@@ -12,6 +12,8 @@ import '../models/trap_dojo_session.dart';
 import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
+import '../services/analytics_cache_service.dart';
+import '../services/analytics_isolate_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
 import '../services/achievement_service.dart';
@@ -537,20 +539,56 @@ final questionIndexProvider = FutureProvider<QuestionIndex>((ref) async {
 final studyAnalyticsServiceProvider =
     Provider<StudyAnalyticsService>((ref) => DefaultStudyAnalyticsService());
 
+final analyticsCacheServiceProvider =
+    Provider<AnalyticsCacheService>((ref) => LocalAnalyticsCacheService());
+
 class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
   @override
   Future<AnalyticsSnapshot> build() async {
     final uid = ref.read(currentUidProvider);
-    final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
-    final index = await ref.watch(questionIndexProvider.future);
-    final service = ref.read(studyAnalyticsServiceProvider);
+    final cacheService = ref.read(analyticsCacheServiceProvider);
+    final range = ref.watch(analyticsRangeProvider);
 
-    return service.aggregate(
+    // 期間に応じてログを読み込む（since パラメータ）
+    final sinceDate = _calculateSinceDate(range, DateTime.now());
+    final logs = await ref
+        .read(dataServiceProvider)
+        .loadAnswerLogs(uid, since: sinceDate);
+
+    // キャッシュを確認（ログの指紋を自動確認）
+    final cached = await cacheService.getCachedIfValid(uid, logs);
+    if (cached != null) {
+      // ログが変わっていない：キャッシュを返す
+      return cached;
+    }
+
+    // キャッシュなし or 指紋が異なる：新規計算
+    final index = await ref.watch(questionIndexProvider.future);
+
+    // 大規模ログセットの場合は isolate に移譲（UI ブロッキング回避）
+    final snapshot = await AnalyticsIsolateService.aggregateWithThreshold(
       uid: uid,
       logs: logs,
       index: index,
       now: DateTime.now(),
     );
+
+    // 新しいスナップショットをキャッシュに保存
+    await cacheService.cache(uid, snapshot, logs);
+
+    return snapshot;
+  }
+
+  /// 期間に応じて since 日付を計算
+  static DateTime? _calculateSinceDate(AnalyticsRange range, DateTime now) {
+    switch (range) {
+      case AnalyticsRange.days7:
+        return now.subtract(const Duration(days: 7));
+      case AnalyticsRange.days30:
+        return now.subtract(const Duration(days: 30));
+      case AnalyticsRange.allTime:
+        return null; // 全期間：制限なし
+    }
   }
 
   /// 分析スナップショットを明示的に再計算

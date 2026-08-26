@@ -27,4 +27,17 @@ class AnalyticsEvents {
 
   /// 広告表示直後のセッション離脱（監視用）。
   static const String adShownSessionEnd = 'ad_shown_session_end';
+
+  /// 学習分析ダッシュボード表示（Phase 3）。
+  /// parameters: license_category（カテゴリが複数の場合はカンマ区切り）
+  static const String analyticsDashboardOpened = 'analytics_dashboard_opened';
+
+  /// 弱点領域の復習開始（Phase 3）。
+  /// parameters: weak_area_kind (stage/category/trapType/difficulty/topic)、
+  ///            action_type (dailyQuota/trapDojo/stageDrill/masteryReview)
+  static const String weakAreaReviewStarted = 'weak_area_review_started';
+
+  /// 分析期間フィルター変更（Phase 3）。
+  /// parameters: range (days7/days30/allTime)
+  static const String analyticsRangeChanged = 'analytics_range_changed';
 }

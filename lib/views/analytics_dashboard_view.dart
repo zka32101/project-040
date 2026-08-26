@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/constants/analytics_events.dart';
 import '../models/analytics_snapshot.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/analytics/overall_summary_card.dart';
 import '../widgets/analytics/accuracy_bar_list.dart';
+import '../widgets/analytics/period_filter_selector.dart';
 import '../widgets/analytics/weak_area_card.dart';
 import '../widgets/analytics/review_recommendation_card.dart';
 
@@ -84,6 +86,17 @@ class AnalyticsDashboardView extends ConsumerWidget {
     WidgetRef ref,
     AnalyticsSnapshot data,
   ) {
+    // 分析ダッシュボード表示イベントを記録
+    Future.microtask(() {
+      final user = ref.read(userControllerProvider).valueOrNull;
+      final categories =
+          user?.licenseCategories.join(',') ?? 'unknown';
+      ref.read(analyticsServiceProvider).logEvent(
+            AnalyticsEvents.analyticsDashboardOpened,
+            parameters: {'license_category': categories},
+          );
+    });
+
     // データ不足の場合の案内
     if (data.overall.attempts < 10) {
       return Center(
@@ -128,6 +141,11 @@ class AnalyticsDashboardView extends ConsumerWidget {
       },
       child: CustomScrollView(
         slivers: [
+          // 期間フィルター
+          SliverToBoxAdapter(
+            child: PeriodFilterSelector(),
+          ),
+
           // 全体統計カード
           SliverPadding(
             padding: const EdgeInsets.all(20),
