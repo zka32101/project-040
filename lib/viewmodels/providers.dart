@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/analytics_events.dart';
 import '../core/constants/license_category.dart';
+import '../models/analytics_snapshot.dart';
 import '../models/bike_unlock_progress.dart';
 import '../models/pass_prediction_score.dart';
 import '../models/question.dart';
@@ -17,6 +18,8 @@ import '../services/achievement_service.dart';
 import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
+import '../services/question_index.dart';
+import '../services/study_analytics_service.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -521,3 +524,102 @@ final trapDojoControllerProvider =
     AsyncNotifierProvider<TrapDojoController, List<TrapDojoSession>>(
   TrapDojoController.new,
 );
+
+// ---------------------------------------------------------------------------
+// Phase 3 Analytics Dashboard (分析ダッシュボード)
+// ---------------------------------------------------------------------------
+
+final questionIndexProvider = FutureProvider<QuestionIndex>((ref) async {
+  final builder = LocalQuestionIndexBuilder(ref.read(dataServiceProvider));
+  return builder.build();
+});
+
+final studyAnalyticsServiceProvider =
+    Provider<StudyAnalyticsService>((ref) => DefaultStudyAnalyticsService());
+
+class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
+  @override
+  Future<AnalyticsSnapshot> build() async {
+    final uid = ref.read(currentUidProvider);
+    final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+    final index = await ref.watch(questionIndexProvider.future);
+    final service = ref.read(studyAnalyticsServiceProvider);
+
+    return service.aggregate(
+      uid: uid,
+      logs: logs,
+      index: index,
+      now: DateTime.now(),
+    );
+  }
+
+  /// 分析スナップショットを明示的に再計算
+  Future<void> refresh({bool force = false}) async {
+    // force=true の場合は強制的に再計算
+    if (force) {
+      state = const AsyncValue.loading();
+    }
+    state = await AsyncValue.guard(() => build());
+  }
+}
+
+final analyticsSnapshotProvider =
+    AsyncNotifierProvider<AnalyticsController, AnalyticsSnapshot>(
+  AnalyticsController.new,
+);
+
+/// 弱点一覧（読み取り専用セレクター）
+final weakAreasProvider = Provider<List<WeakArea>>((ref) {
+  final snapshot = ref.watch(analyticsSnapshotProvider);
+  return snapshot.maybeWhen(
+    data: (data) => data.weakAreas,
+    orElse: () => const [],
+  );
+});
+
+/// ステージ別パフォーマンス（読み取り専用セレクター）
+final stagePerformanceProvider = Provider<List<StagePerformance>>((ref) {
+  final snapshot = ref.watch(analyticsSnapshotProvider);
+  return snapshot.maybeWhen(
+    data: (data) => data.stages,
+    orElse: () => const [],
+  );
+});
+
+/// カテゴリ別パフォーマンス（読み取り専用セレクター）
+final categoryPerformanceProvider = Provider<List<CategoryPerformance>>((ref) {
+  final snapshot = ref.watch(analyticsSnapshotProvider);
+  return snapshot.maybeWhen(
+    data: (data) => data.categories,
+    orElse: () => const [],
+  );
+});
+
+/// 復習推奨（読み取り専用セレクター）
+final reviewRecommendationsProvider =
+    Provider<List<ReviewRecommendation>>((ref) {
+  final snapshot = ref.watch(analyticsSnapshotProvider);
+  return snapshot.maybeWhen(
+    data: (data) => data.recommendations,
+    orElse: () => const [],
+  );
+});
+
+/// 日別学習進捗（読み取り専用セレクター）
+final dailyHistoryProvider = Provider<List<DailyPerformancePoint>>((ref) {
+  final snapshot = ref.watch(analyticsSnapshotProvider);
+  return snapshot.maybeWhen(
+    data: (data) => data.dailyHistory,
+    orElse: () => const [],
+  );
+});
+
+/// 分析期間の選択（7日、30日、全期間）
+enum AnalyticsRange {
+  days7,
+  days30,
+  allTime,
+}
+
+final analyticsRangeProvider =
+    StateProvider<AnalyticsRange>((ref) => AnalyticsRange.days30);
