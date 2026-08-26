@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/analytics_events.dart';
@@ -20,7 +21,9 @@ import '../services/achievement_service.dart';
 import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
+import '../services/notification_service.dart';
 import '../services/question_index.dart';
+import '../services/sound_effects_service.dart';
 import '../services/study_analytics_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +47,15 @@ final masteryServiceProvider = Provider<MasteryService>((ref) => LocalMasterySer
 
 final achievementServiceProvider =
     Provider<AchievementService>((ref) => LocalAchievementService());
+
+final soundEffectsServiceProvider = FutureProvider<SoundEffectsService>((ref) async {
+  final service = LocalSoundEffectsService();
+  await service.initialize();
+  return service;
+});
+
+final notificationServiceProvider =
+    Provider<NotificationService>((ref) => LocalNotificationService());
 
 /// 認証未接続のため固定uid。
 /// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
@@ -251,6 +263,17 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     final isCorrect = choiceIndex == question.answer;
     final uid = ref.read(currentUidProvider);
     final now = DateTime.now();
+
+    // ハプティクスフィードバック
+    try {
+      if (isCorrect) {
+        await HapticFeedback.mediumImpact();
+      } else {
+        await HapticFeedback.lightImpact();
+      }
+    } catch (_) {
+      // Haptics not available on this device
+    }
 
     await ref.read(dataServiceProvider).appendAnswerLog(
           UserAnswerLog(
@@ -464,6 +487,14 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
           AnalyticsEvents.bikeUnlocked,
           parameters: {'bike_id': progress.bikeId},
         );
+
+        // バイク解放時のハプティクスフィードバック
+        try {
+          await HapticFeedback.heavyImpact();
+        } catch (_) {
+          // Haptics not available on this device
+        }
+
         updated.add(unlocked);
       } else {
         updated.add(progress);
@@ -661,3 +692,13 @@ enum AnalyticsRange {
 
 final analyticsRangeProvider =
     StateProvider<AnalyticsRange>((ref) => AnalyticsRange.days30);
+
+/// 音声効果のミュート状態
+/// 設定画面で切り替え可能
+final soundMutedProvider = StateProvider<bool>((ref) => false);
+
+/// 通知が有効か確認（OS権限レベル）
+final notificationEnabledProvider = FutureProvider<bool>((ref) async {
+  final service = ref.read(notificationServiceProvider);
+  return service.isNotificationEnabled();
+});

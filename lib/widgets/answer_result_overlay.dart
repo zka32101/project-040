@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../viewmodels/providers.dart';
 import 'confetti_animation.dart';
 import 'shake_animation.dart';
 
 /// 正誤演出。
 /// 正解=紙吹雪風演出／不正解=シェイク（Step5.5 A.ビジュアル）。
-/// Lottieを活用したアニメーション実装。
-class AnswerResultOverlay extends StatefulWidget {
+/// 音声効果とハプティクスフィードバック付き。
+class AnswerResultOverlay extends ConsumerStatefulWidget {
   const AnswerResultOverlay({
     super.key,
     required this.isCorrect,
@@ -19,10 +21,30 @@ class AnswerResultOverlay extends StatefulWidget {
   final VoidCallback onNext;
 
   @override
-  State<AnswerResultOverlay> createState() => _AnswerResultOverlayState();
+  ConsumerState<AnswerResultOverlay> createState() => _AnswerResultOverlayState();
 }
 
-class _AnswerResultOverlayState extends State<AnswerResultOverlay> {
+class _AnswerResultOverlayState extends ConsumerState<AnswerResultOverlay> {
+  @override
+  void initState() {
+    super.initState();
+    _playSoundAndHaptics();
+  }
+
+  Future<void> _playSoundAndHaptics() async {
+    // 音声効果を再生（非同期で取得）
+    try {
+      final soundService = await ref.read(soundEffectsServiceProvider.future);
+      if (widget.isCorrect) {
+        await soundService.playCorrectionSound();
+      } else {
+        await soundService.playIncorrectSound();
+      }
+    } catch (e) {
+      if (mounted) debugPrint('Sound playback error: $e');
+    }
+  }
+
   void _onAnimationComplete() {
     // Animation complete - could be used for additional feedback if needed
   }
