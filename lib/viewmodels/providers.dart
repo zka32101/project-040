@@ -29,6 +29,8 @@ import '../services/notification_service.dart';
 import '../services/question_index.dart';
 import '../services/sound_effects_service.dart';
 import '../services/study_analytics_service.dart';
+import '../services/sync_queue_service.dart';
+import '../services/connectivity_service.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -63,6 +65,24 @@ final notificationServiceProvider =
 
 final fireStoreSyncServiceProvider =
     Provider<FirestoreSyncService>((ref) => LocalFirestoreSyncService());
+
+final syncQueueServiceProvider = FutureProvider<LocalSyncQueueService>((ref) async {
+  final service = LocalSyncQueueService();
+  await service.initialize();
+  return service;
+});
+
+final connectivityServiceProvider = FutureProvider<ConnectivityService>((ref) async {
+  final service = LocalConnectivityService();
+  await service.initialize();
+  return service;
+});
+
+// 同期ステータスをUIで監視するためのプロバイダー
+final syncStatusProvider = StreamProvider<SyncStatus>((ref) async* {
+  final queueService = await ref.watch(syncQueueServiceProvider.future);
+  yield* queueService.statusStream();
+});
 
 // ---------------------------------------------------------------------------
 // Authentication

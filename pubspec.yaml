@@ -43,6 +43,9 @@ dependencies:
   # 通知
   flutter_local_notifications: ^17.1.0
 
+  # ネットワーク状態監視（オフライン対応）
+  connectivity_plus: ^6.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
