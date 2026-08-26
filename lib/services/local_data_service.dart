@@ -29,7 +29,11 @@ abstract class DataService {
   });
 
   Future<void> appendAnswerLog(UserAnswerLog log);
-  Future<List<UserAnswerLog>> loadAnswerLogs(String uid);
+  /// ログを読み込む（オプション：[since] 以降のログのみ）
+  Future<List<UserAnswerLog>> loadAnswerLogs(
+    String uid, {
+    DateTime? since,
+  });
 
   Future<void> savePredictionScore(PassPredictionScore score);
   Future<PassPredictionScore?> loadPredictionScore(String uid);
@@ -112,12 +116,21 @@ class LocalDataService implements DataService {
   }
 
   @override
-  Future<List<UserAnswerLog>> loadAnswerLogs(String uid) async {
+  Future<List<UserAnswerLog>> loadAnswerLogs(
+    String uid, {
+    DateTime? since,
+  }) async {
     final prefs = await _prefs;
     final existing = prefs.getStringList('$_answerLogKey$uid') ?? [];
-    return existing
+    final logs = existing
         .map((e) => UserAnswerLog.fromJson(jsonDecode(e) as Map<String, dynamic>))
         .toList();
+
+    // since 指定時はフィルタ
+    if (since != null) {
+      return logs.where((log) => log.answeredAt.isAfter(since)).toList();
+    }
+    return logs;
   }
 
   @override

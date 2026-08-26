@@ -547,7 +547,13 @@ class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
   Future<AnalyticsSnapshot> build() async {
     final uid = ref.read(currentUidProvider);
     final cacheService = ref.read(analyticsCacheServiceProvider);
-    final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+    final range = ref.watch(analyticsRangeProvider);
+
+    // 期間に応じてログを読み込む（since パラメータ）
+    final sinceDate = _calculateSinceDate(range, DateTime.now());
+    final logs = await ref
+        .read(dataServiceProvider)
+        .loadAnswerLogs(uid, since: sinceDate);
 
     // キャッシュを確認（ログの指紋を自動確認）
     final cached = await cacheService.getCachedIfValid(uid, logs);
@@ -571,6 +577,18 @@ class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
     await cacheService.cache(uid, snapshot, logs);
 
     return snapshot;
+  }
+
+  /// 期間に応じて since 日付を計算
+  static DateTime? _calculateSinceDate(AnalyticsRange range, DateTime now) {
+    switch (range) {
+      case AnalyticsRange.days7:
+        return now.subtract(const Duration(days: 7));
+      case AnalyticsRange.days30:
+        return now.subtract(const Duration(days: 30));
+      case AnalyticsRange.allTime:
+        return null; // 全期間：制限なし
+    }
   }
 
   /// 分析スナップショットを明示的に再計算

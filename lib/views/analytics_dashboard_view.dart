@@ -6,6 +6,7 @@ import '../models/analytics_snapshot.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/analytics/overall_summary_card.dart';
 import '../widgets/analytics/accuracy_bar_list.dart';
+import '../widgets/analytics/period_filter_selector.dart';
 import '../widgets/analytics/weak_area_card.dart';
 import '../widgets/analytics/review_recommendation_card.dart';
 
@@ -140,6 +141,11 @@ class AnalyticsDashboardView extends ConsumerWidget {
       },
       child: CustomScrollView(
         slivers: [
+          // 期間フィルター
+          SliverToBoxAdapter(
+            child: PeriodFilterSelector(),
+          ),
+
           // 全体統計カード
           SliverPadding(
             padding: const EdgeInsets.all(20),
