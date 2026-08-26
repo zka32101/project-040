@@ -41,6 +41,28 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
           ListTile(
+            leading: const Icon(Icons.volume_up),
+            title: const Text('効果音'),
+            trailing: Consumer(
+              builder: (context, ref, _) {
+                final isMuted = ref.watch(soundMutedProvider);
+                return Switch(
+                  value: !isMuted,
+                  onChanged: (value) async {
+                    ref.read(soundMutedProvider.notifier).state = !value;
+                    // サウンドサービスの状態も更新
+                    try {
+                      final soundService = await ref.read(soundEffectsServiceProvider.future);
+                      await soundService.setMuted(!value);
+                    } catch (_) {
+                      // Ignore errors during sound service update
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          ListTile(
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('通知'),
             trailing: Switch(

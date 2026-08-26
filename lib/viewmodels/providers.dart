@@ -21,6 +21,7 @@ import '../services/mastery_service.dart';
 import '../services/prediction_score_service.dart';
 import '../services/purchase_service.dart';
 import '../services/question_index.dart';
+import '../services/sound_effects_service.dart';
 import '../services/study_analytics_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +45,12 @@ final masteryServiceProvider = Provider<MasteryService>((ref) => LocalMasterySer
 
 final achievementServiceProvider =
     Provider<AchievementService>((ref) => LocalAchievementService());
+
+final soundEffectsServiceProvider = FutureProvider<SoundEffectsService>((ref) async {
+  final service = LocalSoundEffectsService();
+  await service.initialize();
+  return service;
+});
 
 /// 認証未接続のため固定uid。
 /// TODO(firebase-setup): Firebase Auth 匿名認証に差し替え、uidをそこから取得する。
@@ -661,3 +668,7 @@ enum AnalyticsRange {
 
 final analyticsRangeProvider =
     StateProvider<AnalyticsRange>((ref) => AnalyticsRange.days30);
+
+/// 音声効果のミュート状態
+/// 設定画面で切り替え可能
+final soundMutedProvider = StateProvider<bool>((ref) => false);

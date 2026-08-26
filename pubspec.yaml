@@ -37,6 +37,12 @@ dependencies:
   # ハッシング（分析キャッシュの指紋計算用）
   crypto: ^3.0.3
 
+  # 音声効果
+  just_audio: ^0.9.36
+
+  # 通知
+  flutter_local_notifications: ^17.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
