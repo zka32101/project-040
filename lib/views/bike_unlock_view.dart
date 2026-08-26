@@ -90,7 +90,8 @@ class _BikeTile extends StatelessWidget {
       ),
     );
 
-    // 解放されたバイクはゴールドグロー演出
+    // 解放されたバイクはゴールドグロー演出を適用
+    // 音声とハプティクスはBikeUnlockController で既に実装済み
     return unlocked
         ? GoldGlowAnimation(
             duration: const Duration(milliseconds: 1500),
