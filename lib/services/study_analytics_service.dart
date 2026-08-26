@@ -306,7 +306,9 @@ class DefaultStudyAnalyticsService implements StudyAnalyticsService {
       late ReviewActionType action;
       late String title;
       late String body;
-      final payload = <String, String>{};
+      final payload = <String, String>{
+        'weakAreaKind': area.kind.name,
+      };
 
       switch (area.kind) {
         case WeakAreaKind.trapType:

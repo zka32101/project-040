@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/constants/analytics_events.dart';
 import '../models/analytics_snapshot.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/analytics/overall_summary_card.dart';
@@ -84,6 +85,17 @@ class AnalyticsDashboardView extends ConsumerWidget {
     WidgetRef ref,
     AnalyticsSnapshot data,
   ) {
+    // 分析ダッシュボード表示イベントを記録
+    Future.microtask(() {
+      final user = ref.read(userControllerProvider).valueOrNull;
+      final categories =
+          user?.licenseCategories.join(',') ?? 'unknown';
+      ref.read(analyticsServiceProvider).logEvent(
+            AnalyticsEvents.analyticsDashboardOpened,
+            parameters: {'license_category': categories},
+          );
+    });
+
     // データ不足の場合の案内
     if (data.overall.attempts < 10) {
       return Center(

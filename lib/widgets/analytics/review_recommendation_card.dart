@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/analytics_events.dart';
 import '../../models/analytics_snapshot.dart';
+import '../../viewmodels/providers.dart';
 import '../../views/daily_quota_view.dart';
 import '../../views/trap_dojo_view.dart';
 
 /// 復習推奨カード
 /// ユーザーの弱点に基づいた復習アクションを提案
-class ReviewRecommendationCard extends StatelessWidget {
+class ReviewRecommendationCard extends ConsumerWidget {
   const ReviewRecommendationCard({
     super.key,
     required this.recommendation,
@@ -15,7 +18,7 @@ class ReviewRecommendationCard extends StatelessWidget {
   final ReviewRecommendation recommendation;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
@@ -40,7 +43,7 @@ class ReviewRecommendationCard extends StatelessWidget {
           size: 16,
           color: Theme.of(context).colorScheme.outline,
         ),
-        onTap: () => _handleActionTap(context, recommendation),
+        onTap: () => _handleActionTap(context, ref, recommendation),
       ),
     );
   }
@@ -82,8 +85,19 @@ class ReviewRecommendationCard extends StatelessWidget {
   /// アクションタップ時の処理
   void _handleActionTap(
     BuildContext context,
+    WidgetRef ref,
     ReviewRecommendation recommendation,
   ) {
+    // 弱点復習開始イベントを記録
+    final weakAreaKind = recommendation.payload['weakAreaKind'] ?? 'unknown';
+    ref.read(analyticsServiceProvider).logEvent(
+          AnalyticsEvents.weakAreaReviewStarted,
+          parameters: {
+            'weak_area_kind': weakAreaKind,
+            'action_type': recommendation.action.name,
+          },
+        );
+
     switch (recommendation.action) {
       case ReviewActionType.dailyQuota:
         // 日々のノルマに遷移
