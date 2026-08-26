@@ -107,12 +107,25 @@ class UserController extends AsyncNotifier<AppUser> {
     return ref.read(dataServiceProvider).loadUser(uid);
   }
 
+  /// ユーザー情報を保存（ローカル＆Firestore 両方に同期）
+  Future<void> _saveUserToLocalAndFirestore(AppUser user) async {
+    // ローカル保存
+    await ref.read(dataServiceProvider).saveUser(user);
+
+    // Firestore 同期（エラーが出てもアプリは続行）
+    try {
+      await ref.read(fireStoreSyncServiceProvider).saveUser(user);
+    } catch (e) {
+      debugPrint('Failed to sync user to Firestore: $e');
+    }
+  }
+
   Future<void> setLicenseCategories(List<String> categories) async {
     final current = state.valueOrNull;
     if (current == null) return;
     final updated = current.copyWith(licenseCategories: categories);
     state = AsyncData(updated);
-    await ref.read(dataServiceProvider).saveUser(updated);
+    await _saveUserToLocalAndFirestore(updated);
   }
 
   Future<void> setTrainingStage(String? stage) async {
@@ -120,7 +133,7 @@ class UserController extends AsyncNotifier<AppUser> {
     if (current == null) return;
     final updated = current.copyWith(trainingStage: stage);
     state = AsyncData(updated);
-    await ref.read(dataServiceProvider).saveUser(updated);
+    await _saveUserToLocalAndFirestore(updated);
   }
 
   Future<void> setExamDate(DateTime? date) async {
@@ -128,7 +141,7 @@ class UserController extends AsyncNotifier<AppUser> {
     if (current == null) return;
     final updated = current.copyWith(examDate: date);
     state = AsyncData(updated);
-    await ref.read(dataServiceProvider).saveUser(updated);
+    await _saveUserToLocalAndFirestore(updated);
   }
 
   Future<void> setPurchaseStatus(PurchaseStatus status) async {
@@ -136,7 +149,7 @@ class UserController extends AsyncNotifier<AppUser> {
     if (current == null) return;
     final updated = current.copyWith(purchaseStatus: status);
     state = AsyncData(updated);
-    await ref.read(dataServiceProvider).saveUser(updated);
+    await _saveUserToLocalAndFirestore(updated);
   }
 }
 
@@ -291,6 +304,22 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     state = state.copyWith(questions: quota, loading: false);
   }
 
+  /// 回答ログをローカル＆Firestore 両方に保存
+  Future<void> _appendAnswerLogToLocalAndFirestore(UserAnswerLog log) async {
+    final uid = ref.read(currentUidProvider);
+
+    // ローカル保存
+    await ref.read(dataServiceProvider).appendAnswerLog(log);
+
+    // 全ログを取得して Firestore に同期（エラーが出てもアプリは続行）
+    try {
+      final allLogs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+      await ref.read(fireStoreSyncServiceProvider).saveAnswerLogs(uid, allLogs);
+    } catch (e) {
+      debugPrint('Failed to sync answer logs to Firestore: $e');
+    }
+  }
+
   Future<void> answer(int choiceIndex) async {
     final question = state.currentQuestion;
     if (question == null) return;
@@ -310,14 +339,14 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
       // Haptics not available on this device
     }
 
-    await ref.read(dataServiceProvider).appendAnswerLog(
-          UserAnswerLog(
-            uid: uid,
-            questionId: question.id,
-            isCorrect: isCorrect,
-            answeredAt: now,
-          ),
-        );
+    await _appendAnswerLogToLocalAndFirestore(
+      UserAnswerLog(
+        uid: uid,
+        questionId: question.id,
+        isCorrect: isCorrect,
+        answeredAt: now,
+      ),
+    );
 
     final newCorrectCount = state.correctCount + (isCorrect ? 1 : 0);
     state = state.copyWith(
@@ -345,7 +374,14 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
           questionsById: questionsById,
           now: DateTime.now(),
         );
+
+    // ローカル＆Firestore に保存
     await ref.read(dataServiceProvider).savePredictionScore(score);
+    try {
+      await ref.read(fireStoreSyncServiceProvider).savePredictionScore(uid, score);
+    } catch (e) {
+      debugPrint('Failed to sync prediction score to Firestore: $e');
+    }
 
     state = state.copyWith(ahaMomentShown: true, predictionScore: score);
 
@@ -518,6 +554,14 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
           requiredCorrectCount: progress.requiredCorrectCount,
         );
         await ref.read(dataServiceProvider).saveBikeUnlockProgress(unlocked);
+
+        // Firestore に同期（エラーが出てもアプリは続行）
+        try {
+          await ref.read(fireStoreSyncServiceProvider).saveBikeProgress(uid, updated + [unlocked]);
+        } catch (e) {
+          debugPrint('Failed to sync bike progress to Firestore: $e');
+        }
+
         await ref.read(analyticsServiceProvider).logEvent(
           AnalyticsEvents.bikeUnlocked,
           parameters: {'bike_id': progress.bikeId},
@@ -536,6 +580,13 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
       }
     }
     state = AsyncData(updated);
+
+    // 全バイク進捗を Firestore に同期
+    try {
+      await ref.read(fireStoreSyncServiceProvider).saveBikeProgress(uid, updated);
+    } catch (e) {
+      debugPrint('Failed to sync bike progress to Firestore: $e');
+    }
   }
 }
 
@@ -572,6 +623,18 @@ class TrapDojoController extends AsyncNotifier<List<TrapDojoSession>> {
 
     await ref.read(dataServiceProvider).saveTrapDojoSession(updatedSession);
 
+    final updatedList = [
+      ...current.where((s) => s.bossQuestionId != bossQuestion.id),
+      updatedSession,
+    ];
+
+    // Firestore に同期（エラーが出てもアプリは続行）
+    try {
+      await ref.read(fireStoreSyncServiceProvider).saveTrapDojoSessions(uid, updatedList);
+    } catch (e) {
+      debugPrint('Failed to sync trap dojo sessions to Firestore: $e');
+    }
+
     if (isCorrect) {
       await ref
           .read(analyticsServiceProvider)
@@ -581,10 +644,7 @@ class TrapDojoController extends AsyncNotifier<List<TrapDojoSession>> {
       });
     }
 
-    state = AsyncData([
-      ...current.where((s) => s.bossQuestionId != bossQuestion.id),
-      updatedSession,
-    ]);
+    state = AsyncData(updatedList);
   }
 }
 
