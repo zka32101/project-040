@@ -12,6 +12,7 @@ import '../models/trap_dojo_session.dart';
 import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import '../services/ad_gate_service.dart';
+import '../services/analytics_cache_service.dart';
 import '../services/analytics_service.dart';
 import '../services/local_data_service.dart';
 import '../services/achievement_service.dart';
@@ -537,20 +538,38 @@ final questionIndexProvider = FutureProvider<QuestionIndex>((ref) async {
 final studyAnalyticsServiceProvider =
     Provider<StudyAnalyticsService>((ref) => DefaultStudyAnalyticsService());
 
+final analyticsCacheServiceProvider =
+    Provider<AnalyticsCacheService>((ref) => LocalAnalyticsCacheService());
+
 class AnalyticsController extends AsyncNotifier<AnalyticsSnapshot> {
   @override
   Future<AnalyticsSnapshot> build() async {
     final uid = ref.read(currentUidProvider);
+    final cacheService = ref.read(analyticsCacheServiceProvider);
     final logs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
+
+    // キャッシュを確認（ログの指紋を自動確認）
+    final cached = await cacheService.getCachedIfValid(uid, logs);
+    if (cached != null) {
+      // ログが変わっていない：キャッシュを返す
+      return cached;
+    }
+
+    // キャッシュなし or 指紋が異なる：新規計算
     final index = await ref.watch(questionIndexProvider.future);
     final service = ref.read(studyAnalyticsServiceProvider);
 
-    return service.aggregate(
+    final snapshot = await service.aggregate(
       uid: uid,
       logs: logs,
       index: index,
       now: DateTime.now(),
     );
+
+    // 新しいスナップショットをキャッシュに保存
+    await cacheService.cache(uid, snapshot, logs);
+
+    return snapshot;
   }
 
   /// 分析スナップショットを明示的に再計算
