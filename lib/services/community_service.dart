@@ -298,6 +298,146 @@ abstract class CommunityService {
   });
 
   Future<void> unmuteUserNotifications(String userId);
+
+  // Reaction operations (Phase 11 Step 3)
+  Future<String> addPostReaction({
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  });
+
+  Future<String> addReplyReaction({
+    required String replyId,
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  });
+
+  Future<void> removePostReaction(
+    String postId,
+    String userId,
+    String emoji,
+  );
+
+  Future<void> removeReplyReaction(
+    String replyId,
+    String userId,
+    String emoji,
+  );
+
+  Future<List<PostReaction>> getPostReactions(String postId);
+
+  Future<List<ReplyReaction>> getReplyReactions(String replyId);
+
+  Future<List<String>> getReactionUsers(
+    String postId,
+    String emoji,
+  );
+
+  Future<int> getReactionCount(String postId);
+
+  Future<PostReaction?> getUserPostReaction(
+    String postId,
+    String userId,
+    String emoji,
+  );
+
+  Future<ReplyReaction?> getUserReplyReaction(
+    String replyId,
+    String userId,
+    String emoji,
+  );
+
+  // Report operations (Phase 11 Step 3)
+  Future<String> reportPost({
+    required String postId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  });
+
+  Future<String> reportReply({
+    required String replyId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  });
+
+  Future<String> reportUser({
+    required String reportedUserId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+  });
+
+  Future<ContentReport?> getReport(String reportId);
+
+  Future<List<ContentReport>> getChannelReports(
+    String channelId, {
+    ReportStatus? statusFilter,
+    int limit = 50,
+  });
+
+  Future<List<ContentReport>> getUserReports(
+    String reportedUserId, {
+    int limit = 50,
+  });
+
+  Future<List<ContentReport>> getReportedContentReports(
+    String contentId, {
+    int limit = 50,
+  });
+
+  Future<void> actionReport({
+    required String reportId,
+    required ReportAction action,
+    required String moderatorId,
+    String? reason,
+    String? actionDetails,
+  });
+
+  Future<void> dismissReport({
+    required String reportId,
+    required String moderatorId,
+    String? reason,
+  });
+
+  Future<Map<String, int>> getReportStats(String channelId);
+
+  // Trending operations (Phase 11 Step 3)
+  Future<List<ChannelPost>> getTrendingPosts(
+    String channelId, {
+    String timeRange = 'day', // 'day', 'week', 'month'
+    int limit = 20,
+  });
+
+  Future<List<ChannelPost>> getGlobalTrendingPosts({
+    String timeRange = 'week',
+    int limit = 50,
+  });
+
+  Future<List<ChannelPost>> getTrendingByCategory(
+    String category, {
+    String timeRange = 'week',
+    int limit = 20,
+  });
+
+  Future<List<String>> getTrendingTags(
+    String channelId, {
+    int limit = 10,
+  });
+
+  Future<double> calculateTrendingScore(String postId);
+
+  Future<PostEngagementAnalytics?> getPostEngagementAnalytics(
+    String postId,
+  );
+
+  Future<void> updateEngagementAnalytics(String postId);
 }
 
 /// Firebase implementation of community service
@@ -1556,6 +1696,500 @@ class FirebaseCommunityService implements CommunityService {
       );
     }
   }
+
+  // ============ REACTION OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<String> addPostReaction({
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  }) async {
+    final reactionId = 'reaction_${DateTime.now().millisecondsSinceEpoch}';
+    await _db.collection('postReactions').doc(reactionId).set({
+      'reactionId': reactionId,
+      'postId': postId,
+      'userId': userId,
+      'emoji': emoji,
+      'reactionType': reactionType.index,
+      'createdAt': Timestamp.now(),
+    });
+    return reactionId;
+  }
+
+  @override
+  Future<String> addReplyReaction({
+    required String replyId,
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  }) async {
+    final reactionId = 'reaction_${DateTime.now().millisecondsSinceEpoch}';
+    await _db.collection('replyReactions').doc(reactionId).set({
+      'reactionId': reactionId,
+      'replyId': replyId,
+      'postId': postId,
+      'userId': userId,
+      'emoji': emoji,
+      'reactionType': reactionType.index,
+      'createdAt': Timestamp.now(),
+    });
+    return reactionId;
+  }
+
+  @override
+  Future<void> removePostReaction(String postId, String userId, String emoji) async {
+    final snapshot = await _db
+        .collection('postReactions')
+        .where('postId', isEqualTo: postId)
+        .where('userId', isEqualTo: userId)
+        .where('emoji', isEqualTo: emoji)
+        .limit(1)
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  @override
+  Future<void> removeReplyReaction(String replyId, String userId, String emoji) async {
+    final snapshot = await _db
+        .collection('replyReactions')
+        .where('replyId', isEqualTo: replyId)
+        .where('userId', isEqualTo: userId)
+        .where('emoji', isEqualTo: emoji)
+        .limit(1)
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  @override
+  Future<List<PostReaction>> getPostReactions(String postId) async {
+    final snapshot = await _db
+        .collection('postReactions')
+        .where('postId', isEqualTo: postId)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => PostReaction.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<ReplyReaction>> getReplyReactions(String replyId) async {
+    final snapshot = await _db
+        .collection('replyReactions')
+        .where('replyId', isEqualTo: replyId)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ReplyReaction.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<String>> getReactionUsers(String postId, String emoji) async {
+    final snapshot = await _db
+        .collection('postReactions')
+        .where('postId', isEqualTo: postId)
+        .where('emoji', isEqualTo: emoji)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => (doc.data() as Map<String, dynamic>)['userId'] as String)
+        .toList();
+  }
+
+  @override
+  Future<int> getReactionCount(String postId) async {
+    final snapshot = await _db
+        .collection('postReactions')
+        .where('postId', isEqualTo: postId)
+        .count()
+        .get();
+
+    return snapshot.count ?? 0;
+  }
+
+  @override
+  Future<PostReaction?> getUserPostReaction(
+    String postId,
+    String userId,
+    String emoji,
+  ) async {
+    final snapshot = await _db
+        .collection('postReactions')
+        .where('postId', isEqualTo: postId)
+        .where('userId', isEqualTo: userId)
+        .where('emoji', isEqualTo: emoji)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return PostReaction.fromMap(snapshot.docs.first.data());
+  }
+
+  @override
+  Future<ReplyReaction?> getUserReplyReaction(
+    String replyId,
+    String userId,
+    String emoji,
+  ) async {
+    final snapshot = await _db
+        .collection('replyReactions')
+        .where('replyId', isEqualTo: replyId)
+        .where('userId', isEqualTo: userId)
+        .where('emoji', isEqualTo: emoji)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return ReplyReaction.fromMap(snapshot.docs.first.data());
+  }
+
+  // ============ REPORT OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<String> reportPost({
+    required String postId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  }) async {
+    final post = await getPost(postId);
+    final reportId = 'report_${DateTime.now().millisecondsSinceEpoch}';
+
+    await _db.collection('contentReports').doc(reportId).set({
+      'reportId': reportId,
+      'contentId': postId,
+      'contentType': 'post',
+      'reportedByUserId': reportedByUserId,
+      'channelId': post?.channelId ?? '',
+      'category': category.index,
+      'description': description,
+      'attachmentUrl': attachmentUrl,
+      'status': ReportStatus.pending.index,
+      'createdAt': Timestamp.now(),
+    });
+
+    return reportId;
+  }
+
+  @override
+  Future<String> reportReply({
+    required String replyId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  }) async {
+    final reply = await getReply(replyId);
+    final reportId = 'report_${DateTime.now().millisecondsSinceEpoch}';
+
+    await _db.collection('contentReports').doc(reportId).set({
+      'reportId': reportId,
+      'contentId': replyId,
+      'contentType': 'reply',
+      'reportedByUserId': reportedByUserId,
+      'channelId': reply?.channelId ?? '',
+      'category': category.index,
+      'description': description,
+      'attachmentUrl': attachmentUrl,
+      'status': ReportStatus.pending.index,
+      'createdAt': Timestamp.now(),
+    });
+
+    return reportId;
+  }
+
+  @override
+  Future<String> reportUser({
+    required String reportedUserId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+  }) async {
+    final reportId = 'report_${DateTime.now().millisecondsSinceEpoch}';
+
+    await _db.collection('contentReports').doc(reportId).set({
+      'reportId': reportId,
+      'contentId': reportedUserId,
+      'contentType': 'user',
+      'reportedByUserId': reportedByUserId,
+      'reportedUserId': reportedUserId,
+      'category': category.index,
+      'description': description,
+      'status': ReportStatus.pending.index,
+      'createdAt': Timestamp.now(),
+    });
+
+    return reportId;
+  }
+
+  @override
+  Future<ContentReport?> getReport(String reportId) async {
+    final doc = await _db.collection('contentReports').doc(reportId).get();
+    if (!doc.exists) return null;
+    return ContentReport.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<ContentReport>> getChannelReports(
+    String channelId, {
+    ReportStatus? statusFilter,
+    int limit = 50,
+  }) async {
+    var query = _db
+        .collection('contentReports')
+        .where('channelId', isEqualTo: channelId);
+
+    if (statusFilter != null) {
+      query = query.where('status', isEqualTo: statusFilter.index);
+    }
+
+    final snapshot = await query.limit(limit).get();
+
+    return snapshot.docs
+        .map((doc) => ContentReport.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<ContentReport>> getUserReports(
+    String reportedUserId, {
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('contentReports')
+        .where('reportedUserId', isEqualTo: reportedUserId)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ContentReport.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<ContentReport>> getReportedContentReports(
+    String contentId, {
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('contentReports')
+        .where('contentId', isEqualTo: contentId)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ContentReport.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<void> actionReport({
+    required String reportId,
+    required ReportAction action,
+    required String moderatorId,
+    String? reason,
+    String? actionDetails,
+  }) async {
+    await _db.collection('contentReports').doc(reportId).update({
+      'status': ReportStatus.upheld.index,
+      'reviewedAt': Timestamp.now(),
+      'reviewedBy': moderatorId,
+      'action': action.index,
+      'actionReason': reason,
+      'actionDetails': actionDetails,
+    });
+  }
+
+  @override
+  Future<void> dismissReport({
+    required String reportId,
+    required String moderatorId,
+    String? reason,
+  }) async {
+    await _db.collection('contentReports').doc(reportId).update({
+      'status': ReportStatus.dismissed.index,
+      'reviewedAt': Timestamp.now(),
+      'reviewedBy': moderatorId,
+      'actionReason': reason,
+    });
+  }
+
+  @override
+  Future<Map<String, int>> getReportStats(String channelId) async {
+    final snapshot = await _db
+        .collection('contentReports')
+        .where('channelId', isEqualTo: channelId)
+        .get();
+
+    final reports = snapshot.docs;
+    return {
+      'total': reports.length,
+      'pending': reports
+          .where((r) =>
+              (r.data() as Map<String, dynamic>)['status'] ==
+              ReportStatus.pending.index)
+          .length,
+      'upheld': reports
+          .where((r) =>
+              (r.data() as Map<String, dynamic>)['status'] ==
+              ReportStatus.upheld.index)
+          .length,
+      'dismissed': reports
+          .where((r) =>
+              (r.data() as Map<String, dynamic>)['status'] ==
+              ReportStatus.dismissed.index)
+          .length,
+    };
+  }
+
+  // ============ TRENDING OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<List<ChannelPost>> getTrendingPosts(
+    String channelId, {
+    String timeRange = 'day',
+    int limit = 20,
+  }) async {
+    final posts = await getChannelPosts(channelId, statusFilter: PostStatus.published);
+    posts.sort((a, b) {
+      final scoreA = (a.likes * 1) + (a.replies * 3) + (a.views * 0.1);
+      final scoreB = (b.likes * 1) + (b.replies * 3) + (b.views * 0.1);
+      return scoreB.compareTo(scoreA);
+    });
+    return posts.take(limit).toList();
+  }
+
+  @override
+  Future<List<ChannelPost>> getGlobalTrendingPosts({
+    String timeRange = 'week',
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('channelPosts')
+        .where('status', isEqualTo: PostStatus.published.index)
+        .limit(limit * 2)
+        .get();
+
+    final posts = snapshot.docs
+        .map((doc) => ChannelPost.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+
+    posts.sort((a, b) {
+      final scoreA = (a.likes * 1) + (a.replies * 3) + (a.views * 0.1);
+      final scoreB = (b.likes * 1) + (b.replies * 3) + (b.views * 0.1);
+      return scoreB.compareTo(scoreA);
+    });
+
+    return posts.take(limit).toList();
+  }
+
+  @override
+  Future<List<ChannelPost>> getTrendingByCategory(
+    String category, {
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    final channelSnapshot = await _db
+        .collection('communityChannels')
+        .where('category', isEqualTo: category)
+        .get();
+
+    final channelIds = channelSnapshot.docs
+        .map((doc) => (doc.data() as Map<String, dynamic>)['channelId'] as String)
+        .toSet();
+
+    if (channelIds.isEmpty) return [];
+
+    final posts = <ChannelPost>[];
+    for (final channelId in channelIds) {
+      posts.addAll(await getChannelPosts(channelId, statusFilter: PostStatus.published));
+    }
+
+    posts.sort((a, b) {
+      final scoreA = (a.likes * 1) + (a.replies * 3) + (a.views * 0.1);
+      final scoreB = (b.likes * 1) + (b.replies * 3) + (b.views * 0.1);
+      return scoreB.compareTo(scoreA);
+    });
+
+    return posts.take(limit).toList();
+  }
+
+  @override
+  Future<List<String>> getTrendingTags(
+    String channelId, {
+    int limit = 10,
+  }) async {
+    final posts = await getChannelPosts(channelId);
+    final tagCounts = <String, int>{};
+
+    for (final post in posts) {
+      for (final tag in post.tags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+
+    final sorted = tagCounts.entries.toList();
+    sorted.sort((a, b) => b.value.compareTo(a.value));
+
+    return sorted.map((e) => e.key).take(limit).toList();
+  }
+
+  @override
+  Future<double> calculateTrendingScore(String postId) async {
+    final post = await getPost(postId);
+    if (post == null) return 0.0;
+
+    final engagementScore = (post.likes * 1) + (post.replies * 3) + (post.views * 0.1);
+    final ageHours = DateTime.now().difference(post.createdAt).inHours;
+    final timeDecay = 1.0 / (1.0 + (ageHours / 24.0));
+
+    return engagementScore * timeDecay;
+  }
+
+  @override
+  Future<PostEngagementAnalytics?> getPostEngagementAnalytics(
+    String postId,
+  ) async {
+    final doc = await _db
+        .collection('postEngagementAnalytics')
+        .doc(postId)
+        .get();
+
+    if (!doc.exists) return null;
+    return PostEngagementAnalytics.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> updateEngagementAnalytics(String postId) async {
+    final post = await getPost(postId);
+    if (post == null) return;
+
+    final trendingScore = await calculateTrendingScore(postId);
+    final reactionCount = await getReactionCount(postId);
+
+    await _db.collection('postEngagementAnalytics').doc(postId).set({
+      'analyticsId': postId,
+      'postId': postId,
+      'channelId': post.channelId,
+      'reactionCount': reactionCount,
+      'replyCount': post.replies,
+      'likeCount': post.likes,
+      'viewCount': post.views,
+      'trendingScore': trendingScore,
+      'lastUpdatedAt': Timestamp.now(),
+    });
+  }
 }
 
 /// Stub implementation for testing
@@ -1569,6 +2203,10 @@ class StubCommunityService implements CommunityService {
   final Map<String, Mention> _mentions = {}; // Phase 11 Step 2
   final Map<String, UserNotification> _notifications = {}; // Phase 11 Step 2
   final Map<String, NotificationPreferences> _preferences = {}; // Phase 11 Step 2
+  final Map<String, PostReaction> _postReactions = {}; // Phase 11 Step 3
+  final Map<String, ReplyReaction> _replyReactions = {}; // Phase 11 Step 3
+  final Map<String, ContentReport> _reports = {}; // Phase 11 Step 3
+  final Map<String, PostEngagementAnalytics> _analytics = {}; // Phase 11 Step 3
 
   @override
   Future<String> createChannel({
@@ -2580,5 +3218,433 @@ class StubCommunityService implements CommunityService {
         muteUntil: null,
       );
     }
+  }
+
+  // ============ REACTION OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<String> addPostReaction({
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  }) async {
+    final reactionId = 'reaction_${_postReactions.length}';
+    _postReactions[reactionId] = PostReaction(
+      reactionId: reactionId,
+      postId: postId,
+      userId: userId,
+      channelId: '', // Would be populated from post
+      emoji: emoji,
+      reactionType: reactionType,
+      createdAt: DateTime.now(),
+    );
+    return reactionId;
+  }
+
+  @override
+  Future<String> addReplyReaction({
+    required String replyId,
+    required String postId,
+    required String userId,
+    required String emoji,
+    ReactionType reactionType = ReactionType.emoji,
+  }) async {
+    final reactionId = 'reaction_${_replyReactions.length}';
+    _replyReactions[reactionId] = ReplyReaction(
+      reactionId: reactionId,
+      replyId: replyId,
+      postId: postId,
+      userId: userId,
+      emoji: emoji,
+      reactionType: reactionType,
+      createdAt: DateTime.now(),
+    );
+    return reactionId;
+  }
+
+  @override
+  Future<void> removePostReaction(String postId, String userId, String emoji) async {
+    _postReactions.removeWhere((_, r) =>
+        r.postId == postId && r.userId == userId && r.emoji == emoji);
+  }
+
+  @override
+  Future<void> removeReplyReaction(String replyId, String userId, String emoji) async {
+    _replyReactions.removeWhere((_, r) =>
+        r.replyId == replyId && r.userId == userId && r.emoji == emoji);
+  }
+
+  @override
+  Future<List<PostReaction>> getPostReactions(String postId) async {
+    return _postReactions.values.where((r) => r.postId == postId).toList();
+  }
+
+  @override
+  Future<List<ReplyReaction>> getReplyReactions(String replyId) async {
+    return _replyReactions.values.where((r) => r.replyId == replyId).toList();
+  }
+
+  @override
+  Future<List<String>> getReactionUsers(String postId, String emoji) async {
+    return _postReactions.values
+        .where((r) => r.postId == postId && r.emoji == emoji)
+        .map((r) => r.userId)
+        .toList();
+  }
+
+  @override
+  Future<int> getReactionCount(String postId) async {
+    return _postReactions.values.where((r) => r.postId == postId).length;
+  }
+
+  @override
+  Future<PostReaction?> getUserPostReaction(
+    String postId,
+    String userId,
+    String emoji,
+  ) async {
+    try {
+      return _postReactions.values.firstWhere((r) =>
+          r.postId == postId && r.userId == userId && r.emoji == emoji);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<ReplyReaction?> getUserReplyReaction(
+    String replyId,
+    String userId,
+    String emoji,
+  ) async {
+    try {
+      return _replyReactions.values.firstWhere((r) =>
+          r.replyId == replyId && r.userId == userId && r.emoji == emoji);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ============ REPORT OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<String> reportPost({
+    required String postId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  }) async {
+    final post = await getPost(postId);
+    final reportId = 'report_${_reports.length}';
+    _reports[reportId] = ContentReport(
+      reportId: reportId,
+      contentId: postId,
+      contentType: 'post',
+      reportedByUserId: reportedByUserId,
+      channelId: post?.channelId ?? '',
+      category: category,
+      description: description,
+      attachmentUrl: attachmentUrl,
+      createdAt: DateTime.now(),
+    );
+    return reportId;
+  }
+
+  @override
+  Future<String> reportReply({
+    required String replyId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+    String? attachmentUrl,
+  }) async {
+    final reply = await getReply(replyId);
+    final reportId = 'report_${_reports.length}';
+    _reports[reportId] = ContentReport(
+      reportId: reportId,
+      contentId: replyId,
+      contentType: 'reply',
+      reportedByUserId: reportedByUserId,
+      channelId: reply?.channelId ?? '',
+      category: category,
+      description: description,
+      attachmentUrl: attachmentUrl,
+      createdAt: DateTime.now(),
+    );
+    return reportId;
+  }
+
+  @override
+  Future<String> reportUser({
+    required String reportedUserId,
+    required String reportedByUserId,
+    required ReportCategory category,
+    String? description,
+  }) async {
+    final reportId = 'report_${_reports.length}';
+    _reports[reportId] = ContentReport(
+      reportId: reportId,
+      contentId: reportedUserId,
+      contentType: 'user',
+      reportedByUserId: reportedByUserId,
+      reportedUserId: reportedUserId,
+      channelId: '', // N/A for user reports
+      category: category,
+      description: description,
+      createdAt: DateTime.now(),
+    );
+    return reportId;
+  }
+
+  @override
+  Future<ContentReport?> getReport(String reportId) async {
+    return _reports[reportId];
+  }
+
+  @override
+  Future<List<ContentReport>> getChannelReports(
+    String channelId, {
+    ReportStatus? statusFilter,
+    int limit = 50,
+  }) async {
+    var results = _reports.values
+        .where((r) => r.channelId == channelId)
+        .toList();
+
+    if (statusFilter != null) {
+      results = results.where((r) => r.status == statusFilter).toList();
+    }
+
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<List<ContentReport>> getUserReports(
+    String reportedUserId, {
+    int limit = 50,
+  }) async {
+    return _reports.values
+        .where((r) => r.reportedUserId == reportedUserId)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<ContentReport>> getReportedContentReports(
+    String contentId, {
+    int limit = 50,
+  }) async {
+    return _reports.values
+        .where((r) => r.contentId == contentId)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<void> actionReport({
+    required String reportId,
+    required ReportAction action,
+    required String moderatorId,
+    String? reason,
+    String? actionDetails,
+  }) async {
+    final report = _reports[reportId];
+    if (report != null) {
+      _reports[reportId] = report.copyWith(
+        status: ReportStatus.upheld,
+        reviewedAt: DateTime.now(),
+        reviewedBy: moderatorId,
+        action: action,
+        actionReason: reason,
+        actionDetails: actionDetails,
+      );
+    }
+  }
+
+  @override
+  Future<void> dismissReport({
+    required String reportId,
+    required String moderatorId,
+    String? reason,
+  }) async {
+    final report = _reports[reportId];
+    if (report != null) {
+      _reports[reportId] = report.copyWith(
+        status: ReportStatus.dismissed,
+        reviewedAt: DateTime.now(),
+        reviewedBy: moderatorId,
+        actionReason: reason,
+      );
+    }
+  }
+
+  @override
+  Future<Map<String, int>> getReportStats(String channelId) async {
+    final channelReports = _reports.values
+        .where((r) => r.channelId == channelId)
+        .toList();
+
+    return {
+      'total': channelReports.length,
+      'pending': channelReports.where((r) => r.isPending).length,
+      'upheld': channelReports.where((r) => r.isUpheld).length,
+      'dismissed': channelReports.where((r) => r.isDismissed).length,
+    };
+  }
+
+  // ============ TRENDING OPERATIONS (Phase 11 Step 3) ============
+
+  @override
+  Future<List<ChannelPost>> getTrendingPosts(
+    String channelId, {
+    String timeRange = 'day',
+    int limit = 20,
+  }) async {
+    final posts = await getChannelPosts(channelId, statusFilter: PostStatus.published);
+
+    // Score posts by engagement
+    final scored = <(ChannelPost, double)>[];
+    for (final post in posts) {
+      final score = await calculateTrendingScore(post.postId);
+      scored.add((post, score));
+    }
+
+    // Sort by score descending
+    scored.sort((a, b) => b.$2.compareTo(a.$2));
+
+    return scored.map((s) => s.$1).take(limit).toList();
+  }
+
+  @override
+  Future<List<ChannelPost>> getGlobalTrendingPosts({
+    String timeRange = 'week',
+    int limit = 50,
+  }) async {
+    final allPosts = _posts.values
+        .where((p) => p.isPublished)
+        .toList();
+
+    final scored = <(ChannelPost, double)>[];
+    for (final post in allPosts) {
+      final score = await calculateTrendingScore(post.postId);
+      scored.add((post, score));
+    }
+
+    scored.sort((a, b) => b.$2.compareTo(a.$2));
+
+    return scored.map((s) => s.$1).take(limit).toList();
+  }
+
+  @override
+  Future<List<ChannelPost>> getTrendingByCategory(
+    String category, {
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    final channels = _channels.values
+        .where((ch) => ch.category == category)
+        .map((ch) => ch.channelId)
+        .toSet();
+
+    final posts = _posts.values
+        .where((p) => channels.contains(p.channelId) && p.isPublished)
+        .toList();
+
+    final scored = <(ChannelPost, double)>[];
+    for (final post in posts) {
+      final score = await calculateTrendingScore(post.postId);
+      scored.add((post, score));
+    }
+
+    scored.sort((a, b) => b.$2.compareTo(a.$2));
+
+    return scored.map((s) => s.$1).take(limit).toList();
+  }
+
+  @override
+  Future<List<String>> getTrendingTags(
+    String channelId, {
+    int limit = 10,
+  }) async {
+    final posts = await getChannelPosts(channelId);
+
+    final tagCounts = <String, int>{};
+    for (final post in posts) {
+      for (final tag in post.tags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+
+    final sorted = tagCounts.entries.toList();
+    sorted.sort((a, b) => b.value.compareTo(a.value));
+
+    return sorted.map((e) => e.key).take(limit).toList();
+  }
+
+  @override
+  Future<double> calculateTrendingScore(String postId) async {
+    final post = await getPost(postId);
+    if (post == null) return 0.0;
+
+    // Get engagement metrics
+    final reactionCount = await getReactionCount(postId);
+    final likeCount = post.likes;
+    final replyCount = post.replies;
+    final viewCount = post.views;
+
+    // Calculate score: weighted sum of engagement
+    // Reactions: 2x, Replies: 3x, Likes: 1x, Views: 0.1x
+    final engagementScore = (reactionCount * 2) +
+        (replyCount * 3) +
+        (likeCount * 1) +
+        (viewCount * 0.1);
+
+    // Time decay: newer posts score higher
+    final ageHours = DateTime.now().difference(post.createdAt).inHours;
+    final timeDecay = 1.0 / (1.0 + (ageHours / 24.0));
+
+    final score = engagementScore * timeDecay;
+
+    // Store analytics
+    await updateEngagementAnalytics(postId);
+
+    return score;
+  }
+
+  @override
+  Future<PostEngagementAnalytics?> getPostEngagementAnalytics(
+    String postId,
+  ) async {
+    try {
+      return _analytics.values.firstWhere((a) => a.postId == postId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateEngagementAnalytics(String postId) async {
+    final post = await getPost(postId);
+    if (post == null) return;
+
+    final analyticsId = 'analytics_$postId';
+    final reactionCount = await getReactionCount(postId);
+    final trendingScore = await calculateTrendingScore(postId);
+
+    _analytics[analyticsId] = PostEngagementAnalytics(
+      analyticsId: analyticsId,
+      postId: postId,
+      channelId: post.channelId,
+      reactionCount: reactionCount,
+      replyCount: post.replies,
+      likeCount: post.likes,
+      viewCount: post.views,
+      trendingScore: trendingScore,
+      lastUpdatedAt: DateTime.now(),
+    );
   }
 }

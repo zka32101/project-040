@@ -11,6 +11,14 @@ enum ModerationAction { none, warning, mute, ban }
 
 enum NotificationType { mention, reply, likePost, likeReply, moderation, channelEvent, channelAnnounce }
 
+enum ReactionType { emoji, sticker }
+
+enum ReportCategory { inappropriate, harassment, spam, misinformation, copyright, other }
+
+enum ReportStatus { pending, reviewing, upheld, dismissed, appealed }
+
+enum ReportAction { warning, mute, removeContent, ban, escalate, dismiss }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -888,6 +896,369 @@ class NotificationPreferences {
       channelAnnouncements: channelAnnouncements ?? this.channelAnnouncements,
       updatedAt: DateTime.now(),
       muteUntil: muteUntil ?? this.muteUntil,
+    );
+  }
+}
+
+/// Post reaction model (Phase 11 Step 3)
+class PostReaction {
+  final String reactionId;
+  final String postId;
+  final String userId;
+  final String channelId;
+  final String emoji;
+  final ReactionType reactionType;
+  final DateTime createdAt;
+
+  PostReaction({
+    required this.reactionId,
+    required this.postId,
+    required this.userId,
+    required this.channelId,
+    required this.emoji,
+    this.reactionType = ReactionType.emoji,
+    required this.createdAt,
+  });
+
+  bool get isEmoji => reactionType == ReactionType.emoji;
+  bool get isSticker => reactionType == ReactionType.sticker;
+
+  factory PostReaction.empty() {
+    return PostReaction(
+      reactionId: '',
+      postId: '',
+      userId: '',
+      channelId: '',
+      emoji: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory PostReaction.fromMap(Map<String, dynamic> map) {
+    return PostReaction(
+      reactionId: map['reactionId'] as String? ?? '',
+      postId: map['postId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      emoji: map['emoji'] as String? ?? '',
+      reactionType: ReactionType.values[(map['reactionType'] as int?) ?? ReactionType.emoji.index],
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reactionId': reactionId,
+      'postId': postId,
+      'userId': userId,
+      'channelId': channelId,
+      'emoji': emoji,
+      'reactionType': reactionType.index,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
+  PostReaction copyWith() {
+    return PostReaction(
+      reactionId: reactionId,
+      postId: postId,
+      userId: userId,
+      channelId: channelId,
+      emoji: emoji,
+      reactionType: reactionType,
+      createdAt: createdAt,
+    );
+  }
+}
+
+/// Reply reaction model (Phase 11 Step 3)
+class ReplyReaction {
+  final String reactionId;
+  final String replyId;
+  final String postId;
+  final String userId;
+  final String emoji;
+  final ReactionType reactionType;
+  final DateTime createdAt;
+
+  ReplyReaction({
+    required this.reactionId,
+    required this.replyId,
+    required this.postId,
+    required this.userId,
+    required this.emoji,
+    this.reactionType = ReactionType.emoji,
+    required this.createdAt,
+  });
+
+  bool get isEmoji => reactionType == ReactionType.emoji;
+  bool get isSticker => reactionType == ReactionType.sticker;
+
+  factory ReplyReaction.empty() {
+    return ReplyReaction(
+      reactionId: '',
+      replyId: '',
+      postId: '',
+      userId: '',
+      emoji: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ReplyReaction.fromMap(Map<String, dynamic> map) {
+    return ReplyReaction(
+      reactionId: map['reactionId'] as String? ?? '',
+      replyId: map['replyId'] as String? ?? '',
+      postId: map['postId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      emoji: map['emoji'] as String? ?? '',
+      reactionType: ReactionType.values[(map['reactionType'] as int?) ?? ReactionType.emoji.index],
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reactionId': reactionId,
+      'replyId': replyId,
+      'postId': postId,
+      'userId': userId,
+      'emoji': emoji,
+      'reactionType': reactionType.index,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
+  ReplyReaction copyWith() {
+    return ReplyReaction(
+      reactionId: reactionId,
+      replyId: replyId,
+      postId: postId,
+      userId: userId,
+      emoji: emoji,
+      reactionType: reactionType,
+      createdAt: createdAt,
+    );
+  }
+}
+
+/// Content report model (Phase 11 Step 3)
+class ContentReport {
+  final String reportId;
+  final String contentId; // postId or replyId or userId
+  final String contentType; // 'post', 'reply', 'user'
+  final String reportedByUserId;
+  final String? reportedUserId; // Only for user reports
+  final String channelId;
+  final ReportCategory category;
+  final String? description;
+  final String? attachmentUrl;
+  final ReportStatus status;
+  final DateTime createdAt;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
+  final ReportAction? action;
+  final String? actionReason;
+  final String? actionDetails;
+
+  ContentReport({
+    required this.reportId,
+    required this.contentId,
+    required this.contentType,
+    required this.reportedByUserId,
+    this.reportedUserId,
+    required this.channelId,
+    required this.category,
+    this.description,
+    this.attachmentUrl,
+    this.status = ReportStatus.pending,
+    required this.createdAt,
+    this.reviewedAt,
+    this.reviewedBy,
+    this.action,
+    this.actionReason,
+    this.actionDetails,
+  });
+
+  bool get isPending => status == ReportStatus.pending;
+  bool get isResolved => status == ReportStatus.upheld || status == ReportStatus.dismissed;
+  bool get isUpheld => status == ReportStatus.upheld;
+  bool get isDismissed => status == ReportStatus.dismissed;
+  bool get isPostReport => contentType == 'post';
+  bool get isReplyReport => contentType == 'reply';
+  bool get isUserReport => contentType == 'user';
+
+  factory ContentReport.empty() {
+    return ContentReport(
+      reportId: '',
+      contentId: '',
+      contentType: '',
+      reportedByUserId: '',
+      channelId: '',
+      category: ReportCategory.other,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ContentReport.fromMap(Map<String, dynamic> map) {
+    return ContentReport(
+      reportId: map['reportId'] as String? ?? '',
+      contentId: map['contentId'] as String? ?? '',
+      contentType: map['contentType'] as String? ?? '',
+      reportedByUserId: map['reportedByUserId'] as String? ?? '',
+      reportedUserId: map['reportedUserId'] as String?,
+      channelId: map['channelId'] as String? ?? '',
+      category: ReportCategory.values[(map['category'] as int?) ?? ReportCategory.other.index],
+      description: map['description'] as String?,
+      attachmentUrl: map['attachmentUrl'] as String?,
+      status: ReportStatus.values[(map['status'] as int?) ?? ReportStatus.pending.index],
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reviewedAt: (map['reviewedAt'] as Timestamp?)?.toDate(),
+      reviewedBy: map['reviewedBy'] as String?,
+      action: map['action'] != null
+          ? ReportAction.values[map['action'] as int]
+          : null,
+      actionReason: map['actionReason'] as String?,
+      actionDetails: map['actionDetails'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reportId': reportId,
+      'contentId': contentId,
+      'contentType': contentType,
+      'reportedByUserId': reportedByUserId,
+      'reportedUserId': reportedUserId,
+      'channelId': channelId,
+      'category': category.index,
+      'description': description,
+      'attachmentUrl': attachmentUrl,
+      'status': status.index,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'reviewedAt': reviewedAt != null ? Timestamp.fromDate(reviewedAt!) : null,
+      'reviewedBy': reviewedBy,
+      'action': action?.index,
+      'actionReason': actionReason,
+      'actionDetails': actionDetails,
+    };
+  }
+
+  ContentReport copyWith({
+    ReportStatus? status,
+    DateTime? reviewedAt,
+    String? reviewedBy,
+    ReportAction? action,
+    String? actionReason,
+    String? actionDetails,
+  }) {
+    return ContentReport(
+      reportId: reportId,
+      contentId: contentId,
+      contentType: contentType,
+      reportedByUserId: reportedByUserId,
+      reportedUserId: reportedUserId,
+      channelId: channelId,
+      category: category,
+      description: description,
+      attachmentUrl: attachmentUrl,
+      status: status ?? this.status,
+      createdAt: createdAt,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      reviewedBy: reviewedBy ?? this.reviewedBy,
+      action: action ?? this.action,
+      actionReason: actionReason ?? this.actionReason,
+      actionDetails: actionDetails ?? this.actionDetails,
+    );
+  }
+}
+
+/// Post engagement analytics model (Phase 11 Step 3)
+class PostEngagementAnalytics {
+  final String analyticsId;
+  final String postId;
+  final String channelId;
+  final int reactionCount;
+  final int replyCount;
+  final int likeCount;
+  final int viewCount;
+  final double trendingScore;
+  final DateTime lastUpdatedAt;
+  final String timeRange; // 'hour', 'day', 'week'
+
+  PostEngagementAnalytics({
+    required this.analyticsId,
+    required this.postId,
+    required this.channelId,
+    this.reactionCount = 0,
+    this.replyCount = 0,
+    this.likeCount = 0,
+    this.viewCount = 0,
+    this.trendingScore = 0.0,
+    required this.lastUpdatedAt,
+    this.timeRange = 'day',
+  });
+
+  int get totalEngagement => reactionCount + replyCount + likeCount + viewCount;
+  double get engagementRate => totalEngagement > 0 ? (totalEngagement / (viewCount + 1)).toDouble() : 0.0;
+
+  factory PostEngagementAnalytics.empty(String postId, String channelId) {
+    return PostEngagementAnalytics(
+      analyticsId: '',
+      postId: postId,
+      channelId: channelId,
+      lastUpdatedAt: DateTime.now(),
+    );
+  }
+
+  factory PostEngagementAnalytics.fromMap(Map<String, dynamic> map) {
+    return PostEngagementAnalytics(
+      analyticsId: map['analyticsId'] as String? ?? '',
+      postId: map['postId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      reactionCount: map['reactionCount'] as int? ?? 0,
+      replyCount: map['replyCount'] as int? ?? 0,
+      likeCount: map['likeCount'] as int? ?? 0,
+      viewCount: map['viewCount'] as int? ?? 0,
+      trendingScore: (map['trendingScore'] as num?)?.toDouble() ?? 0.0,
+      lastUpdatedAt: (map['lastUpdatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      timeRange: map['timeRange'] as String? ?? 'day',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'analyticsId': analyticsId,
+      'postId': postId,
+      'channelId': channelId,
+      'reactionCount': reactionCount,
+      'replyCount': replyCount,
+      'likeCount': likeCount,
+      'viewCount': viewCount,
+      'trendingScore': trendingScore,
+      'lastUpdatedAt': Timestamp.fromDate(lastUpdatedAt),
+      'timeRange': timeRange,
+    };
+  }
+
+  PostEngagementAnalytics copyWith({
+    int? reactionCount,
+    int? replyCount,
+    int? likeCount,
+    int? viewCount,
+    double? trendingScore,
+  }) {
+    return PostEngagementAnalytics(
+      analyticsId: analyticsId,
+      postId: postId,
+      channelId: channelId,
+      reactionCount: reactionCount ?? this.reactionCount,
+      replyCount: replyCount ?? this.replyCount,
+      likeCount: likeCount ?? this.likeCount,
+      viewCount: viewCount ?? this.viewCount,
+      trendingScore: trendingScore ?? this.trendingScore,
+      lastUpdatedAt: DateTime.now(),
+      timeRange: timeRange,
     );
   }
 }

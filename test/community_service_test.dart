@@ -1603,4 +1603,373 @@ void main() {
       expect(readNotifs, isEmpty);
     });
   });
+
+  // ============ REACTION TESTS (Phase 11 Step 3) ============
+  group('Reaction Management (Phase 11 Step 3)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('add reaction to post', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      final reactionId = await service.addPostReaction(
+        postId: postId,
+        userId: 'user2',
+        emoji: '👍',
+      );
+
+      expect(reactionId, isNotEmpty);
+    });
+
+    test('get post reactions', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      await service.addPostReaction(
+        postId: postId,
+        userId: 'user2',
+        emoji: '👍',
+      );
+
+      await service.addPostReaction(
+        postId: postId,
+        userId: 'user3',
+        emoji: '❤️',
+      );
+
+      final reactions = await service.getPostReactions(postId);
+      expect(reactions, hasLength(2));
+    });
+
+    test('remove reaction from post', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      await service.addPostReaction(
+        postId: postId,
+        userId: 'user2',
+        emoji: '👍',
+      );
+
+      await service.removePostReaction(postId, 'user2', '👍');
+
+      final reactions = await service.getPostReactions(postId);
+      expect(reactions, isEmpty);
+    });
+
+    test('get reaction count', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      await service.addPostReaction(
+        postId: postId,
+        userId: 'user2',
+        emoji: '👍',
+      );
+
+      await service.addPostReaction(
+        postId: postId,
+        userId: 'user3',
+        emoji: '👍',
+      );
+
+      final count = await service.getReactionCount(postId);
+      expect(count, 2);
+    });
+
+    test('add reaction to reply', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      final replyId = await service.createReply(
+        postId: postId,
+        channelId: channelId,
+        authorId: 'user2',
+        content: 'Test reply',
+      );
+
+      final reactionId = await service.addReplyReaction(
+        replyId: replyId,
+        postId: postId,
+        userId: 'user3',
+        emoji: '👍',
+      );
+
+      expect(reactionId, isNotEmpty);
+    });
+  });
+
+  // ============ REPORT TESTS (Phase 11 Step 3) ============
+  group('Report Management (Phase 11 Step 3)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('report post', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Inappropriate content',
+      );
+
+      final reportId = await service.reportPost(
+        postId: postId,
+        reportedByUserId: 'user2',
+        category: ReportCategory.inappropriate,
+        description: 'Offensive language',
+      );
+
+      expect(reportId, isNotEmpty);
+    });
+
+    test('get report', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test',
+      );
+
+      final reportId = await service.reportPost(
+        postId: postId,
+        reportedByUserId: 'user2',
+        category: ReportCategory.spam,
+      );
+
+      final report = await service.getReport(reportId);
+      expect(report!.isPending, true);
+    });
+
+    test('action report', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test',
+      );
+
+      final reportId = await service.reportPost(
+        postId: postId,
+        reportedByUserId: 'user2',
+        category: ReportCategory.spam,
+      );
+
+      await service.actionReport(
+        reportId: reportId,
+        action: ReportAction.removeContent,
+        moderatorId: 'moderator1',
+        reason: 'Spam detected',
+      );
+
+      final report = await service.getReport(reportId);
+      expect(report!.isUpheld, true);
+    });
+
+    test('get channel reports', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test',
+      );
+
+      await service.reportPost(
+        postId: postId,
+        reportedByUserId: 'user2',
+        category: ReportCategory.spam,
+      );
+
+      final reports = await service.getChannelReports(channelId);
+      expect(reports, hasLength(1));
+    });
+
+    test('report stats', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test',
+      );
+
+      await service.reportPost(
+        postId: postId,
+        reportedByUserId: 'user2',
+        category: ReportCategory.spam,
+      );
+
+      final stats = await service.getReportStats(channelId);
+      expect(stats['total'], 1);
+      expect(stats['pending'], 1);
+    });
+  });
+
+  // ============ TRENDING TESTS (Phase 11 Step 3) ============
+  group('Trending Content (Phase 11 Step 3)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('get trending posts', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Popular post',
+      );
+
+      // Add engagement
+      await service.likePost(postId, 'user2');
+      await service.likePost(postId, 'user3');
+
+      final trending = await service.getTrendingPosts(channelId);
+      expect(trending.isNotEmpty, true);
+    });
+
+    test('get trending tags', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Post 1',
+        tags: ['bike', 'maintenance'],
+      );
+
+      await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Post 2',
+        tags: ['bike', 'repair'],
+      );
+
+      final tags = await service.getTrendingTags(channelId);
+      expect(tags.contains('bike'), true);
+    });
+
+    test('calculate trending score', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      await service.likePost(postId, 'user2');
+
+      final score = await service.calculateTrendingScore(postId);
+      expect(score, greaterThan(0));
+    });
+
+    test('get post engagement analytics', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        content: 'Test post',
+      );
+
+      await service.updateEngagementAnalytics(postId);
+
+      final analytics = await service.getPostEngagementAnalytics(postId);
+      expect(analytics, isNotNull);
+    });
+  });
 }
