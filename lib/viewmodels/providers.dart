@@ -33,6 +33,7 @@ import '../services/sync_queue_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/conflict_resolution_service.dart';
 import '../services/user_deletion_service.dart';
+import '../services/network_queue_processor.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -91,6 +92,20 @@ final conflictResolutionServiceProvider =
 
 final userDeletionServiceProvider =
     Provider<UserDeletionService>((ref) => FirebaseUserDeletionService());
+
+final networkQueueProcessorProvider =
+    FutureProvider<NetworkQueueProcessor>((ref) async {
+  final queueService = await ref.watch(syncQueueServiceProvider.future);
+  final connectivityService = await ref.watch(connectivityServiceProvider.future);
+  final processor = DefaultNetworkQueueProcessor(
+    syncQueueService: queueService,
+    connectivityService: connectivityService,
+    firestoreSyncService: ref.read(fireStoreSyncServiceProvider),
+    localDataService: LocalDataService(),
+  );
+  await processor.start();
+  return processor;
+});
 
 // ---------------------------------------------------------------------------
 // Authentication

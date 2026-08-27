@@ -26,6 +26,20 @@ class BikeLicenseKoreApp extends ConsumerWidget {
       });
     });
 
+    // アプリ起動時にネットワークキュープロセッサーを初期化
+    // これでオフラインキューの自動処理が開始される
+    ref.listen(networkQueueProcessorProvider, (previous, next) {
+      next.whenData((processor) {
+        if (context.mounted) {
+          debugPrint('Network queue processor initialized');
+        }
+      }).whenError((error, stackTrace) {
+        if (context.mounted) {
+          debugPrint('Failed to initialize network queue processor: $error');
+        }
+      });
+    });
+
     return MaterialApp(
       title: '原付・バイク免許コレ！',
       debugShowCheckedModeBanner: false,
