@@ -1056,4 +1056,551 @@ void main() {
       expect(record!.isActive, false);
     });
   });
+
+  // ============ MENTION TESTS (Phase 11 Step 2) ============
+  group('Mention Management (Phase 11 Step 2)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('extract mentions from content', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+
+      final mentions = await service.extractMentions(
+        'Hey @john_cyclist check this out!',
+        channelId: channelId,
+      );
+
+      expect(mentions, hasLength(1));
+      expect(mentions[0].mentionedUsername, 'john_cyclist');
+    });
+
+    test('extract multiple mentions from content', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'jane_rider',
+      );
+
+      final mentions = await service.extractMentions(
+        '@john_cyclist and @jane_rider, check this!',
+        channelId: channelId,
+      );
+
+      expect(mentions, hasLength(2));
+    });
+
+    test('prevent duplicate mentions in same content', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+
+      final mentions = await service.extractMentions(
+        '@john_cyclist @john_cyclist check this!',
+        channelId: channelId,
+      );
+
+      expect(mentions, hasLength(1));
+    });
+
+    test('create mention record', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      final mentionId = await service.createMention(
+        mentionedUserId: 'john_cyclist',
+        mentionedUsername: 'john_cyclist',
+        channelId: channelId,
+        authorId: 'user1',
+        authorName: 'User 1',
+      );
+
+      expect(mentionId, isNotEmpty);
+    });
+
+    test('get mentions for user', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.createMention(
+        mentionedUserId: 'john_cyclist',
+        mentionedUsername: 'john_cyclist',
+        channelId: channelId,
+        authorId: 'user1',
+      );
+
+      final mentions = await service.getUserMentions('john_cyclist');
+      expect(mentions, hasLength(1));
+    });
+
+    test('validate mention in channel', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+
+      final isValid = await service.validateMention(
+        'john_cyclist',
+        channelId: channelId,
+      );
+
+      expect(isValid, true);
+    });
+
+    test('get mentionable users in channel', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'jane_rider',
+      );
+
+      final users = await service.getMentionableCommunityUsers(channelId);
+
+      expect(users.length, greaterThan(0));
+    });
+
+    test('get mention count for user', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.createMention(
+        mentionedUserId: 'john_cyclist',
+        mentionedUsername: 'john_cyclist',
+        channelId: channelId,
+        authorId: 'user1',
+      );
+
+      await service.createMention(
+        mentionedUserId: 'john_cyclist',
+        mentionedUsername: 'john_cyclist',
+        channelId: channelId,
+        authorId: 'user2',
+      );
+
+      final count = await service.getMentionCount('john_cyclist');
+      expect(count, 2);
+    });
+  });
+
+  // ============ NOTIFICATION TESTS (Phase 11 Step 2) ============
+  group('Notification Management (Phase 11 Step 2)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('create notification for user', () async {
+      final notificationId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'New Mention',
+        description: 'You were mentioned in a post',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      expect(notificationId, isNotEmpty);
+    });
+
+    test('get user notifications', () async {
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'New Mention',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      final notifications = await service.getUserNotifications('user1');
+      expect(notifications, hasLength(1));
+    });
+
+    test('get unread notifications only', () async {
+      final notifId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'New Mention',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.markNotificationAsRead(notifId);
+
+      final unreadNotifs = await service.getUserNotifications(
+        'user1',
+        unreadOnly: true,
+      );
+
+      expect(unreadNotifs, isEmpty);
+    });
+
+    test('mark notification as read', () async {
+      final notifId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'New Mention',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.markNotificationAsRead(notifId);
+
+      final notif = await service.getNotification(notifId);
+      expect(notif!.isRead, true);
+    });
+
+    test('mark all notifications as read', () async {
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention 1',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.reply,
+        title: 'New Reply',
+        description: 'Someone replied',
+        relatedId: 'post2',
+        relatedType: 'post',
+      );
+
+      await service.markAllNotificationsAsRead('user1');
+
+      final notifs = await service.getUserNotifications(
+        'user1',
+        unreadOnly: true,
+      );
+
+      expect(notifs, isEmpty);
+    });
+
+    test('delete notification', () async {
+      final notifId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'New Mention',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.deleteNotification(notifId);
+
+      final notif = await service.getNotification(notifId);
+      expect(notif, isNull);
+    });
+
+    test('get unread count', () async {
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention 1',
+        description: 'You were mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.reply,
+        title: 'Reply',
+        description: 'New reply',
+        relatedId: 'post2',
+        relatedType: 'post',
+      );
+
+      final count = await service.getUnreadCount('user1');
+      expect(count, 2);
+    });
+
+    test('get notification summary', () async {
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention',
+        description: 'Mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.reply,
+        title: 'Reply',
+        description: 'Reply received',
+        relatedId: 'post2',
+        relatedType: 'post',
+      );
+
+      final summary = await service.getNotificationSummary('user1');
+      expect(summary['mentions'], 1);
+      expect(summary['replies'], 1);
+      expect(summary['total'], 2);
+    });
+
+    test('prevent duplicate notifications', () async {
+      await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention',
+        description: 'Mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      final notifId2 = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention',
+        description: 'Mentioned again',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      expect(notifId2, isEmpty);
+    });
+  });
+
+  // ============ NOTIFICATION PREFERENCE TESTS (Phase 11 Step 2) ============
+  group('Notification Preferences (Phase 11 Step 2)', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('get default notification preferences', () async {
+      final prefs = await service.getUserNotificationPreferences('user1');
+      expect(prefs, isNull);
+    });
+
+    test('update notification preferences', () async {
+      final prefs = NotificationPreferences(
+        userId: 'user1',
+        mentionNotifications: true,
+        replyNotifications: false,
+        updatedAt: DateTime.now(),
+      );
+
+      await service.updateNotificationPreferences('user1', prefs);
+
+      final retrieved = await service.getUserNotificationPreferences('user1');
+      expect(retrieved!.replyNotifications, false);
+    });
+
+    test('mute user notifications', () async {
+      await service.muteUserNotifications(
+        'user1',
+        duration: Duration(hours: 1),
+      );
+
+      final prefs = await service.getUserNotificationPreferences('user1');
+      expect(prefs!.isCurrentlyMuted, true);
+    });
+
+    test('unmute user notifications', () async {
+      await service.muteUserNotifications(
+        'user1',
+        duration: Duration(hours: 1),
+      );
+
+      await service.unmuteUserNotifications('user1');
+
+      final prefs = await service.getUserNotificationPreferences('user1');
+      expect(prefs!.isCurrentlyMuted, false);
+    });
+
+    test('respect notification preferences when creating', () async {
+      final prefs = NotificationPreferences(
+        userId: 'user1',
+        mentionNotifications: false,
+        replyNotifications: true,
+        updatedAt: DateTime.now(),
+      );
+
+      await service.updateNotificationPreferences('user1', prefs);
+
+      final mentionNotifId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention',
+        description: 'Mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      expect(mentionNotifId, isEmpty);
+    });
+
+    test('get users with notifications enabled in channel', () async {
+      final channelId = await service.createChannel(
+        name: 'Test Channel',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'user2',
+      );
+
+      final users = await service.getUsersWithNotificationsEnabled(channelId);
+      expect(users.length, greaterThan(0));
+    });
+
+    test('clear read notifications', () async {
+      final notifId = await service.createNotification(
+        userId: 'user1',
+        type: NotificationType.mention,
+        title: 'Mention',
+        description: 'Mentioned',
+        relatedId: 'post1',
+        relatedType: 'post',
+      );
+
+      await service.markNotificationAsRead(notifId);
+      await service.clearReadNotifications('user1');
+
+      final notifs = await service.getUserNotifications('user1');
+      expect(notifs, isEmpty);
+    });
+  });
+
+  // ============ INTEGRATED WORKFLOW TESTS (Phase 11 Step 2) ============
+  group('Integrated Mention & Notification Workflows', () {
+    late CommunityService service;
+
+    setUp(() {
+      service = StubCommunityService();
+    });
+
+    test('complete mention and notification workflow', () async {
+      // Setup channel
+      final channelId = await service.createChannel(
+        name: 'Bike Tips',
+        ownerId: 'user1',
+        type: ChannelType.public,
+      );
+
+      await service.addMemberToChannel(
+        channelId: channelId,
+        userId: 'john_cyclist',
+      );
+
+      // Create post with mention
+      final postId = await service.createPost(
+        channelId: channelId,
+        authorId: 'user1',
+        authorName: 'Alice',
+        content: 'Hey @john_cyclist, check out this maintenance tip!',
+      );
+
+      // Extract mentions
+      final mentions = await service.extractMentions(
+        'Hey @john_cyclist, check out this maintenance tip!',
+        channelId: channelId,
+      );
+
+      // Verify mentions were found
+      expect(mentions, hasLength(1));
+
+      // Create mention records and notifications
+      for (final mention in mentions) {
+        final mentionId = await service.createMention(
+          mentionedUserId: mention.mentionedUserId,
+          mentionedUsername: mention.mentionedUsername,
+          channelId: channelId,
+          authorId: 'user1',
+          authorName: 'Alice',
+          postId: postId,
+        );
+
+        final notifId = await service.createNotification(
+          userId: mention.mentionedUserId,
+          type: NotificationType.mention,
+          title: 'New Mention',
+          description: 'Alice mentioned you in Bike Tips',
+          relatedId: postId,
+          relatedType: 'post',
+          channelId: channelId,
+        );
+
+        expect(notifId, isNotEmpty);
+      }
+
+      // User receives notifications
+      final notifs = await service.getUserNotifications('john_cyclist');
+      expect(notifs, hasLength(1));
+      expect(notifs[0].type, NotificationType.mention);
+
+      // User marks notification as read
+      await service.markNotificationAsRead(notifs[0].notificationId);
+
+      final readNotifs = await service.getUserNotifications(
+        'john_cyclist',
+        unreadOnly: true,
+      );
+
+      expect(readNotifs, isEmpty);
+    });
+  });
 }

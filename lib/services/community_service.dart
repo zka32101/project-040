@@ -192,6 +192,112 @@ abstract class CommunityService {
     required String query,
     int limit = 50,
   });
+
+  // Mention operations (Phase 11 Step 2)
+  Future<List<Mention>> extractMentions(
+    String content, {
+    required String channelId,
+  });
+
+  Future<String> createMention({
+    required String mentionedUserId,
+    required String mentionedUsername,
+    required String channelId,
+    required String authorId,
+    String? authorName,
+    String? postId,
+    String? replyId,
+    String? notificationId,
+  });
+
+  Future<List<Mention>> getPostMentions(String postId);
+
+  Future<List<Mention>> getReplyMentions(String replyId);
+
+  Future<List<Mention>> getUserMentions(
+    String userId, {
+    int limit = 50,
+  });
+
+  Future<List<Mention>> getChannelMentions(
+    String channelId, {
+    int limit = 50,
+  });
+
+  Future<int> getMentionCount(String userId);
+
+  Future<bool> validateMention(
+    String username, {
+    required String channelId,
+  });
+
+  Future<List<ChannelMember>> getMentionableCommunityUsers(
+    String channelId,
+  );
+
+  // Notification operations (Phase 11 Step 2)
+  Future<List<UserNotification>> getUserNotifications(
+    String userId, {
+    bool unreadOnly = false,
+    int limit = 50,
+    int offset = 0,
+  });
+
+  Future<UserNotification?> getNotification(String notificationId);
+
+  Future<String> createNotification({
+    required String userId,
+    required NotificationType type,
+    required String title,
+    required String description,
+    required String relatedId,
+    required String relatedType,
+    String? channelId,
+    String? actionUrl,
+    Map<String, dynamic>? metadata,
+  });
+
+  Future<void> markNotificationAsRead(String notificationId);
+
+  Future<void> markAllNotificationsAsRead(String userId);
+
+  Future<void> markPostNotificationsAsRead({
+    required String userId,
+    required String postId,
+  });
+
+  Future<void> deleteNotification(String notificationId);
+
+  Future<void> deleteUserNotifications(String userId);
+
+  Future<void> archiveOldNotifications({
+    int olderThanDays = 30,
+  });
+
+  Future<void> clearReadNotifications(String userId);
+
+  Future<Map<String, int>> getNotificationSummary(String userId);
+
+  Future<int> getUnreadCount(String userId);
+
+  // Notification preference operations (Phase 11 Step 2)
+  Future<NotificationPreferences?> getUserNotificationPreferences(
+    String userId,
+  );
+
+  Future<void> updateNotificationPreferences(
+    String userId,
+    NotificationPreferences preferences,
+  );
+
+  Future<List<String>> getUsersWithNotificationsEnabled(String channelId);
+
+  Future<void> muteUserNotifications(
+    String userId, {
+    required Duration duration,
+  });
+
+  Future<void> unmuteUserNotifications(String userId);
 }
 
 /// Firebase implementation of community service
@@ -917,6 +1023,539 @@ class FirebaseCommunityService implements CommunityService {
         .where((reply) => reply.content.toLowerCase().contains(query.toLowerCase()))
         .toList();
   }
+
+  // ============ MENTION OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<List<Mention>> extractMentions(
+    String content, {
+    required String channelId,
+  }) async {
+    final regex = RegExp(r'@(\w+)');
+    final matches = regex.allMatches(content);
+    final mentions = <Mention>[];
+    final seenUsernames = <String>{};
+
+    // Get channel members
+    final memberSnapshot = await _db
+        .collection('channelMembers')
+        .where('channelId', isEqualTo: channelId)
+        .get();
+
+    final memberUserIds = memberSnapshot.docs
+        .map((doc) => (doc.data() as Map<String, dynamic>)['userId'] as String)
+        .toSet();
+
+    for (final match in matches) {
+      final username = match.group(1)!.toLowerCase();
+      if (seenUsernames.add(username) && memberUserIds.contains(username)) {
+        mentions.add(
+          Mention(
+            mentionId: 'mention_${DateTime.now().millisecondsSinceEpoch}',
+            mentionedUserId: username,
+            mentionedUsername: username,
+            channelId: channelId,
+            authorId: '',
+            mentionedAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+    return mentions;
+  }
+
+  @override
+  Future<String> createMention({
+    required String mentionedUserId,
+    required String mentionedUsername,
+    required String channelId,
+    required String authorId,
+    String? authorName,
+    String? postId,
+    String? replyId,
+    String? notificationId,
+  }) async {
+    final mentionId = 'mention_${DateTime.now().millisecondsSinceEpoch}';
+    await _db.collection('mentions').doc(mentionId).set({
+      'mentionId': mentionId,
+      'mentionedUserId': mentionedUserId,
+      'mentionedUsername': mentionedUsername,
+      'postId': postId,
+      'replyId': replyId,
+      'channelId': channelId,
+      'authorId': authorId,
+      'authorName': authorName,
+      'mentionedAt': Timestamp.now(),
+      'notificationId': notificationId,
+    });
+    return mentionId;
+  }
+
+  @override
+  Future<List<Mention>> getPostMentions(String postId) async {
+    final snapshot = await _db
+        .collection('mentions')
+        .where('postId', isEqualTo: postId)
+        .where('replyId', isEqualTo: null)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Mention.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getReplyMentions(String replyId) async {
+    final snapshot = await _db
+        .collection('mentions')
+        .where('replyId', isEqualTo: replyId)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Mention.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getUserMentions(
+    String userId, {
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('mentions')
+        .where('mentionedUserId', isEqualTo: userId)
+        .orderBy('mentionedAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Mention.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getChannelMentions(
+    String channelId, {
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('mentions')
+        .where('channelId', isEqualTo: channelId)
+        .orderBy('mentionedAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Mention.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<int> getMentionCount(String userId) async {
+    final snapshot = await _db
+        .collection('mentions')
+        .where('mentionedUserId', isEqualTo: userId)
+        .count()
+        .get();
+
+    return snapshot.count ?? 0;
+  }
+
+  @override
+  Future<bool> validateMention(
+    String username, {
+    required String channelId,
+  }) async {
+    final snapshot = await _db
+        .collection('channelMembers')
+        .where('channelId', isEqualTo: channelId)
+        .where('userId', isEqualTo: username)
+        .where('isBanned', isEqualTo: false)
+        .limit(1)
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
+
+  @override
+  Future<List<ChannelMember>> getMentionableCommunityUsers(
+    String channelId,
+  ) async {
+    final snapshot = await _db
+        .collection('channelMembers')
+        .where('channelId', isEqualTo: channelId)
+        .where('isBanned', isEqualTo: false)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ChannelMember.fromMap(doc.data()))
+        .toList();
+  }
+
+  // ============ NOTIFICATION OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<List<UserNotification>> getUserNotifications(
+    String userId, {
+    bool unreadOnly = false,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    var query = _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true);
+
+    if (unreadOnly) {
+      query = query.where('isRead', isEqualTo: false);
+    }
+
+    final snapshot = await query
+        .limit(limit + offset)
+        .get();
+
+    return snapshot.docs
+        .skip(offset)
+        .map((doc) => UserNotification.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<UserNotification?> getNotification(String notificationId) async {
+    // Search across all users (inefficient but works for now)
+    // In production, store notificationId -> userId mapping
+    final snapshot = await _db
+        .collectionGroup('notifications')
+        .where('notificationId', isEqualTo: notificationId)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return UserNotification.fromMap(snapshot.docs.first.data());
+  }
+
+  @override
+  Future<String> createNotification({
+    required String userId,
+    required NotificationType type,
+    required String title,
+    required String description,
+    required String relatedId,
+    required String relatedType,
+    String? channelId,
+    String? actionUrl,
+    Map<String, dynamic>? metadata,
+  }) async {
+    // Check preferences
+    final prefs = await getUserNotificationPreferences(userId);
+    if (prefs?.isCurrentlyMuted ?? false) {
+      return '';
+    }
+
+    // Check type-specific preferences
+    bool shouldCreate = true;
+    if (prefs != null) {
+      switch (type) {
+        case NotificationType.mention:
+          shouldCreate = prefs.mentionNotifications;
+          break;
+        case NotificationType.reply:
+          shouldCreate = prefs.replyNotifications;
+          break;
+        case NotificationType.likePost:
+        case NotificationType.likeReply:
+          shouldCreate = prefs.likeNotifications;
+          break;
+        case NotificationType.moderation:
+          shouldCreate = prefs.moderationNotifications;
+          break;
+        case NotificationType.channelEvent:
+        case NotificationType.channelAnnounce:
+          shouldCreate = prefs.channelAnnouncements;
+          break;
+      }
+    }
+
+    if (!shouldCreate) {
+      return '';
+    }
+
+    // Check for duplicates
+    final dupSnapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .where('type', isEqualTo: type.index)
+        .where('relatedId', isEqualTo: relatedId)
+        .where('isRead', isEqualTo: false)
+        .limit(1)
+        .get();
+
+    if (dupSnapshot.docs.isNotEmpty) {
+      return '';
+    }
+
+    final notificationId = 'notif_${DateTime.now().millisecondsSinceEpoch}';
+    await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .doc(notificationId)
+        .set({
+      'notificationId': notificationId,
+      'userId': userId,
+      'type': type.index,
+      'title': title,
+      'description': description,
+      'relatedId': relatedId,
+      'relatedType': relatedType,
+      'channelId': channelId,
+      'isRead': false,
+      'createdAt': Timestamp.now(),
+      'readAt': null,
+      'actionUrl': actionUrl,
+      'metadata': metadata,
+    });
+
+    return notificationId;
+  }
+
+  @override
+  Future<void> markNotificationAsRead(String notificationId) async {
+    // Need to find the notification first (inefficient in production)
+    final snapshot = await _db
+        .collectionGroup('notifications')
+        .where('notificationId', isEqualTo: notificationId)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      final userId = doc.reference.parent.parent?.id;
+      if (userId != null) {
+        await doc.reference.update({
+          'isRead': true,
+          'readAt': Timestamp.now(),
+        });
+      }
+    }
+  }
+
+  @override
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {
+        'isRead': true,
+        'readAt': Timestamp.now(),
+      });
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> markPostNotificationsAsRead({
+    required String userId,
+    required String postId,
+  }) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .where('relatedId', isEqualTo: postId)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {
+        'isRead': true,
+        'readAt': Timestamp.now(),
+      });
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> deleteNotification(String notificationId) async {
+    final snapshot = await _db
+        .collectionGroup('notifications')
+        .where('notificationId', isEqualTo: notificationId)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.delete();
+    }
+  }
+
+  @override
+  Future<void> deleteUserNotifications(String userId) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> archiveOldNotifications({
+    int olderThanDays = 30,
+  }) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: olderThanDays));
+
+    // This would need to be done per-user in production
+    // For now, this is a placeholder
+  }
+
+  @override
+  Future<void> clearReadNotifications(String userId) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: true)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<Map<String, int>> getNotificationSummary(String userId) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .get();
+
+    final notifs = snapshot.docs
+        .map((doc) => UserNotification.fromMap(doc.data()))
+        .toList();
+
+    return {
+      'mentions': notifs
+          .where((n) => n.type == NotificationType.mention)
+          .length,
+      'replies': notifs
+          .where((n) => n.type == NotificationType.reply)
+          .length,
+      'likes': notifs
+          .where((n) =>
+              n.type == NotificationType.likePost ||
+              n.type == NotificationType.likeReply)
+          .length,
+      'moderation': notifs
+          .where((n) => n.type == NotificationType.moderation)
+          .length,
+      'total': notifs.length,
+      'unread': notifs.where((n) => n.isUnread).length,
+    };
+  }
+
+  @override
+  Future<int> getUnreadCount(String userId) async {
+    final snapshot = await _db
+        .collection('userNotifications')
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: false)
+        .count()
+        .get();
+
+    return snapshot.count ?? 0;
+  }
+
+  // ============ NOTIFICATION PREFERENCE OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<NotificationPreferences?> getUserNotificationPreferences(
+    String userId,
+  ) async {
+    final doc = await _db
+        .collection('notificationPreferences')
+        .doc(userId)
+        .get();
+
+    if (!doc.exists) return null;
+    return NotificationPreferences.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> updateNotificationPreferences(
+    String userId,
+    NotificationPreferences preferences,
+  ) async {
+    await _db
+        .collection('notificationPreferences')
+        .doc(userId)
+        .set(preferences.toMap(), SetOptions(merge: true));
+  }
+
+  @override
+  Future<List<String>> getUsersWithNotificationsEnabled(
+    String channelId,
+  ) async {
+    final memberSnapshot = await _db
+        .collection('channelMembers')
+        .where('channelId', isEqualTo: channelId)
+        .where('isBanned', isEqualTo: false)
+        .get();
+
+    final enabledUsers = <String>[];
+    for (final memberDoc in memberSnapshot.docs) {
+      final userId = (memberDoc.data() as Map<String, dynamic>)['userId'] as String;
+      final prefs = await getUserNotificationPreferences(userId);
+
+      if (prefs == null || prefs.hasAnyNotificationsEnabled) {
+        enabledUsers.add(userId);
+      }
+    }
+
+    return enabledUsers;
+  }
+
+  @override
+  Future<void> muteUserNotifications(
+    String userId, {
+    required Duration duration,
+  }) async {
+    final prefs = await getUserNotificationPreferences(userId) ??
+        NotificationPreferences.empty(userId);
+
+    final muteUntil = DateTime.now().add(duration);
+    await updateNotificationPreferences(
+      userId,
+      prefs.copyWith(muteUntil: muteUntil),
+    );
+  }
+
+  @override
+  Future<void> unmuteUserNotifications(String userId) async {
+    final prefs = await getUserNotificationPreferences(userId);
+    if (prefs != null) {
+      await updateNotificationPreferences(
+        userId,
+        prefs.copyWith(muteUntil: null),
+      );
+    }
+  }
 }
 
 /// Stub implementation for testing
@@ -927,6 +1566,9 @@ class StubCommunityService implements CommunityService {
   final Map<String, PostReply> _replies = {};
   final Map<String, ModerationRecord> _records = {};
   final Map<String, ChannelStats> _stats = {};
+  final Map<String, Mention> _mentions = {}; // Phase 11 Step 2
+  final Map<String, UserNotification> _notifications = {}; // Phase 11 Step 2
+  final Map<String, NotificationPreferences> _preferences = {}; // Phase 11 Step 2
 
   @override
   Future<String> createChannel({
@@ -1535,5 +2177,408 @@ class StubCommunityService implements CommunityService {
         .toList()
         .take(limit)
         .toList();
+  }
+
+  // ============ MENTION OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<List<Mention>> extractMentions(
+    String content, {
+    required String channelId,
+  }) async {
+    final regex = RegExp(r'@(\w+)');
+    final matches = regex.allMatches(content);
+    final mentions = <Mention>[];
+    final seenUsernames = <String>{};
+
+    for (final match in matches) {
+      final username = match.group(1)!.toLowerCase();
+      if (seenUsernames.add(username)) {
+        // Check if user is a channel member
+        final isMember = _members.values.any((m) =>
+            m.channelId == channelId &&
+            m.userId == username);
+        if (isMember) {
+          mentions.add(
+            Mention(
+              mentionId: 'mention_${_mentions.length}',
+              mentionedUserId: username,
+              mentionedUsername: username,
+              channelId: channelId,
+              authorId: '', // Will be set during create
+              mentionedAt: DateTime.now(),
+            ),
+          );
+        }
+      }
+    }
+    return mentions;
+  }
+
+  @override
+  Future<String> createMention({
+    required String mentionedUserId,
+    required String mentionedUsername,
+    required String channelId,
+    required String authorId,
+    String? authorName,
+    String? postId,
+    String? replyId,
+    String? notificationId,
+  }) async {
+    final mentionId = 'mention_${_mentions.length}';
+    _mentions[mentionId] = Mention(
+      mentionId: mentionId,
+      mentionedUserId: mentionedUserId,
+      mentionedUsername: mentionedUsername,
+      postId: postId,
+      replyId: replyId,
+      channelId: channelId,
+      authorId: authorId,
+      authorName: authorName,
+      mentionedAt: DateTime.now(),
+      notificationId: notificationId,
+    );
+    return mentionId;
+  }
+
+  @override
+  Future<List<Mention>> getPostMentions(String postId) async {
+    return _mentions.values
+        .where((m) => m.postId == postId && m.replyId == null)
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getReplyMentions(String replyId) async {
+    return _mentions.values
+        .where((m) => m.replyId == replyId)
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getUserMentions(
+    String userId, {
+    int limit = 50,
+  }) async {
+    return _mentions.values
+        .where((m) => m.mentionedUserId == userId)
+        .toList()
+        .reversed
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<Mention>> getChannelMentions(
+    String channelId, {
+    int limit = 50,
+  }) async {
+    return _mentions.values
+        .where((m) => m.channelId == channelId)
+        .toList()
+        .reversed
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<int> getMentionCount(String userId) async {
+    return _mentions.values
+        .where((m) => m.mentionedUserId == userId)
+        .length;
+  }
+
+  @override
+  Future<bool> validateMention(
+    String username, {
+    required String channelId,
+  }) async {
+    return _members.values.any((m) =>
+        m.channelId == channelId &&
+        m.userId == username &&
+        !m.isBanned);
+  }
+
+  @override
+  Future<List<ChannelMember>> getMentionableCommunityUsers(
+    String channelId,
+  ) async {
+    return _members.values
+        .where((m) => m.channelId == channelId && !m.isBanned)
+        .toList();
+  }
+
+  // ============ NOTIFICATION OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<List<UserNotification>> getUserNotifications(
+    String userId, {
+    bool unreadOnly = false,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    var results = _notifications.values
+        .where((n) => n.userId == userId)
+        .toList();
+
+    if (unreadOnly) {
+      results = results.where((n) => n.isUnread).toList();
+    }
+
+    results.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    return results
+        .skip(offset)
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<UserNotification?> getNotification(String notificationId) async {
+    return _notifications[notificationId];
+  }
+
+  @override
+  Future<String> createNotification({
+    required String userId,
+    required NotificationType type,
+    required String title,
+    required String description,
+    required String relatedId,
+    required String relatedType,
+    String? channelId,
+    String? actionUrl,
+    Map<String, dynamic>? metadata,
+  }) async {
+    // Check if user has notifications enabled
+    final prefs = await getUserNotificationPreferences(userId);
+    final prefsToUse = prefs ?? NotificationPreferences.empty(userId);
+
+    // Check if user is muted
+    if (prefsToUse.isCurrentlyMuted) {
+      return '';
+    }
+
+    // Check type-specific preferences
+    bool shouldCreate = false;
+    switch (type) {
+      case NotificationType.mention:
+        shouldCreate = prefsToUse.mentionNotifications;
+        break;
+      case NotificationType.reply:
+        shouldCreate = prefsToUse.replyNotifications;
+        break;
+      case NotificationType.likePost:
+      case NotificationType.likeReply:
+        shouldCreate = prefsToUse.likeNotifications;
+        break;
+      case NotificationType.moderation:
+        shouldCreate = prefsToUse.moderationNotifications;
+        break;
+      case NotificationType.channelEvent:
+      case NotificationType.channelAnnounce:
+        shouldCreate = prefsToUse.channelAnnouncements;
+        break;
+    }
+
+    if (!shouldCreate) {
+      return '';
+    }
+
+    // Prevent duplicates
+    final exists = _notifications.values.any((n) =>
+        n.userId == userId &&
+        n.type == type &&
+        n.relatedId == relatedId &&
+        n.isUnread);
+
+    if (exists) {
+      return '';
+    }
+
+    final notificationId = 'notif_${_notifications.length}';
+    _notifications[notificationId] = UserNotification(
+      notificationId: notificationId,
+      userId: userId,
+      type: type,
+      title: title,
+      description: description,
+      relatedId: relatedId,
+      relatedType: relatedType,
+      channelId: channelId,
+      isRead: false,
+      createdAt: DateTime.now(),
+      actionUrl: actionUrl,
+      metadata: metadata,
+    );
+
+    return notificationId;
+  }
+
+  @override
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final notification = _notifications[notificationId];
+    if (notification != null) {
+      _notifications[notificationId] = notification.copyWith(
+        isRead: true,
+        readAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    for (final entry in _notifications.entries) {
+      if (entry.value.userId == userId) {
+        _notifications[entry.key] = entry.value.copyWith(
+          isRead: true,
+          readAt: DateTime.now(),
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> markPostNotificationsAsRead({
+    required String userId,
+    required String postId,
+  }) async {
+    for (final entry in _notifications.entries) {
+      if (entry.value.userId == userId &&
+          entry.value.relatedId == postId) {
+        _notifications[entry.key] = entry.value.copyWith(
+          isRead: true,
+          readAt: DateTime.now(),
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> deleteNotification(String notificationId) async {
+    _notifications.remove(notificationId);
+  }
+
+  @override
+  Future<void> deleteUserNotifications(String userId) async {
+    _notifications.removeWhere((_, n) => n.userId == userId);
+  }
+
+  @override
+  Future<void> archiveOldNotifications({
+    int olderThanDays = 30,
+  }) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: olderThanDays));
+    final toRemove = _notifications.entries
+        .where((e) =>
+            e.value.isRead &&
+            e.value.createdAt.isBefore(cutoffDate))
+        .map((e) => e.key)
+        .toList();
+
+    for (final id in toRemove) {
+      _notifications.remove(id);
+    }
+  }
+
+  @override
+  Future<void> clearReadNotifications(String userId) async {
+    _notifications.removeWhere((_, n) =>
+        n.userId == userId && n.isRead);
+  }
+
+  @override
+  Future<Map<String, int>> getNotificationSummary(String userId) async {
+    final userNotifs = _notifications.values
+        .where((n) => n.userId == userId)
+        .toList();
+
+    return {
+      'mentions': userNotifs
+          .where((n) => n.type == NotificationType.mention)
+          .length,
+      'replies': userNotifs
+          .where((n) => n.type == NotificationType.reply)
+          .length,
+      'likes': userNotifs
+          .where((n) =>
+              n.type == NotificationType.likePost ||
+              n.type == NotificationType.likeReply)
+          .length,
+      'moderation': userNotifs
+          .where((n) => n.type == NotificationType.moderation)
+          .length,
+      'total': userNotifs.length,
+      'unread': userNotifs.where((n) => n.isUnread).length,
+    };
+  }
+
+  @override
+  Future<int> getUnreadCount(String userId) async {
+    return _notifications.values
+        .where((n) => n.userId == userId && n.isUnread)
+        .length;
+  }
+
+  // ============ NOTIFICATION PREFERENCE OPERATIONS (Phase 11 Step 2) ============
+
+  @override
+  Future<NotificationPreferences?> getUserNotificationPreferences(
+    String userId,
+  ) async {
+    return _preferences[userId];
+  }
+
+  @override
+  Future<void> updateNotificationPreferences(
+    String userId,
+    NotificationPreferences preferences,
+  ) async {
+    _preferences[userId] = preferences;
+  }
+
+  @override
+  Future<List<String>> getUsersWithNotificationsEnabled(
+    String channelId,
+  ) async {
+    final channelMembers = _members.values
+        .where((m) => m.channelId == channelId && !m.isBanned)
+        .map((m) => m.userId)
+        .toSet();
+
+    final enabledUsers = <String>[];
+    for (final userId in channelMembers) {
+      final prefs = await getUserNotificationPreferences(userId);
+      if (prefs == null || prefs.hasAnyNotificationsEnabled) {
+        enabledUsers.add(userId);
+      }
+    }
+
+    return enabledUsers;
+  }
+
+  @override
+  Future<void> muteUserNotifications(
+    String userId, {
+    required Duration duration,
+  }) async {
+    final prefs = await getUserNotificationPreferences(userId) ??
+        NotificationPreferences.empty(userId);
+
+    final muteUntil = DateTime.now().add(duration);
+    _preferences[userId] = prefs.copyWith(
+      muteUntil: muteUntil,
+    );
+  }
+
+  @override
+  Future<void> unmuteUserNotifications(String userId) async {
+    final prefs = await getUserNotificationPreferences(userId);
+    if (prefs != null) {
+      _preferences[userId] = prefs.copyWith(
+        muteUntil: null,
+      );
+    }
   }
 }

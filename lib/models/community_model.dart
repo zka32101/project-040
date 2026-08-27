@@ -9,6 +9,8 @@ enum PostStatus { published, draft, archived, pinned }
 
 enum ModerationAction { none, warning, mute, ban }
 
+enum NotificationType { mention, reply, likePost, likeReply, moderation, channelEvent, channelAnnounce }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -611,6 +613,281 @@ class ChannelStats {
       activeToday: activeToday ?? this.activeToday,
       activeThisWeek: activeThisWeek ?? this.activeThisWeek,
       updatedAt: DateTime.now(),
+    );
+  }
+}
+
+/// User mention model (Phase 11 Step 2)
+class Mention {
+  final String mentionId;
+  final String mentionedUserId;
+  final String mentionedUsername;
+  final String? postId;
+  final String? replyId;
+  final String channelId;
+  final String authorId;
+  final String? authorName;
+  final DateTime mentionedAt;
+  final String? notificationId; // Link to notification
+
+  Mention({
+    required this.mentionId,
+    required this.mentionedUserId,
+    required this.mentionedUsername,
+    this.postId,
+    this.replyId,
+    required this.channelId,
+    required this.authorId,
+    this.authorName,
+    required this.mentionedAt,
+    this.notificationId,
+  });
+
+  bool get isPostMention => postId != null && replyId == null;
+  bool get isReplyMention => replyId != null;
+
+  factory Mention.empty() {
+    return Mention(
+      mentionId: '',
+      mentionedUserId: '',
+      mentionedUsername: '',
+      channelId: '',
+      authorId: '',
+      mentionedAt: DateTime.now(),
+    );
+  }
+
+  factory Mention.fromMap(Map<String, dynamic> map) {
+    return Mention(
+      mentionId: map['mentionId'] as String? ?? '',
+      mentionedUserId: map['mentionedUserId'] as String? ?? '',
+      mentionedUsername: map['mentionedUsername'] as String? ?? '',
+      postId: map['postId'] as String?,
+      replyId: map['replyId'] as String?,
+      channelId: map['channelId'] as String? ?? '',
+      authorId: map['authorId'] as String? ?? '',
+      authorName: map['authorName'] as String?,
+      mentionedAt: (map['mentionedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      notificationId: map['notificationId'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'mentionId': mentionId,
+      'mentionedUserId': mentionedUserId,
+      'mentionedUsername': mentionedUsername,
+      'postId': postId,
+      'replyId': replyId,
+      'channelId': channelId,
+      'authorId': authorId,
+      'authorName': authorName,
+      'mentionedAt': Timestamp.fromDate(mentionedAt),
+      'notificationId': notificationId,
+    };
+  }
+
+  Mention copyWith({
+    String? notificationId,
+  }) {
+    return Mention(
+      mentionId: mentionId,
+      mentionedUserId: mentionedUserId,
+      mentionedUsername: mentionedUsername,
+      postId: postId,
+      replyId: replyId,
+      channelId: channelId,
+      authorId: authorId,
+      authorName: authorName,
+      mentionedAt: mentionedAt,
+      notificationId: notificationId ?? this.notificationId,
+    );
+  }
+}
+
+/// User notification model (Phase 11 Step 2)
+class UserNotification {
+  final String notificationId;
+  final String userId;
+  final NotificationType type;
+  final String title;
+  final String description;
+  final String relatedId; // postId, replyId, userId, etc.
+  final String relatedType; // 'post', 'reply', 'user', 'channel', 'mention'
+  final String? channelId;
+  final bool isRead;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  final String? actionUrl;
+  final Map<String, dynamic>? metadata;
+
+  UserNotification({
+    required this.notificationId,
+    required this.userId,
+    required this.type,
+    required this.title,
+    required this.description,
+    required this.relatedId,
+    required this.relatedType,
+    this.channelId,
+    this.isRead = false,
+    required this.createdAt,
+    this.readAt,
+    this.actionUrl,
+    this.metadata,
+  });
+
+  bool get isUnread => !isRead;
+  bool get isOld => DateTime.now().difference(createdAt).inDays > 30;
+
+  factory UserNotification.empty() {
+    return UserNotification(
+      notificationId: '',
+      userId: '',
+      type: NotificationType.mention,
+      title: '',
+      description: '',
+      relatedId: '',
+      relatedType: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory UserNotification.fromMap(Map<String, dynamic> map) {
+    return UserNotification(
+      notificationId: map['notificationId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      type: NotificationType.values[(map['type'] as int?) ?? NotificationType.mention.index],
+      title: map['title'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      relatedId: map['relatedId'] as String? ?? '',
+      relatedType: map['relatedType'] as String? ?? '',
+      channelId: map['channelId'] as String?,
+      isRead: map['isRead'] as bool? ?? false,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      readAt: (map['readAt'] as Timestamp?)?.toDate(),
+      actionUrl: map['actionUrl'] as String?,
+      metadata: map['metadata'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'notificationId': notificationId,
+      'userId': userId,
+      'type': type.index,
+      'title': title,
+      'description': description,
+      'relatedId': relatedId,
+      'relatedType': relatedType,
+      'channelId': channelId,
+      'isRead': isRead,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'readAt': readAt != null ? Timestamp.fromDate(readAt!) : null,
+      'actionUrl': actionUrl,
+      'metadata': metadata,
+    };
+  }
+
+  UserNotification copyWith({
+    bool? isRead,
+    DateTime? readAt,
+  }) {
+    return UserNotification(
+      notificationId: notificationId,
+      userId: userId,
+      type: type,
+      title: title,
+      description: description,
+      relatedId: relatedId,
+      relatedType: relatedType,
+      channelId: channelId,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt,
+      readAt: readAt ?? this.readAt,
+      actionUrl: actionUrl,
+      metadata: metadata,
+    );
+  }
+}
+
+/// User notification preferences model (Phase 11 Step 2)
+class NotificationPreferences {
+  final String userId;
+  final bool mentionNotifications;
+  final bool replyNotifications;
+  final bool likeNotifications;
+  final bool moderationNotifications;
+  final bool channelAnnouncements;
+  final DateTime updatedAt;
+  final DateTime? muteUntil;
+
+  NotificationPreferences({
+    required this.userId,
+    this.mentionNotifications = true,
+    this.replyNotifications = true,
+    this.likeNotifications = true,
+    this.moderationNotifications = true,
+    this.channelAnnouncements = true,
+    required this.updatedAt,
+    this.muteUntil,
+  });
+
+  bool get isCurrentlyMuted => muteUntil != null && DateTime.now().isBefore(muteUntil!);
+  bool get hasAnyNotificationsEnabled =>
+      mentionNotifications || replyNotifications || likeNotifications ||
+      moderationNotifications || channelAnnouncements;
+
+  factory NotificationPreferences.empty(String userId) {
+    return NotificationPreferences(
+      userId: userId,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory NotificationPreferences.fromMap(Map<String, dynamic> map) {
+    return NotificationPreferences(
+      userId: map['userId'] as String? ?? '',
+      mentionNotifications: map['mentionNotifications'] as bool? ?? true,
+      replyNotifications: map['replyNotifications'] as bool? ?? true,
+      likeNotifications: map['likeNotifications'] as bool? ?? true,
+      moderationNotifications: map['moderationNotifications'] as bool? ?? true,
+      channelAnnouncements: map['channelAnnouncements'] as bool? ?? true,
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      muteUntil: (map['muteUntil'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'mentionNotifications': mentionNotifications,
+      'replyNotifications': replyNotifications,
+      'likeNotifications': likeNotifications,
+      'moderationNotifications': moderationNotifications,
+      'channelAnnouncements': channelAnnouncements,
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'muteUntil': muteUntil != null ? Timestamp.fromDate(muteUntil!) : null,
+    };
+  }
+
+  NotificationPreferences copyWith({
+    bool? mentionNotifications,
+    bool? replyNotifications,
+    bool? likeNotifications,
+    bool? moderationNotifications,
+    bool? channelAnnouncements,
+    DateTime? muteUntil,
+  }) {
+    return NotificationPreferences(
+      userId: userId,
+      mentionNotifications: mentionNotifications ?? this.mentionNotifications,
+      replyNotifications: replyNotifications ?? this.replyNotifications,
+      likeNotifications: likeNotifications ?? this.likeNotifications,
+      moderationNotifications: moderationNotifications ?? this.moderationNotifications,
+      channelAnnouncements: channelAnnouncements ?? this.channelAnnouncements,
+      updatedAt: DateTime.now(),
+      muteUntil: muteUntil ?? this.muteUntil,
     );
   }
 }
