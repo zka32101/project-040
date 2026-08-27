@@ -1,0 +1,216 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ─────────────────────────────────────────────────────────────────────
+    // ユーティリティ関数
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// 認証ユーザーか確認
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /// リクエストユーザーIDを取得
+    function getUserId() {
+      return request.auth.uid;
+    }
+
+    /// ドキュメントの所有者を確認
+    function isOwner(uid) {
+      return isAuthenticated() && getUserId() == uid;
+    }
+
+    /// タイムスタンプが有効か確認
+    function hasValidTimestamp(timestamp) {
+      return timestamp is timestamp &&
+             timestamp <= now;
+    }
+
+    /// UIDが有効か確認（長さ28文字のFirebase Auth UID）
+    function isValidUid(uid) {
+      return uid is string && uid.size() == 28;
+    }
+
+    /// データが新しいか確認（更新時のコンフリクト検出）
+    function isNewer(newData, existingData) {
+      return newData.updatedAt > existingData.updatedAt;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // ユーザードキュメント
+    // ─────────────────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      /// ユーザーは自分のドキュメントのみ読み込み可能
+      allow read: if isOwner(uid);
+
+      /// ユーザーは自分のドキュメントのみ作成・更新可能
+      allow write: if isOwner(uid) &&
+                      isValidUid(uid) &&
+                      validateUserData(request.resource.data);
+
+      /// ユーザーは自分のドキュメントのみ削除可能（削除フロー検証用）
+      allow delete: if isOwner(uid);
+
+      // ─────────────────────────────────────────────────────────────────
+      // 回答ログサブコレクション
+      // ─────────────────────────────────────────────────────────────────
+
+      match /answerLogs/{document=**} {
+        /// ユーザーは自分の回答ログのみ読み込み可能
+        allow read: if isOwner(uid);
+
+        /// ユーザーは自分の回答ログのみ作成・更新可能
+        allow write: if isOwner(uid) &&
+                        validateAnswerLog(request.resource.data, uid);
+
+        /// ユーザーは自分の回答ログのみ削除可能
+        allow delete: if isOwner(uid);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // バイク解放進捗サブコレクション
+      // ─────────────────────────────────────────────────────────────────
+
+      match /bikeUnlockProgress/{document=**} {
+        /// ユーザーは自分のバイク解放進捗のみ読み込み可能
+        allow read: if isOwner(uid);
+
+        /// ユーザーは自分のバイク解放進捗のみ作成・更新可能
+        allow write: if isOwner(uid) &&
+                        validateBikeUnlockProgress(request.resource.data, uid);
+
+        /// ユーザーは自分のバイク解放進捗のみ削除可能
+        allow delete: if isOwner(uid);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // ひっかけ道場セッションサブコレクション
+      // ─────────────────────────────────────────────────────────────────
+
+      match /trapDojoSessions/{document=**} {
+        /// ユーザーは自分のひっかけ道場セッションのみ読み込み可能
+        allow read: if isOwner(uid);
+
+        /// ユーザーは自分のひっかけ道場セッションのみ作成・更新可能
+        allow write: if isOwner(uid) &&
+                        validateTrapDojoSession(request.resource.data, uid);
+
+        /// ユーザーは自分のひっかけ道場セッションのみ削除可能
+        allow delete: if isOwner(uid);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // 合格率予測スコアサブコレクション
+      // ─────────────────────────────────────────────────────────────────
+
+      match /predictionScores/{document=**} {
+        /// ユーザーは自分の合格率予測スコアのみ読み込み可能
+        allow read: if isOwner(uid);
+
+        /// ユーザーは自分の合格率予測スコアのみ作成・更新可能
+        allow write: if isOwner(uid) &&
+                        validatePredictionScore(request.resource.data, uid);
+
+        /// ユーザーは自分の合格率予測スコアのみ削除可能
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 検証関数
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// ユーザードキュメント検証
+    function validateUserData(data) {
+      return data.keys().hasAll(['uid', 'createdAt', 'updatedAt']) &&
+             isValidUid(data.uid) &&
+             hasValidTimestamp(data.createdAt) &&
+             hasValidTimestamp(data.updatedAt) &&
+             data.uid == getUserId();  // uid はリクエストユーザーIDと一致
+    }
+
+    /// 回答ログ検証
+    function validateAnswerLog(data, uid) {
+      return data.keys().hasAll([
+        'id',
+        'uid',
+        'questionId',
+        'selectedAnswer',
+        'isCorrect',
+        'answeredAt'
+      ]) &&
+             data.uid == uid &&
+             data.id is string &&
+             data.questionId is string &&
+             data.selectedAnswer is number &&
+             data.isCorrect is bool &&
+             hasValidTimestamp(data.answeredAt);
+    }
+
+    /// バイク解放進捗検証
+    function validateBikeUnlockProgress(data, uid) {
+      return data.keys().hasAll([
+        'uid',
+        'bikeCategory',
+        'unlockedAt',
+        'unlockedPercentage'
+      ]) &&
+             data.uid == uid &&
+             data.bikeCategory is string &&
+             (data.bikeCategory in [
+               'gentsuki',
+               'futsuu_nirin',
+               'ogata_nirin',
+               '400cc',
+               'big_bike'
+             ]) &&
+             hasValidTimestamp(data.unlockedAt) &&
+             data.unlockedPercentage is number &&
+             data.unlockedPercentage >= 0 &&
+             data.unlockedPercentage <= 100;
+    }
+
+    /// ひっかけ道場セッション検証
+    function validateTrapDojoSession(data, uid) {
+      return data.keys().hasAll([
+        'id',
+        'uid',
+        'startedAt',
+        'completedAt',
+        'score',
+        'totalQuestions'
+      ]) &&
+             data.uid == uid &&
+             data.id is string &&
+             hasValidTimestamp(data.startedAt) &&
+             (data.completedAt == null || hasValidTimestamp(data.completedAt)) &&
+             data.score is number &&
+             data.totalQuestions is number &&
+             data.score >= 0 &&
+             data.totalQuestions > 0;
+    }
+
+    /// 合格率予測スコア検証
+    function validatePredictionScore(data, uid) {
+      return data.keys().hasAll([
+        'uid',
+        'score',
+        'calculatedAt'
+      ]) &&
+             data.uid == uid &&
+             data.score is number &&
+             data.score >= 0 &&
+             data.score <= 100 &&
+             hasValidTimestamp(data.calculatedAt);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // デフォルトルール（すべての読み込み・書き込みを拒否）
+    // ─────────────────────────────────────────────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
