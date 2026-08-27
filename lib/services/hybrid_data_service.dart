@@ -7,19 +7,25 @@ import '../models/user.dart';
 import '../models/user_answer_log.dart';
 import 'firestore_sync_service.dart';
 import 'local_data_service.dart';
+import 'conflict_resolution_service.dart';
 
 /// ハイブリッドデータサービス：Firestore 優先でデータを読み込む。
 /// Firestore が利用不可またはエラー時はローカルにフォールバック。
+/// コンフリクト検出時は Last-Write-Wins 戦略を適用。
 /// 書き込みは LocalDataService で行う（Firestore 同期は別途）。
 class HybridDataService extends DataService {
   HybridDataService({
     required LocalDataService localDataService,
     required FirestoreSyncService firestoreSyncService,
+    ConflictResolutionService? conflictResolutionService,
   })  : _localDataService = localDataService,
-        _firestoreSyncService = firestoreSyncService;
+        _firestoreSyncService = firestoreSyncService,
+        _conflictResolutionService =
+            conflictResolutionService ?? DefaultConflictResolutionService();
 
   final LocalDataService _localDataService;
   final FirestoreSyncService _firestoreSyncService;
+  final ConflictResolutionService _conflictResolutionService;
 
   /// Firestore から読み込む（エラー時はローカルにフォールバック）
   Future<T> _readFromFirestoreOrLocal<T>(
@@ -51,11 +57,68 @@ class HybridDataService extends DataService {
 
   @override
   Future<AppUser> loadUser(String uid) async {
-    return _readFromFirestoreOrLocal(
-      () => _firestoreSyncService.loadUser(uid),
-      () => _localDataService.loadUser(uid),
-      'user',
-    );
+    AppUser? remoteUser;
+    AppUser? localUser;
+
+    // Firestore からの読み込みを試みる
+    try {
+      remoteUser = await _firestoreSyncService.loadUser(uid);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to load user from Firestore: $e');
+      }
+    }
+
+    // ローカルから読み込み
+    try {
+      localUser = await _localDataService.loadUser(uid);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to load user from local: $e');
+      }
+    }
+
+    // 両方のデータがある場合はコンフリクト解決
+    if (remoteUser != null && localUser != null) {
+      final winner = _conflictResolutionService.resolveConflict(
+        local: localUser,
+        remote: remoteUser,
+        localTimestamp: localUser.updatedAt,
+        remoteTimestamp: remoteUser.updatedAt,
+      );
+
+      if (winner == 'remote') {
+        if (kDebugMode) {
+          debugPrint('Loaded user from Firestore (remote is newer)');
+        }
+        return remoteUser;
+      } else {
+        if (kDebugMode) {
+          debugPrint('Loaded user from local (local is newer or equal)');
+        }
+        return localUser;
+      }
+    }
+
+    // どちらか一方のみ存在
+    if (remoteUser != null) {
+      if (kDebugMode) {
+        debugPrint('Loaded user from Firestore');
+      }
+      return remoteUser;
+    }
+
+    if (localUser != null) {
+      if (kDebugMode) {
+        debugPrint('Loaded user from local');
+      }
+      return localUser;
+    }
+
+    // どちらも存在しない場合は新規作成
+    final newUser = AppUser(uid: uid);
+    await _localDataService.saveUser(newUser);
+    return newUser;
   }
 
   @override

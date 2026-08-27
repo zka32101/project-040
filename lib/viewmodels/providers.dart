@@ -33,6 +33,7 @@ import '../services/sync_queue_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/conflict_resolution_service.dart';
 import '../services/user_deletion_service.dart';
+import '../services/network_queue_processor.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -92,6 +93,20 @@ final conflictResolutionServiceProvider =
 final userDeletionServiceProvider =
     Provider<UserDeletionService>((ref) => FirebaseUserDeletionService());
 
+final networkQueueProcessorProvider =
+    FutureProvider<NetworkQueueProcessor>((ref) async {
+  final queueService = await ref.watch(syncQueueServiceProvider.future);
+  final connectivityService = await ref.watch(connectivityServiceProvider.future);
+  final processor = DefaultNetworkQueueProcessor(
+    syncQueueService: queueService,
+    connectivityService: connectivityService,
+    firestoreSyncService: ref.read(fireStoreSyncServiceProvider),
+    localDataService: LocalDataService(),
+  );
+  await processor.start();
+  return processor;
+});
+
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------
@@ -135,16 +150,25 @@ class UserController extends AsyncNotifier<AppUser> {
     return ref.read(dataServiceProvider).loadUser(uid);
   }
 
-  /// ユーザー情報を保存（ローカル＆Firestore 両方に同期）
+  /// ユーザー情報を保存（ローカル＋キューイング）
   Future<void> _saveUserToLocalAndFirestore(AppUser user) async {
     // ローカル保存
     await ref.read(dataServiceProvider).saveUser(user);
 
-    // Firestore 同期（エラーが出てもアプリは続行）
+    // Firestore 同期をキューに登録
     try {
-      await ref.read(fireStoreSyncServiceProvider).saveUser(user);
+      final queueService = await ref.read(syncQueueServiceProvider.future);
+      final operation = QueuedOperation(
+        id: 'user_${user.uid}_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'saveUser',
+        data: user.toJson(),
+        queuedAt: DateTime.now(),
+        lastAttemptAt: DateTime.now(),
+        retryCount: 0,
+      );
+      await queueService.enqueue(operation);
     } catch (e) {
-      debugPrint('Failed to sync user to Firestore: $e');
+      debugPrint('Failed to queue user save operation: $e');
     }
   }
 
@@ -332,19 +356,31 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
     state = state.copyWith(questions: quota, loading: false);
   }
 
-  /// 回答ログをローカル＆Firestore 両方に保存
+  /// 回答ログをローカル＆キューに保存
   Future<void> _appendAnswerLogToLocalAndFirestore(UserAnswerLog log) async {
     final uid = ref.read(currentUidProvider);
 
     // ローカル保存
     await ref.read(dataServiceProvider).appendAnswerLog(log);
 
-    // 全ログを取得して Firestore に同期（エラーが出てもアプリは続行）
+    // 全ログを取得してキューに登録（エラーが出てもアプリは続行）
     try {
       final allLogs = await ref.read(dataServiceProvider).loadAnswerLogs(uid);
-      await ref.read(fireStoreSyncServiceProvider).saveAnswerLogs(uid, allLogs);
+      final queueService = await ref.read(syncQueueServiceProvider.future);
+      final operation = QueuedOperation(
+        id: 'answerLogs_${uid}_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'saveAnswerLogs',
+        data: {
+          'uid': uid,
+          'logs': allLogs.map((l) => l.toJson()).toList(),
+        },
+        queuedAt: DateTime.now(),
+        lastAttemptAt: DateTime.now(),
+        retryCount: 0,
+      );
+      await queueService.enqueue(operation);
     } catch (e) {
-      debugPrint('Failed to sync answer logs to Firestore: $e');
+      debugPrint('Failed to queue answer logs operation: $e');
     }
   }
 
@@ -403,12 +439,26 @@ class DailyQuotaController extends FamilyNotifier<DailyQuotaState, String> {
           now: DateTime.now(),
         );
 
-    // ローカル＆Firestore に保存
+    // ローカル＆キューに保存
     await ref.read(dataServiceProvider).savePredictionScore(score);
     try {
-      await ref.read(fireStoreSyncServiceProvider).savePredictionScore(uid, score);
+      final queueService = await ref.read(syncQueueServiceProvider.future);
+      final operation = QueuedOperation(
+        id: 'predictionScore_${uid}_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'savePredictionScore',
+        data: {
+          'uid': uid,
+          'score': score.score,
+          'calculatedAt': score.calculatedAt.toIso8601String(),
+          'breakdown': score.breakdown,
+        },
+        queuedAt: DateTime.now(),
+        lastAttemptAt: DateTime.now(),
+        retryCount: 0,
+      );
+      await queueService.enqueue(operation);
     } catch (e) {
-      debugPrint('Failed to sync prediction score to Firestore: $e');
+      debugPrint('Failed to queue prediction score operation: $e');
     }
 
     state = state.copyWith(ahaMomentShown: true, predictionScore: score);
@@ -583,11 +633,23 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
         );
         await ref.read(dataServiceProvider).saveBikeUnlockProgress(unlocked);
 
-        // Firestore に同期（エラーが出てもアプリは続行）
+        // キューに登録（エラーが出てもアプリは続行）
         try {
-          await ref.read(fireStoreSyncServiceProvider).saveBikeProgress(uid, updated + [unlocked]);
+          final queueService = await ref.read(syncQueueServiceProvider.future);
+          final operation = QueuedOperation(
+            id: 'bikeProgress_${uid}_${DateTime.now().millisecondsSinceEpoch}',
+            type: 'saveBikeProgress',
+            data: {
+              'uid': uid,
+              'progress': (updated + [unlocked]).map((p) => p.toJson()).toList(),
+            },
+            queuedAt: DateTime.now(),
+            lastAttemptAt: DateTime.now(),
+            retryCount: 0,
+          );
+          await queueService.enqueue(operation);
         } catch (e) {
-          debugPrint('Failed to sync bike progress to Firestore: $e');
+          debugPrint('Failed to queue bike progress operation: $e');
         }
 
         await ref.read(analyticsServiceProvider).logEvent(
@@ -609,11 +671,23 @@ class BikeUnlockController extends AsyncNotifier<List<BikeUnlockProgress>> {
     }
     state = AsyncData(updated);
 
-    // 全バイク進捗を Firestore に同期
+    // 全バイク進捗をキューに登録
     try {
-      await ref.read(fireStoreSyncServiceProvider).saveBikeProgress(uid, updated);
+      final queueService = await ref.read(syncQueueServiceProvider.future);
+      final operation = QueuedOperation(
+        id: 'bikeProgressFull_${uid}_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'saveBikeProgress',
+        data: {
+          'uid': uid,
+          'progress': updated.map((p) => p.toJson()).toList(),
+        },
+        queuedAt: DateTime.now(),
+        lastAttemptAt: DateTime.now(),
+        retryCount: 0,
+      );
+      await queueService.enqueue(operation);
     } catch (e) {
-      debugPrint('Failed to sync bike progress to Firestore: $e');
+      debugPrint('Failed to queue bike progress full sync: $e');
     }
   }
 }
@@ -656,11 +730,23 @@ class TrapDojoController extends AsyncNotifier<List<TrapDojoSession>> {
       updatedSession,
     ];
 
-    // Firestore に同期（エラーが出てもアプリは続行）
+    // キューに登録（エラーが出てもアプリは続行）
     try {
-      await ref.read(fireStoreSyncServiceProvider).saveTrapDojoSessions(uid, updatedList);
+      final queueService = await ref.read(syncQueueServiceProvider.future);
+      final operation = QueuedOperation(
+        id: 'trapDojo_${uid}_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'saveTrapDojoSessions',
+        data: {
+          'uid': uid,
+          'sessions': updatedList.map((s) => s.toJson()).toList(),
+        },
+        queuedAt: DateTime.now(),
+        lastAttemptAt: DateTime.now(),
+        retryCount: 0,
+      );
+      await queueService.enqueue(operation);
     } catch (e) {
-      debugPrint('Failed to sync trap dojo sessions to Firestore: $e');
+      debugPrint('Failed to queue trap dojo sessions operation: $e');
     }
 
     if (isCorrect) {
