@@ -1972,4 +1972,523 @@ void main() {
       expect(analytics, isNotNull);
     });
   });
+
+  group('Phase 11 Step 4: Channel Access Control & Invitations', () {
+    group('Invitations', () {
+      test('Create invitation to channel', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+
+        expect(invitationId, isNotEmpty);
+
+        final invitation = await service.getInvitation(invitationId);
+        expect(invitation, isNotNull);
+        expect(invitation?.invitedUserId, 'user2');
+        expect(invitation?.status, 'pending');
+      });
+
+      test('Invite multiple users at once', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationIds = await service.inviteMultipleUsers(
+          channelId: channelId,
+          invitedUserIds: ['user2', 'user3', 'user4'],
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+
+        expect(invitationIds.length, 3);
+
+        final invitations = await service.getChannelInvitations(channelId);
+        expect(invitations.length, 3);
+      });
+
+      test('Get user invitations', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+
+        final invitations = await service.getUserInvitations('user2');
+        expect(invitations, isNotEmpty);
+        expect(invitations.first.invitedUserId, 'user2');
+      });
+
+      test('Accept invitation', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+
+        await service.acceptInvitation(invitationId, 'user2');
+
+        final invitation = await service.getInvitation(invitationId);
+        expect(invitation?.status, 'accepted');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, true);
+      });
+
+      test('Decline invitation', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+
+        await service.declineInvitation(invitationId, 'user2');
+
+        final invitation = await service.getInvitation(invitationId);
+        expect(invitation?.status, 'declined');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, false);
+      });
+    });
+
+    group('Access Requests', () {
+      test('Create access request', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.private,
+        );
+
+        final requestId = await service.createAccessRequest(
+          channelId: channelId,
+          requestedByUserId: 'user2',
+          requesterName: 'User 2',
+          reason: 'I want to join',
+        );
+
+        expect(requestId, isNotEmpty);
+
+        final request = await service.getAccessRequest(requestId);
+        expect(request, isNotNull);
+        expect(request?.status, 'pending');
+      });
+
+      test('Get channel access requests', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.private,
+        );
+
+        await service.createAccessRequest(
+          channelId: channelId,
+          requestedByUserId: 'user2',
+          requesterName: 'User 2',
+        );
+
+        await service.createAccessRequest(
+          channelId: channelId,
+          requestedByUserId: 'user3',
+          requesterName: 'User 3',
+        );
+
+        final requests = await service.getChannelAccessRequests(channelId);
+        expect(requests.length, 2);
+      });
+
+      test('Approve access request', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.private,
+        );
+
+        final requestId = await service.createAccessRequest(
+          channelId: channelId,
+          requestedByUserId: 'user2',
+          requesterName: 'User 2',
+        );
+
+        await service.approveAccessRequest(
+          requestId,
+          'user1',
+          role: 'member',
+        );
+
+        final request = await service.getAccessRequest(requestId);
+        expect(request?.status, 'approved');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, true);
+      });
+
+      test('Reject access request', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.private,
+        );
+
+        final requestId = await service.createAccessRequest(
+          channelId: channelId,
+          requestedByUserId: 'user2',
+          requesterName: 'User 2',
+        );
+
+        await service.rejectAccessRequest(
+          requestId,
+          'user1',
+          reason: 'Does not meet requirements',
+        );
+
+        final request = await service.getAccessRequest(requestId);
+        expect(request?.status, 'rejected');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, false);
+      });
+    });
+
+    group('Member Management', () {
+      test('Get channel members', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        // Create and accept invitation
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        final members = await service.getChannelMembers(channelId);
+        expect(members.length, greaterThan(0));
+      });
+
+      test('Update member role', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        await service.updateMemberRole(
+          channelId,
+          'user2',
+          'moderator',
+          'user1',
+        );
+
+        final role = await service.getUserRoleInChannel(channelId, 'user2');
+        expect(role, 'moderator');
+      });
+
+      test('Remove member from channel', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        await service.removeMember(channelId, 'user2', 'user1');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, false);
+      });
+
+      test('Leave channel', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        await service.leaveChannel(channelId, 'user2');
+
+        final isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, false);
+      });
+
+      test('Get user channels', () async {
+        final channelId1 = await service.createChannel(
+          name: 'Channel 1',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId1,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        final channels = await service.getUserChannels('user2');
+        expect(channels, isNotEmpty);
+      });
+    });
+
+    group('Permissions', () {
+      test('Check if user is channel member', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        var isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, false);
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        isMember = await service.isChannelMember(channelId, 'user2');
+        expect(isMember, true);
+      });
+
+      test('Get user role in channel', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        var role = await service.getUserRoleInChannel(channelId, 'user2');
+        expect(role, isNull);
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        role = await service.getUserRoleInChannel(channelId, 'user2');
+        expect(role, 'member');
+      });
+
+      test('Check invite permission', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        var canInvite = await service.canUserInvite(channelId, 'user2');
+        expect(canInvite, false);
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'moderator',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        canInvite = await service.canUserInvite(channelId, 'user2');
+        expect(canInvite, true);
+      });
+
+      test('Check moderation permission', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        var canModerate = await service.canUserModerate(channelId, 'user2');
+        expect(canModerate, false);
+
+        await service.updateMemberRole(
+          channelId,
+          'user2',
+          'moderator',
+          'user1',
+        );
+
+        canModerate = await service.canUserModerate(channelId, 'user2');
+        expect(canModerate, true);
+      });
+
+      test('Check specific permissions', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'guest',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        var canPost = await service.hasPermission(
+          channelId,
+          'user2',
+          'post_content',
+        );
+        expect(canPost, false);
+
+        var canInvite = await service.hasPermission(
+          channelId,
+          'user2',
+          'invite',
+        );
+        expect(canInvite, false);
+      });
+    });
+
+    group('Access History', () {
+      test('Get channel access history', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        final history = await service.getChannelAccessHistory(channelId);
+        expect(history, isNotEmpty);
+      });
+
+      test('Get user access history', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        final history = await service.getUserAccessHistory('user2');
+        expect(history, isNotEmpty);
+      });
+
+      test('History tracks role changes', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final invitationId = await service.createInvitation(
+          channelId: channelId,
+          invitedUserId: 'user2',
+          invitedByUserId: 'user1',
+          inviterName: 'User 1',
+          role: 'member',
+        );
+        await service.acceptInvitation(invitationId, 'user2');
+
+        await service.updateMemberRole(
+          channelId,
+          'user2',
+          'moderator',
+          'user1',
+        );
+
+        final history = await service.getChannelAccessHistory(channelId);
+        expect(history.any((h) => h.action == 'promoted'), true);
+      });
+    });
+  });
 }

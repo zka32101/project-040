@@ -438,6 +438,143 @@ abstract class CommunityService {
   );
 
   Future<void> updateEngagementAnalytics(String postId);
+
+  // Phase 11 Step 4: Channel Access Control & Invitations
+
+  // Invitation Management
+  Future<String> createInvitation({
+    required String channelId,
+    required String invitedUserId,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+    String? message,
+  });
+
+  Future<List<String>> inviteMultipleUsers({
+    required String channelId,
+    required List<String> invitedUserIds,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+  });
+
+  Future<ChannelInvitation?> getInvitation(String invitationId);
+
+  Future<List<ChannelInvitation>> getUserInvitations(
+    String userId, {
+    bool includeExpired = false,
+    int limit = 20,
+  });
+
+  Future<List<ChannelInvitation>> getChannelInvitations(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  });
+
+  Future<void> acceptInvitation(String invitationId, String userId);
+
+  Future<void> declineInvitation(String invitationId, String userId);
+
+  Future<void> cancelInvitation(String invitationId, String cancelledByUserId);
+
+  // Access Request Management
+  Future<String> createAccessRequest({
+    required String channelId,
+    required String requestedByUserId,
+    required String requesterName,
+    String? reason,
+  });
+
+  Future<AccessRequest?> getAccessRequest(String requestId);
+
+  Future<List<AccessRequest>> getChannelAccessRequests(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  });
+
+  Future<List<AccessRequest>> getUserAccessRequests(
+    String userId, {
+    String? status,
+    int limit = 10,
+  });
+
+  Future<void> approveAccessRequest(
+    String requestId,
+    String approvedByUserId, {
+    String role = 'member',
+  });
+
+  Future<void> rejectAccessRequest(
+    String requestId,
+    String rejectedByUserId, {
+    String? reason,
+  });
+
+  Future<void> cancelAccessRequest(String requestId, String cancelledByUserId);
+
+  // Member Management
+  Future<List<ChannelMember>> getChannelMembers(
+    String channelId, {
+    String? role,
+    int limit = 50,
+  });
+
+  Future<ChannelMember?> getChannelMember(String channelId, String userId);
+
+  Future<void> updateMemberRole(
+    String channelId,
+    String userId,
+    String newRole,
+    String updatedByUserId,
+  );
+
+  Future<void> removeMember(
+    String channelId,
+    String userId,
+    String removedByUserId,
+  );
+
+  Future<void> leaveChannel(String channelId, String userId);
+
+  Future<bool> isChannelMember(String channelId, String userId);
+
+  Future<String?> getUserRoleInChannel(String channelId, String userId);
+
+  Future<List<CommunityChannel>> getUserChannels(
+    String userId, {
+    String? role,
+    int limit = 50,
+  });
+
+  // Permission Management
+  Future<bool> canUserInvite(String channelId, String userId);
+
+  Future<bool> canUserModerate(String channelId, String userId);
+
+  Future<bool> canUserRemoveMembers(String channelId, String userId);
+
+  Future<bool> hasPermission(
+    String channelId,
+    String userId,
+    String permission,
+  );
+
+  // Access History
+  Future<List<AccessHistoryEntry>> getChannelAccessHistory(
+    String channelId, {
+    String? actionType,
+    int limit = 50,
+  });
+
+  Future<List<AccessHistoryEntry>> getUserAccessHistory(
+    String userId, {
+    int limit = 30,
+  });
+
+  Future<AccessHistoryEntry?> getAccessHistoryEntry(String historyId);
 }
 
 /// Firebase implementation of community service
@@ -2190,6 +2327,591 @@ class FirebaseCommunityService implements CommunityService {
       'lastUpdatedAt': Timestamp.now(),
     });
   }
+
+  // Phase 11 Step 4: Channel Access Control & Invitations
+
+  @override
+  Future<String> createInvitation({
+    required String channelId,
+    required String invitedUserId,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+    String? message,
+  }) async {
+    final invitationId = _db.collection('channels').doc().id;
+    final invitationCode = _generateInvitationCode();
+
+    await _db.collection('channels').doc(channelId).collection('invitations').doc(invitationId).set({
+      'invitationId': invitationId,
+      'channelId': channelId,
+      'invitedUserId': invitedUserId,
+      'invitedByUserId': invitedByUserId,
+      'inviterName': inviterName,
+      'role': role,
+      'message': message,
+      'status': 'pending',
+      'createdAt': Timestamp.now(),
+      'expiresAt': Timestamp.fromDate(DateTime.now().add(Duration(days: 14))),
+      'invitationCode': invitationCode,
+    });
+
+    return invitationId;
+  }
+
+  @override
+  Future<List<String>> inviteMultipleUsers({
+    required String channelId,
+    required List<String> invitedUserIds,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+  }) async {
+    final invitationIds = <String>[];
+
+    for (final userId in invitedUserIds) {
+      final id = await createInvitation(
+        channelId: channelId,
+        invitedUserId: userId,
+        invitedByUserId: invitedByUserId,
+        inviterName: inviterName,
+        role: role,
+      );
+      invitationIds.add(id);
+    }
+
+    return invitationIds;
+  }
+
+  @override
+  Future<ChannelInvitation?> getInvitation(String invitationId) async {
+    // Note: In real implementation, would need to search across channels
+    // For now, returning null as this is a simplified version
+    return null;
+  }
+
+  @override
+  Future<List<ChannelInvitation>> getUserInvitations(
+    String userId, {
+    bool includeExpired = false,
+    int limit = 20,
+  }) async {
+    final snapshot = await _db
+        .collectionGroup('invitations')
+        .where('invitedUserId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ChannelInvitation.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<ChannelInvitation>> getChannelInvitations(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  }) async {
+    var query = _db.collection('channels').doc(channelId).collection('invitations').limit(limit);
+
+    if (status != null) {
+      query = query.where('status', isEqualTo: status) as Query;
+    }
+
+    final snapshot = await query.get();
+
+    return snapshot.docs
+        .map((doc) => ChannelInvitation.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> acceptInvitation(String invitationId, String userId) async {
+    // Find and update the invitation
+    final snapshot = await _db
+        .collectionGroup('invitations')
+        .where('invitationId', isEqualTo: invitationId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      final invitation = ChannelInvitation.fromMap(doc.data() as Map<String, dynamic>);
+
+      // Add user as member
+      await addChannelMember(
+        invitation.channelId,
+        userId,
+        invitation.inviterName,
+        invitation.role,
+      );
+
+      // Update invitation status
+      await doc.reference.update({
+        'status': 'accepted',
+        'respondedAt': Timestamp.now(),
+      });
+
+      // Add to access history
+      await _addAccessHistory(
+        invitation.channelId,
+        userId,
+        'system',
+        'joined',
+        invitation.role,
+        'Accepted invitation',
+      );
+    }
+  }
+
+  @override
+  Future<void> declineInvitation(String invitationId, String userId) async {
+    final snapshot = await _db
+        .collectionGroup('invitations')
+        .where('invitationId', isEqualTo: invitationId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.update({
+        'status': 'declined',
+        'respondedAt': Timestamp.now(),
+      });
+    }
+  }
+
+  @override
+  Future<void> cancelInvitation(String invitationId, String cancelledByUserId) async {
+    final snapshot = await _db
+        .collectionGroup('invitations')
+        .where('invitationId', isEqualTo: invitationId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.update({
+        'status': 'cancelled',
+      });
+    }
+  }
+
+  @override
+  Future<String> createAccessRequest({
+    required String channelId,
+    required String requestedByUserId,
+    required String requesterName,
+    String? reason,
+  }) async {
+    final requestId = _db.collection('channels').doc().id;
+
+    await _db.collection('channels').doc(channelId).collection('accessRequests').doc(requestId).set({
+      'requestId': requestId,
+      'channelId': channelId,
+      'requestedByUserId': requestedByUserId,
+      'requesterName': requesterName,
+      'reason': reason,
+      'status': 'pending',
+      'createdAt': Timestamp.now(),
+    });
+
+    return requestId;
+  }
+
+  @override
+  Future<AccessRequest?> getAccessRequest(String requestId) async {
+    // Simplified: would need to search across channels
+    return null;
+  }
+
+  @override
+  Future<List<AccessRequest>> getChannelAccessRequests(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  }) async {
+    var query = _db.collection('channels').doc(channelId).collection('accessRequests').limit(limit);
+
+    if (status != null) {
+      query = query.where('status', isEqualTo: status) as Query;
+    }
+
+    final snapshot = await query.get();
+
+    return snapshot.docs
+        .map((doc) => AccessRequest.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<AccessRequest>> getUserAccessRequests(
+    String userId, {
+    String? status,
+    int limit = 10,
+  }) async {
+    final snapshot = await _db
+        .collectionGroup('accessRequests')
+        .where('requestedByUserId', isEqualTo: userId)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => AccessRequest.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> approveAccessRequest(
+    String requestId,
+    String approvedByUserId, {
+    String role = 'member',
+  }) async {
+    // Find request
+    final snapshot = await _db
+        .collectionGroup('accessRequests')
+        .where('requestId', isEqualTo: requestId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      final request = AccessRequest.fromMap(doc.data() as Map<String, dynamic>);
+
+      // Add user as member
+      await addChannelMember(
+        request.channelId,
+        request.requestedByUserId,
+        request.requesterName,
+        role,
+      );
+
+      // Update request
+      await doc.reference.update({
+        'status': 'approved',
+        'respondedAt': Timestamp.now(),
+        'respondedByUserId': approvedByUserId,
+        'approvedRole': role,
+      });
+
+      // Add to history
+      await _addAccessHistory(
+        request.channelId,
+        request.requestedByUserId,
+        approvedByUserId,
+        'joined',
+        role,
+        'Access request approved',
+      );
+    }
+  }
+
+  @override
+  Future<void> rejectAccessRequest(
+    String requestId,
+    String rejectedByUserId, {
+    String? reason,
+  }) async {
+    final snapshot = await _db
+        .collectionGroup('accessRequests')
+        .where('requestId', isEqualTo: requestId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.update({
+        'status': 'rejected',
+        'respondedAt': Timestamp.now(),
+        'respondedByUserId': rejectedByUserId,
+        'rejectionReason': reason,
+      });
+    }
+  }
+
+  @override
+  Future<void> cancelAccessRequest(String requestId, String cancelledByUserId) async {
+    final snapshot = await _db
+        .collectionGroup('accessRequests')
+        .where('requestId', isEqualTo: requestId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.update({
+        'status': 'cancelled',
+      });
+    }
+  }
+
+  Future<void> addChannelMember(
+    String channelId,
+    String userId,
+    String userName,
+    String role,
+  ) async {
+    final memberId = _db.collection('channels').doc().id;
+
+    await _db.collection('channels').doc(channelId).collection('members').doc(memberId).set({
+      'memberId': memberId,
+      'userId': userId,
+      'userName': userName,
+      'role': role,
+      'joinedAt': Timestamp.now(),
+      'status': 'active',
+    });
+  }
+
+  @override
+  Future<List<ChannelMember>> getChannelMembers(
+    String channelId, {
+    String? role,
+    int limit = 50,
+  }) async {
+    var query = _db.collection('channels').doc(channelId).collection('members').limit(limit);
+
+    if (role != null) {
+      query = query.where('role', isEqualTo: role) as Query;
+    }
+
+    final snapshot = await query.get();
+
+    return snapshot.docs
+        .map((doc) => ChannelMember.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<ChannelMember?> getChannelMember(String channelId, String userId) async {
+    final snapshot = await _db
+        .collection('channels')
+        .doc(channelId)
+        .collection('members')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    return ChannelMember.fromMap(snapshot.docs.first.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> updateMemberRole(
+    String channelId,
+    String userId,
+    String newRole,
+    String updatedByUserId,
+  ) async {
+    final snapshot = await _db
+        .collection('channels')
+        .doc(channelId)
+        .collection('members')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      final oldRole = (doc.data() as Map<String, dynamic>)['role'] as String?;
+
+      await doc.reference.update({'role': newRole});
+
+      // Add to history
+      await _addAccessHistory(
+        channelId,
+        userId,
+        updatedByUserId,
+        'promoted',
+        newRole,
+        'Role updated',
+        oldRole: oldRole,
+      );
+    }
+  }
+
+  @override
+  Future<void> removeMember(
+    String channelId,
+    String userId,
+    String removedByUserId,
+  ) async {
+    final snapshot = await _db
+        .collection('channels')
+        .doc(channelId)
+        .collection('members')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      await doc.reference.delete();
+
+      // Add to history
+      await _addAccessHistory(
+        channelId,
+        userId,
+        removedByUserId,
+        'removed',
+      );
+    }
+  }
+
+  @override
+  Future<void> leaveChannel(String channelId, String userId) async {
+    final snapshot = await _db
+        .collection('channels')
+        .doc(channelId)
+        .collection('members')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await snapshot.docs.first.reference.delete();
+
+      // Add to history
+      await _addAccessHistory(
+        channelId,
+        userId,
+        userId,
+        'left',
+      );
+    }
+  }
+
+  @override
+  Future<bool> isChannelMember(String channelId, String userId) async {
+    final snapshot = await _db
+        .collection('channels')
+        .doc(channelId)
+        .collection('members')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
+
+  @override
+  Future<String?> getUserRoleInChannel(String channelId, String userId) async {
+    final member = await getChannelMember(channelId, userId);
+    return member?.role;
+  }
+
+  @override
+  Future<List<CommunityChannel>> getUserChannels(
+    String userId, {
+    String? role,
+    int limit = 50,
+  }) async {
+    // Simplified: would need proper implementation
+    return [];
+  }
+
+  @override
+  Future<bool> canUserInvite(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> canUserModerate(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> canUserRemoveMembers(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> hasPermission(
+    String channelId,
+    String userId,
+    String permission,
+  ) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    if (role == null) return false;
+
+    // Basic permission mapping
+    switch (permission) {
+      case 'post_content':
+        return role != 'guest';
+      case 'invite':
+        return role == 'owner' || role == 'moderator';
+      case 'moderate':
+        return role == 'owner' || role == 'moderator';
+      case 'manage_roles':
+        return role == 'owner';
+      default:
+        return false;
+    }
+  }
+
+  @override
+  Future<List<AccessHistoryEntry>> getChannelAccessHistory(
+    String channelId, {
+    String? actionType,
+    int limit = 50,
+  }) async {
+    var query = _db.collection('accessHistory').where('channelId', isEqualTo: channelId).limit(limit);
+
+    if (actionType != null) {
+      query = query.where('action', isEqualTo: actionType) as Query;
+    }
+
+    final snapshot = await query.get();
+
+    return snapshot.docs
+        .map((doc) => AccessHistoryEntry.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<AccessHistoryEntry>> getUserAccessHistory(
+    String userId, {
+    int limit = 30,
+  }) async {
+    final snapshot = await _db
+        .collection('accessHistory')
+        .where('userId', isEqualTo: userId)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => AccessHistoryEntry.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<AccessHistoryEntry?> getAccessHistoryEntry(String historyId) async {
+    final doc = await _db.collection('accessHistory').doc(historyId).get();
+
+    if (!doc.exists) return null;
+
+    return AccessHistoryEntry.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  Future<void> _addAccessHistory(
+    String channelId,
+    String userId,
+    String actor,
+    String action, [
+    String? newRole,
+    String? reason,
+    String? oldRole,
+  ]) async {
+    final historyId = _db.collection('accessHistory').doc().id;
+
+    await _db.collection('accessHistory').doc(historyId).set({
+      'historyId': historyId,
+      'channelId': channelId,
+      'userId': userId,
+      'actor': actor,
+      'action': action,
+      'oldRole': oldRole,
+      'newRole': newRole,
+      'reason': reason,
+      'createdAt': Timestamp.now(),
+      'metadata': {},
+    });
+  }
+
+  String _generateInvitationCode() {
+    return 'inv_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 10000).toString().padLeft(4, '0')}';
+  }
 }
 
 /// Stub implementation for testing
@@ -3646,5 +4368,528 @@ class StubCommunityService implements CommunityService {
       trendingScore: trendingScore,
       lastUpdatedAt: DateTime.now(),
     );
+  }
+
+  // Phase 11 Step 4: Channel Access Control & Invitations
+
+  final Map<String, ChannelInvitation> _invitations = {};
+  final Map<String, AccessRequest> _accessRequests = {};
+  final Map<String, ChannelMember> _members = {};
+  final Map<String, AccessHistoryEntry> _accessHistory = {};
+
+  @override
+  Future<String> createInvitation({
+    required String channelId,
+    required String invitedUserId,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+    String? message,
+  }) async {
+    final invitationId = 'inv_${DateTime.now().millisecondsSinceEpoch}';
+    final invitationCode = _generateInvitationCode();
+
+    final invitation = ChannelInvitation(
+      invitationId: invitationId,
+      channelId: channelId,
+      invitedUserId: invitedUserId,
+      invitedByUserId: invitedByUserId,
+      inviterName: inviterName,
+      role: role,
+      message: message,
+      status: 'pending',
+      createdAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 14)),
+      invitationCode: invitationCode,
+    );
+
+    _invitations[invitationId] = invitation;
+    return invitationId;
+  }
+
+  @override
+  Future<List<String>> inviteMultipleUsers({
+    required String channelId,
+    required List<String> invitedUserIds,
+    required String invitedByUserId,
+    required String inviterName,
+    String role = 'member',
+  }) async {
+    final invitationIds = <String>[];
+
+    for (final userId in invitedUserIds) {
+      final id = await createInvitation(
+        channelId: channelId,
+        invitedUserId: userId,
+        invitedByUserId: invitedByUserId,
+        inviterName: inviterName,
+        role: role,
+      );
+      invitationIds.add(id);
+    }
+
+    return invitationIds;
+  }
+
+  @override
+  Future<ChannelInvitation?> getInvitation(String invitationId) async {
+    return _invitations[invitationId];
+  }
+
+  @override
+  Future<List<ChannelInvitation>> getUserInvitations(
+    String userId, {
+    bool includeExpired = false,
+    int limit = 20,
+  }) async {
+    final invitations = _invitations.values
+        .where((inv) =>
+            inv.invitedUserId == userId &&
+            (includeExpired || inv.isActive) &&
+            inv.status == 'pending')
+        .take(limit)
+        .toList();
+
+    return invitations;
+  }
+
+  @override
+  Future<List<ChannelInvitation>> getChannelInvitations(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  }) async {
+    var invitations = _invitations.values.where((inv) => inv.channelId == channelId);
+
+    if (status != null) {
+      invitations = invitations.where((inv) => inv.status == status);
+    }
+
+    return invitations.take(limit).toList();
+  }
+
+  @override
+  Future<void> acceptInvitation(String invitationId, String userId) async {
+    final invitation = _invitations[invitationId];
+    if (invitation == null) return;
+
+    // Add user as member
+    final memberId = 'member_${DateTime.now().millisecondsSinceEpoch}';
+    _members[memberId] = ChannelMember(
+      memberId: memberId,
+      channelId: invitation.channelId,
+      userId: userId,
+      userName: invitation.inviterName,
+      role: invitation.role,
+      joinedAt: DateTime.now(),
+      invitedAt: invitation.createdAt,
+      invitedByUserId: invitation.invitedByUserId,
+      status: 'active',
+    );
+
+    // Update invitation
+    _invitations[invitationId] = invitation.copyWith(
+      status: 'accepted',
+      respondedAt: DateTime.now(),
+    );
+
+    // Add to history
+    _addAccessHistoryEntry(
+      invitation.channelId,
+      userId,
+      'system',
+      'joined',
+      invitation.role,
+      'Accepted invitation',
+    );
+  }
+
+  @override
+  Future<void> declineInvitation(String invitationId, String userId) async {
+    final invitation = _invitations[invitationId];
+    if (invitation == null) return;
+
+    _invitations[invitationId] = invitation.copyWith(
+      status: 'declined',
+      respondedAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<void> cancelInvitation(String invitationId, String cancelledByUserId) async {
+    final invitation = _invitations[invitationId];
+    if (invitation == null) return;
+
+    _invitations[invitationId] = invitation.copyWith(status: 'cancelled');
+  }
+
+  @override
+  Future<String> createAccessRequest({
+    required String channelId,
+    required String requestedByUserId,
+    required String requesterName,
+    String? reason,
+  }) async {
+    final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+
+    final request = AccessRequest(
+      requestId: requestId,
+      channelId: channelId,
+      requestedByUserId: requestedByUserId,
+      requesterName: requesterName,
+      reason: reason,
+      status: 'pending',
+      createdAt: DateTime.now(),
+    );
+
+    _accessRequests[requestId] = request;
+    return requestId;
+  }
+
+  @override
+  Future<AccessRequest?> getAccessRequest(String requestId) async {
+    return _accessRequests[requestId];
+  }
+
+  @override
+  Future<List<AccessRequest>> getChannelAccessRequests(
+    String channelId, {
+    String? status,
+    int limit = 20,
+  }) async {
+    var requests = _accessRequests.values.where((req) => req.channelId == channelId);
+
+    if (status != null) {
+      requests = requests.where((req) => req.status == status);
+    }
+
+    return requests.take(limit).toList();
+  }
+
+  @override
+  Future<List<AccessRequest>> getUserAccessRequests(
+    String userId, {
+    String? status,
+    int limit = 10,
+  }) async {
+    var requests = _accessRequests.values.where((req) => req.requestedByUserId == userId);
+
+    if (status != null) {
+      requests = requests.where((req) => req.status == status);
+    }
+
+    return requests.take(limit).toList();
+  }
+
+  @override
+  Future<void> approveAccessRequest(
+    String requestId,
+    String approvedByUserId, {
+    String role = 'member',
+  }) async {
+    final request = _accessRequests[requestId];
+    if (request == null) return;
+
+    // Add user as member
+    final memberId = 'member_${DateTime.now().millisecondsSinceEpoch}';
+    _members[memberId] = ChannelMember(
+      memberId: memberId,
+      channelId: request.channelId,
+      userId: request.requestedByUserId,
+      userName: request.requesterName,
+      role: role,
+      joinedAt: DateTime.now(),
+      status: 'active',
+    );
+
+    // Update request
+    _accessRequests[requestId] = request.copyWith(
+      status: 'approved',
+      respondedAt: DateTime.now(),
+      respondedByUserId: approvedByUserId,
+      approvedRole: role,
+    );
+
+    // Add to history
+    _addAccessHistoryEntry(
+      request.channelId,
+      request.requestedByUserId,
+      approvedByUserId,
+      'joined',
+      role,
+      'Access request approved',
+    );
+  }
+
+  @override
+  Future<void> rejectAccessRequest(
+    String requestId,
+    String rejectedByUserId, {
+    String? reason,
+  }) async {
+    final request = _accessRequests[requestId];
+    if (request == null) return;
+
+    _accessRequests[requestId] = request.copyWith(
+      status: 'rejected',
+      respondedAt: DateTime.now(),
+      respondedByUserId: rejectedByUserId,
+      rejectionReason: reason,
+    );
+  }
+
+  @override
+  Future<void> cancelAccessRequest(String requestId, String cancelledByUserId) async {
+    final request = _accessRequests[requestId];
+    if (request == null) return;
+
+    _accessRequests[requestId] = request.copyWith(status: 'cancelled');
+  }
+
+  @override
+  Future<List<ChannelMember>> getChannelMembers(
+    String channelId, {
+    String? role,
+    int limit = 50,
+  }) async {
+    var members = _members.values.where((m) => m.channelId == channelId);
+
+    if (role != null) {
+      members = members.where((m) => m.role == role);
+    }
+
+    return members.take(limit).toList();
+  }
+
+  @override
+  Future<ChannelMember?> getChannelMember(String channelId, String userId) async {
+    try {
+      return _members.values.firstWhere(
+        (m) => m.channelId == channelId && m.userId == userId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateMemberRole(
+    String channelId,
+    String userId,
+    String newRole,
+    String updatedByUserId,
+  ) async {
+    try {
+      final member = _members.values.firstWhere(
+        (m) => m.channelId == channelId && m.userId == userId,
+      );
+
+      final oldRole = member.role;
+
+      // Update member
+      for (final entry in _members.entries) {
+        if (entry.value.channelId == channelId && entry.value.userId == userId) {
+          _members[entry.key] = member.copyWith(role: newRole);
+          break;
+        }
+      }
+
+      // Add to history
+      _addAccessHistoryEntry(
+        channelId,
+        userId,
+        updatedByUserId,
+        'promoted',
+        newRole,
+        'Role updated',
+        oldRole: oldRole,
+      );
+    } catch (e) {
+      // Member not found
+    }
+  }
+
+  @override
+  Future<void> removeMember(
+    String channelId,
+    String userId,
+    String removedByUserId,
+  ) async {
+    final toRemove = _members.entries
+        .where((e) => e.value.channelId == channelId && e.value.userId == userId)
+        .toList();
+
+    for (final entry in toRemove) {
+      _members.remove(entry.key);
+    }
+
+    // Add to history
+    _addAccessHistoryEntry(
+      channelId,
+      userId,
+      removedByUserId,
+      'removed',
+    );
+  }
+
+  @override
+  Future<void> leaveChannel(String channelId, String userId) async {
+    final toRemove = _members.entries
+        .where((e) => e.value.channelId == channelId && e.value.userId == userId)
+        .toList();
+
+    for (final entry in toRemove) {
+      _members.remove(entry.key);
+    }
+
+    // Add to history
+    _addAccessHistoryEntry(
+      channelId,
+      userId,
+      userId,
+      'left',
+    );
+  }
+
+  @override
+  Future<bool> isChannelMember(String channelId, String userId) async {
+    return _members.values.any(
+      (m) => m.channelId == channelId && m.userId == userId && m.isActive,
+    );
+  }
+
+  @override
+  Future<String?> getUserRoleInChannel(String channelId, String userId) async {
+    try {
+      final member = _members.values.firstWhere(
+        (m) => m.channelId == channelId && m.userId == userId,
+      );
+      return member.role;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<CommunityChannel>> getUserChannels(
+    String userId, {
+    String? role,
+    int limit = 50,
+  }) async {
+    final userChannelIds = _members.values
+        .where((m) => m.userId == userId && (role == null || m.role == role))
+        .map((m) => m.channelId)
+        .take(limit)
+        .toSet();
+
+    final channels = <CommunityChannel>[];
+    for (final id in userChannelIds) {
+      final channel = await getChannel(id);
+      if (channel != null) {
+        channels.add(channel);
+      }
+    }
+
+    return channels;
+  }
+
+  @override
+  Future<bool> canUserInvite(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> canUserModerate(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> canUserRemoveMembers(String channelId, String userId) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    return role == 'owner' || role == 'moderator';
+  }
+
+  @override
+  Future<bool> hasPermission(
+    String channelId,
+    String userId,
+    String permission,
+  ) async {
+    final role = await getUserRoleInChannel(channelId, userId);
+    if (role == null) return false;
+
+    switch (permission) {
+      case 'post_content':
+        return role != 'guest';
+      case 'invite':
+        return role == 'owner' || role == 'moderator';
+      case 'moderate':
+        return role == 'owner' || role == 'moderator';
+      case 'manage_roles':
+        return role == 'owner';
+      default:
+        return false;
+    }
+  }
+
+  @override
+  Future<List<AccessHistoryEntry>> getChannelAccessHistory(
+    String channelId, {
+    String? actionType,
+    int limit = 50,
+  }) async {
+    var entries = _accessHistory.values.where((h) => h.channelId == channelId);
+
+    if (actionType != null) {
+      entries = entries.where((h) => h.action == actionType);
+    }
+
+    return entries.take(limit).toList();
+  }
+
+  @override
+  Future<List<AccessHistoryEntry>> getUserAccessHistory(
+    String userId, {
+    int limit = 30,
+  }) async {
+    return _accessHistory.values
+        .where((h) => h.userId == userId)
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<AccessHistoryEntry?> getAccessHistoryEntry(String historyId) async {
+    return _accessHistory[historyId];
+  }
+
+  void _addAccessHistoryEntry(
+    String channelId,
+    String userId,
+    String actor,
+    String action, [
+    String? newRole,
+    String? reason,
+    String? oldRole,
+  ]) {
+    final historyId = 'hist_${DateTime.now().millisecondsSinceEpoch}';
+
+    _accessHistory[historyId] = AccessHistoryEntry(
+      historyId: historyId,
+      channelId: channelId,
+      userId: userId,
+      actor: actor,
+      action: action,
+      oldRole: oldRole,
+      newRole: newRole,
+      reason: reason,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  String _generateInvitationCode() {
+    return 'inv_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 10000).toString().padLeft(4, '0')}';
   }
 }

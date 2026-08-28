@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Community system enums
 enum ChannelType { public, private, announcement }
 
-enum MemberRole { owner, moderator, member }
+enum MemberRole { owner, moderator, member, guest }
 
 enum PostStatus { published, draft, archived, pinned }
 
@@ -18,6 +18,14 @@ enum ReportCategory { inappropriate, harassment, spam, misinformation, copyright
 enum ReportStatus { pending, reviewing, upheld, dismissed, appealed }
 
 enum ReportAction { warning, mute, removeContent, ban, escalate, dismiss }
+
+enum InvitationStatus { pending, accepted, declined, cancelled, expired }
+
+enum AccessRequestStatus { pending, approved, rejected, cancelled }
+
+enum MemberStatus { active, inactive, suspended, left }
+
+enum AccessAction { invited, joined, promoted, demoted, removed, left, invitedByLink }
 
 /// Community channel model
 class CommunityChannel {
@@ -1259,6 +1267,400 @@ class PostEngagementAnalytics {
       trendingScore: trendingScore ?? this.trendingScore,
       lastUpdatedAt: DateTime.now(),
       timeRange: timeRange,
+    );
+  }
+}
+
+/// Channel invitation model for inviting users to channels
+class ChannelInvitation {
+  final String invitationId;
+  final String channelId;
+  final String invitedUserId;
+  final String invitedByUserId;
+  final String inviterName;
+  final String role; // owner, moderator, member, guest
+  final String? message;
+  final String status; // pending, accepted, declined, cancelled, expired
+  final DateTime createdAt;
+  final DateTime expiresAt;
+  final DateTime? respondedAt;
+  final String invitationCode;
+
+  ChannelInvitation({
+    required this.invitationId,
+    required this.channelId,
+    required this.invitedUserId,
+    required this.invitedByUserId,
+    required this.inviterName,
+    required this.role,
+    this.message,
+    required this.status,
+    required this.createdAt,
+    required this.expiresAt,
+    this.respondedAt,
+    required this.invitationCode,
+  });
+
+  bool get isPending => status == 'pending';
+  bool get isAccepted => status == 'accepted';
+  bool get isDeclined => status == 'declined';
+  bool get isExpired => status == 'expired';
+  bool get isActive => status == 'pending' && DateTime.now().isBefore(expiresAt);
+
+  factory ChannelInvitation.empty(String channelId, String invitedUserId) {
+    return ChannelInvitation(
+      invitationId: '',
+      channelId: channelId,
+      invitedUserId: invitedUserId,
+      invitedByUserId: '',
+      inviterName: '',
+      role: 'member',
+      status: 'pending',
+      createdAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 14)),
+      invitationCode: '',
+    );
+  }
+
+  factory ChannelInvitation.fromMap(Map<String, dynamic> map) {
+    return ChannelInvitation(
+      invitationId: map['invitationId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      invitedUserId: map['invitedUserId'] as String? ?? '',
+      invitedByUserId: map['invitedByUserId'] as String? ?? '',
+      inviterName: map['inviterName'] as String? ?? '',
+      role: map['role'] as String? ?? 'member',
+      message: map['message'] as String?,
+      status: map['status'] as String? ?? 'pending',
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      expiresAt: (map['expiresAt'] as Timestamp?)?.toDate() ?? DateTime.now().add(Duration(days: 14)),
+      respondedAt: (map['respondedAt'] as Timestamp?)?.toDate(),
+      invitationCode: map['invitationCode'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'invitationId': invitationId,
+      'channelId': channelId,
+      'invitedUserId': invitedUserId,
+      'invitedByUserId': invitedByUserId,
+      'inviterName': inviterName,
+      'role': role,
+      'message': message,
+      'status': status,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'expiresAt': Timestamp.fromDate(expiresAt),
+      'respondedAt': respondedAt != null ? Timestamp.fromDate(respondedAt!) : null,
+      'invitationCode': invitationCode,
+    };
+  }
+
+  ChannelInvitation copyWith({
+    String? status,
+    DateTime? respondedAt,
+  }) {
+    return ChannelInvitation(
+      invitationId: invitationId,
+      channelId: channelId,
+      invitedUserId: invitedUserId,
+      invitedByUserId: invitedByUserId,
+      inviterName: inviterName,
+      role: role,
+      message: message,
+      status: status ?? this.status,
+      createdAt: createdAt,
+      expiresAt: expiresAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      invitationCode: invitationCode,
+    );
+  }
+}
+
+/// Access request model for requesting channel access
+class AccessRequest {
+  final String requestId;
+  final String channelId;
+  final String requestedByUserId;
+  final String requesterName;
+  final String? reason;
+  final String status; // pending, approved, rejected, cancelled
+  final DateTime createdAt;
+  final DateTime? respondedAt;
+  final String? respondedByUserId;
+  final String? approvedRole;
+  final String? rejectionReason;
+
+  AccessRequest({
+    required this.requestId,
+    required this.channelId,
+    required this.requestedByUserId,
+    required this.requesterName,
+    this.reason,
+    required this.status,
+    required this.createdAt,
+    this.respondedAt,
+    this.respondedByUserId,
+    this.approvedRole,
+    this.rejectionReason,
+  });
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isRejected => status == 'rejected';
+  bool get isCancelled => status == 'cancelled';
+
+  factory AccessRequest.empty(String channelId, String requestedByUserId) {
+    return AccessRequest(
+      requestId: '',
+      channelId: channelId,
+      requestedByUserId: requestedByUserId,
+      requesterName: '',
+      status: 'pending',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory AccessRequest.fromMap(Map<String, dynamic> map) {
+    return AccessRequest(
+      requestId: map['requestId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      requestedByUserId: map['requestedByUserId'] as String? ?? '',
+      requesterName: map['requesterName'] as String? ?? '',
+      reason: map['reason'] as String?,
+      status: map['status'] as String? ?? 'pending',
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      respondedAt: (map['respondedAt'] as Timestamp?)?.toDate(),
+      respondedByUserId: map['respondedByUserId'] as String?,
+      approvedRole: map['approvedRole'] as String?,
+      rejectionReason: map['rejectionReason'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'requestId': requestId,
+      'channelId': channelId,
+      'requestedByUserId': requestedByUserId,
+      'requesterName': requesterName,
+      'reason': reason,
+      'status': status,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'respondedAt': respondedAt != null ? Timestamp.fromDate(respondedAt!) : null,
+      'respondedByUserId': respondedByUserId,
+      'approvedRole': approvedRole,
+      'rejectionReason': rejectionReason,
+    };
+  }
+
+  AccessRequest copyWith({
+    String? status,
+    DateTime? respondedAt,
+    String? respondedByUserId,
+    String? approvedRole,
+    String? rejectionReason,
+  }) {
+    return AccessRequest(
+      requestId: requestId,
+      channelId: channelId,
+      requestedByUserId: requestedByUserId,
+      requesterName: requesterName,
+      reason: reason,
+      status: status ?? this.status,
+      createdAt: createdAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      respondedByUserId: respondedByUserId ?? this.respondedByUserId,
+      approvedRole: approvedRole ?? this.approvedRole,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+    );
+  }
+}
+
+/// Channel member model for tracking members and their roles
+class ChannelMember {
+  final String memberId;
+  final String channelId;
+  final String userId;
+  final String userName;
+  final String role; // owner, moderator, member, guest
+  final DateTime joinedAt;
+  final DateTime? invitedAt;
+  final String? invitedByUserId;
+  final String status; // active, inactive, suspended, left
+  final DateTime? lastActivityAt;
+
+  ChannelMember({
+    required this.memberId,
+    required this.channelId,
+    required this.userId,
+    required this.userName,
+    required this.role,
+    required this.joinedAt,
+    this.invitedAt,
+    this.invitedByUserId,
+    required this.status,
+    this.lastActivityAt,
+  });
+
+  bool get isOwner => role == 'owner';
+  bool get isModerator => role == 'moderator';
+  bool get isRegularMember => role == 'member';
+  bool get isGuest => role == 'guest';
+  bool get isActive => status == 'active';
+  bool get isSuspended => status == 'suspended';
+
+  factory ChannelMember.empty(String channelId, String userId) {
+    return ChannelMember(
+      memberId: '',
+      channelId: channelId,
+      userId: userId,
+      userName: '',
+      role: 'member',
+      joinedAt: DateTime.now(),
+      status: 'active',
+    );
+  }
+
+  factory ChannelMember.fromMap(Map<String, dynamic> map) {
+    return ChannelMember(
+      memberId: map['memberId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String? ?? '',
+      role: map['role'] as String? ?? 'member',
+      joinedAt: (map['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      invitedAt: (map['invitedAt'] as Timestamp?)?.toDate(),
+      invitedByUserId: map['invitedByUserId'] as String?,
+      status: map['status'] as String? ?? 'active',
+      lastActivityAt: (map['lastActivityAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'memberId': memberId,
+      'channelId': channelId,
+      'userId': userId,
+      'userName': userName,
+      'role': role,
+      'joinedAt': Timestamp.fromDate(joinedAt),
+      'invitedAt': invitedAt != null ? Timestamp.fromDate(invitedAt!) : null,
+      'invitedByUserId': invitedByUserId,
+      'status': status,
+      'lastActivityAt': lastActivityAt != null ? Timestamp.fromDate(lastActivityAt!) : null,
+    };
+  }
+
+  ChannelMember copyWith({
+    String? role,
+    String? status,
+    DateTime? lastActivityAt,
+  }) {
+    return ChannelMember(
+      memberId: memberId,
+      channelId: channelId,
+      userId: userId,
+      userName: userName,
+      role: role ?? this.role,
+      joinedAt: joinedAt,
+      invitedAt: invitedAt,
+      invitedByUserId: invitedByUserId,
+      status: status ?? this.status,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
+    );
+  }
+}
+
+/// Access history entry for auditing access changes
+class AccessHistoryEntry {
+  final String historyId;
+  final String channelId;
+  final String userId;
+  final String actor;
+  final String action; // invited, joined, promoted, demoted, removed, left, invitedByLink
+  final String? oldRole;
+  final String? newRole;
+  final String? reason;
+  final DateTime createdAt;
+  final Map<String, dynamic> metadata;
+
+  AccessHistoryEntry({
+    required this.historyId,
+    required this.channelId,
+    required this.userId,
+    required this.actor,
+    required this.action,
+    this.oldRole,
+    this.newRole,
+    this.reason,
+    required this.createdAt,
+    this.metadata = const {},
+  });
+
+  factory AccessHistoryEntry.empty(String channelId, String userId) {
+    return AccessHistoryEntry(
+      historyId: '',
+      channelId: channelId,
+      userId: userId,
+      actor: '',
+      action: 'joined',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory AccessHistoryEntry.fromMap(Map<String, dynamic> map) {
+    return AccessHistoryEntry(
+      historyId: map['historyId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      actor: map['actor'] as String? ?? '',
+      action: map['action'] as String? ?? 'joined',
+      oldRole: map['oldRole'] as String?,
+      newRole: map['newRole'] as String?,
+      reason: map['reason'] as String?,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      metadata: (map['metadata'] as Map<String, dynamic>?) ?? {},
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'historyId': historyId,
+      'channelId': channelId,
+      'userId': userId,
+      'actor': actor,
+      'action': action,
+      'oldRole': oldRole,
+      'newRole': newRole,
+      'reason': reason,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'metadata': metadata,
+    };
+  }
+
+  AccessHistoryEntry copyWith({
+    String? historyId,
+    String? channelId,
+    String? userId,
+    String? actor,
+    String? action,
+    String? oldRole,
+    String? newRole,
+    String? reason,
+    DateTime? createdAt,
+    Map<String, dynamic>? metadata,
+  }) {
+    return AccessHistoryEntry(
+      historyId: historyId ?? this.historyId,
+      channelId: channelId ?? this.channelId,
+      userId: userId ?? this.userId,
+      actor: actor ?? this.actor,
+      action: action ?? this.action,
+      oldRole: oldRole ?? this.oldRole,
+      newRole: newRole ?? this.newRole,
+      reason: reason ?? this.reason,
+      createdAt: createdAt ?? this.createdAt,
+      metadata: metadata ?? this.metadata,
     );
   }
 }
