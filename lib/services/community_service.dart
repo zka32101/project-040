@@ -575,6 +575,112 @@ abstract class CommunityService {
   });
 
   Future<AccessHistoryEntry?> getAccessHistoryEntry(String historyId);
+
+  // Phase 11 Step 5: Advanced Search & Content Discovery
+
+  // Search Posts and Replies
+  Future<List<SearchResult>> searchPosts(
+    String query, {
+    String? channelId,
+    String? authorId,
+    String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String sortBy = 'relevance',
+    int limit = 20,
+  });
+
+  Future<List<SearchResult>> searchPostsByDateRange({
+    required String query,
+    required DateTime fromDate,
+    required DateTime toDate,
+    int limit = 20,
+  });
+
+  Future<List<SearchResult>> searchPostsByTags({
+    required List<String> tags,
+    int limit = 20,
+  });
+
+  Future<SearchResult?> getSearchResult(String resultId);
+
+  // Search Channels
+  Future<List<CommunityChannel>> searchChannels(
+    String query, {
+    String? category,
+    String sortBy = 'relevance',
+    int limit = 20,
+  });
+
+  Future<List<CommunityChannel>> getPopularChannels({int limit = 10});
+
+  Future<List<CommunityChannel>> getTrendingChannels({int limit = 10});
+
+  // Search Users
+  Future<List<Map<String, dynamic>>> searchUsers(
+    String query, {
+    int limit = 20,
+  });
+
+  Future<Map<String, dynamic>?> searchUserByUsername(String username);
+
+  // Search Suggestions
+  Future<List<SearchSuggestion>> getSearchSuggestions(
+    String partialQuery, {
+    String category = 'all',
+    int limit = 10,
+  });
+
+  // Search History
+  Future<void> recordSearch({
+    required String userId,
+    required String query,
+    required int resultCount,
+    Map<String, dynamic>? filters,
+  });
+
+  Future<List<SearchQuery>> getUserSearchHistory(
+    String userId, {
+    int limit = 20,
+  });
+
+  Future<List<SearchQuery>> getTrendingSearches({
+    String timeRange = 'week',
+    int limit = 10,
+  });
+
+  Future<void> clearSearchHistory(String userId);
+
+  // Saved Searches
+  Future<String> saveSearch({
+    required String userId,
+    required String query,
+    required String name,
+    String? description,
+    Map<String, dynamic>? filters,
+  });
+
+  Future<SavedSearch?> getSavedSearch(String savedSearchId);
+
+  Future<List<SavedSearch>> getSavedSearches(String userId);
+
+  Future<void> updateSavedSearch(String savedSearchId, {
+    String? name,
+    String? description,
+  });
+
+  Future<void> deleteSavedSearch(String savedSearchId);
+
+  Future<void> useSavedSearch(String savedSearchId);
+
+  // Search Analytics
+  Future<List<SearchQuery>> getSearchAnalytics({
+    String? query,
+    String timeRange = 'week',
+    int limit = 20,
+  });
+
+  Future<Map<String, dynamic>> getSearchStats();
 }
 
 /// Firebase implementation of community service
@@ -2912,6 +3018,385 @@ class FirebaseCommunityService implements CommunityService {
   String _generateInvitationCode() {
     return 'inv_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 10000).toString().padLeft(4, '0')}';
   }
+
+  // Phase 11 Step 5: Advanced Search & Content Discovery
+
+  @override
+  Future<List<SearchResult>> searchPosts(
+    String query, {
+    String? channelId,
+    String? authorId,
+    String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String sortBy = 'relevance',
+    int limit = 20,
+  }) async {
+    // Simplified full-text search implementation
+    var postQuery = _db.collection('posts');
+
+    if (channelId != null) {
+      postQuery = postQuery.where('channelId', isEqualTo: channelId) as Query;
+    }
+    if (authorId != null) {
+      postQuery = postQuery.where('authorId', isEqualTo: authorId) as Query;
+    }
+    if (status != null) {
+      postQuery = postQuery.where('status', isEqualTo: status) as Query;
+    }
+    if (fromDate != null) {
+      postQuery = postQuery.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(fromDate)) as Query;
+    }
+    if (toDate != null) {
+      postQuery = postQuery.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(toDate)) as Query;
+    }
+
+    final snapshot = await (postQuery as Query).limit(limit).get();
+
+    final results = <SearchResult>[];
+    for (final doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      // Simple relevance scoring based on content
+      final content = '${data['title']} ${data['content']}'.toLowerCase();
+      final relevance = query.toLowerCase().split(' ').fold<double>(0.0, (score, term) {
+        return score + (content.contains(term) ? 1.0 : 0.0);
+      }) / query.split(' ').length;
+
+      results.add(SearchResult(
+        resultId: doc.id,
+        query: query,
+        contentType: 'post',
+        contentId: doc.id,
+        title: data['title'] as String? ?? '',
+        snippet: (data['content'] as String? ?? '').substring(0, 150),
+        relevanceScore: relevance,
+        author: data['authorName'] as String? ?? '',
+        authorId: data['authorId'] as String? ?? '',
+        channelId: data['channelId'] as String? ?? '',
+        tags: (data['tags'] as List?)?.cast<String>() ?? [],
+        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        replyCount: data['replies'] as int? ?? 0,
+        reactionCount: data['likes'] as int? ?? 0,
+        viewCount: data['views'] as int? ?? 0,
+        url: '/post/${doc.id}',
+      ));
+    }
+
+    // Sort by relevance
+    results.sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
+
+    return results;
+  }
+
+  @override
+  Future<List<SearchResult>> searchPostsByDateRange({
+    required String query,
+    required DateTime fromDate,
+    required DateTime toDate,
+    int limit = 20,
+  }) async {
+    return searchPosts(query, fromDate: fromDate, toDate: toDate, limit: limit);
+  }
+
+  @override
+  Future<List<SearchResult>> searchPostsByTags({
+    required List<String> tags,
+    int limit = 20,
+  }) async {
+    // Simplified tag search
+    final snapshot = await _db
+        .collection('posts')
+        .where('tags', arrayContainsAny: tags)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return SearchResult(
+            resultId: doc.id,
+            query: tags.join(','),
+            contentType: 'post',
+            contentId: doc.id,
+            title: data['title'] as String? ?? '',
+            snippet: (data['content'] as String? ?? '').substring(0, 150),
+            relevanceScore: 1.0,
+            author: data['authorName'] as String? ?? '',
+            authorId: data['authorId'] as String? ?? '',
+            channelId: data['channelId'] as String? ?? '',
+            tags: (data['tags'] as List?)?.cast<String>() ?? [],
+            createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            replyCount: data['replies'] as int? ?? 0,
+            reactionCount: data['likes'] as int? ?? 0,
+            viewCount: data['views'] as int? ?? 0,
+            url: '/post/${doc.id}',
+          );
+        })
+        .toList();
+  }
+
+  @override
+  Future<SearchResult?> getSearchResult(String resultId) async {
+    final doc = await _db.collection('posts').doc(resultId).get();
+    if (!doc.exists) return null;
+
+    final data = doc.data() as Map<String, dynamic>;
+    return SearchResult(
+      resultId: doc.id,
+      query: '',
+      contentType: 'post',
+      contentId: doc.id,
+      title: data['title'] as String? ?? '',
+      snippet: (data['content'] as String? ?? '').substring(0, 150),
+      relevanceScore: 1.0,
+      author: data['authorName'] as String? ?? '',
+      authorId: data['authorId'] as String? ?? '',
+      channelId: data['channelId'] as String? ?? '',
+      tags: (data['tags'] as List?)?.cast<String>() ?? [],
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      replyCount: data['replies'] as int? ?? 0,
+      reactionCount: data['likes'] as int? ?? 0,
+      viewCount: data['views'] as int? ?? 0,
+      url: '/post/${doc.id}',
+    );
+  }
+
+  @override
+  Future<List<CommunityChannel>> searchChannels(
+    String query, {
+    String? category,
+    String sortBy = 'relevance',
+    int limit = 20,
+  }) async {
+    var channelQuery = _db.collection('communityChannels').where('isArchived', isEqualTo: false);
+
+    if (category != null) {
+      channelQuery = channelQuery.where('category', isEqualTo: category) as Query;
+    }
+
+    final snapshot = await (channelQuery as Query).limit(limit).get();
+
+    return snapshot.docs
+        .map((doc) => CommunityChannel.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<CommunityChannel>> getPopularChannels({int limit = 10}) async {
+    final snapshot = await _db
+        .collection('communityChannels')
+        .where('isArchived', isEqualTo: false)
+        .orderBy('memberCount', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => CommunityChannel.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<CommunityChannel>> getTrendingChannels({int limit = 10}) async {
+    final snapshot = await _db
+        .collection('communityChannels')
+        .where('isArchived', isEqualTo: false)
+        .orderBy('lastActivityAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => CommunityChannel.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
+    // Simplified user search
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>?> searchUserByUsername(String username) async {
+    // Simplified username search
+    return null;
+  }
+
+  @override
+  Future<List<SearchSuggestion>> getSearchSuggestions(
+    String partialQuery, {
+    String category = 'all',
+    int limit = 10,
+  }) async {
+    final snapshot = await _db
+        .collection('searchSuggestions')
+        .where('text', isGreaterThanOrEqualTo: partialQuery)
+        .where('text', isLessThan: '${partialQuery}z')
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => SearchSuggestion.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> recordSearch({
+    required String userId,
+    required String query,
+    required int resultCount,
+    Map<String, dynamic>? filters,
+  }) async {
+    final queryId = _db.collection('searchQueries').doc().id;
+    final timeMs = DateTime.now().millisecondsSinceEpoch;
+
+    await _db.collection('searchQueries').doc(queryId).set({
+      'queryId': queryId,
+      'userId': userId,
+      'query': query,
+      'resultCount': resultCount,
+      'timeMs': timeMs,
+      'filters': filters ?? {},
+      'createdAt': Timestamp.now(),
+    });
+  }
+
+  @override
+  Future<List<SearchQuery>> getUserSearchHistory(
+    String userId, {
+    int limit = 20,
+  }) async {
+    final snapshot = await _db
+        .collection('searchQueries')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => SearchQuery.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<SearchQuery>> getTrendingSearches({
+    String timeRange = 'week',
+    int limit = 10,
+  }) async {
+    final snapshot = await _db.collection('searchAnalytics').limit(limit).get();
+
+    return [];
+  }
+
+  @override
+  Future<void> clearSearchHistory(String userId) async {
+    final snapshot = await _db
+        .collection('searchQueries')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  @override
+  Future<String> saveSearch({
+    required String userId,
+    required String query,
+    required String name,
+    String? description,
+    Map<String, dynamic>? filters,
+  }) async {
+    final savedSearchId = _db.collection('savedSearches').doc().id;
+
+    await _db.collection('savedSearches').doc(savedSearchId).set({
+      'savedSearchId': savedSearchId,
+      'userId': userId,
+      'query': query,
+      'name': name,
+      'description': description,
+      'filters': filters ?? {},
+      'createdAt': Timestamp.now(),
+      'useCount': 0,
+    });
+
+    return savedSearchId;
+  }
+
+  @override
+  Future<SavedSearch?> getSavedSearch(String savedSearchId) async {
+    final doc = await _db.collection('savedSearches').doc(savedSearchId).get();
+    if (!doc.exists) return null;
+
+    return SavedSearch.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<SavedSearch>> getSavedSearches(String userId) async {
+    final snapshot = await _db
+        .collection('savedSearches')
+        .where('userId', isEqualTo: userId)
+        .orderBy('lastUsedAt', descending: true)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => SavedSearch.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> updateSavedSearch(
+    String savedSearchId, {
+    String? name,
+    String? description,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (name != null) updates['name'] = name;
+    if (description != null) updates['description'] = description;
+
+    if (updates.isNotEmpty) {
+      await _db.collection('savedSearches').doc(savedSearchId).update(updates);
+    }
+  }
+
+  @override
+  Future<void> deleteSavedSearch(String savedSearchId) async {
+    await _db.collection('savedSearches').doc(savedSearchId).delete();
+  }
+
+  @override
+  Future<void> useSavedSearch(String savedSearchId) async {
+    await _db.collection('savedSearches').doc(savedSearchId).update({
+      'lastUsedAt': Timestamp.now(),
+      'useCount': FieldValue.increment(1),
+    });
+  }
+
+  @override
+  Future<List<SearchQuery>> getSearchAnalytics({
+    String? query,
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    // Simplified analytics
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSearchStats() async {
+    return {
+      'totalSearches': 0,
+      'uniqueUsers': 0,
+      'averageResults': 0.0,
+      'trendingSearches': [],
+    };
+  }
 }
 
 /// Stub implementation for testing
@@ -4892,4 +5377,369 @@ class StubCommunityService implements CommunityService {
   String _generateInvitationCode() {
     return 'inv_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 10000).toString().padLeft(4, '0')}';
   }
+
+  // Phase 11 Step 5: Advanced Search & Content Discovery
+
+  final Map<String, SearchQuery> _searchQueries = {};
+  final Map<String, SavedSearch> _savedSearches = {};
+  final Map<String, SearchSuggestion> _suggestions = {};
+
+  @override
+  Future<List<SearchResult>> searchPosts(
+    String query, {
+    String? channelId,
+    String? authorId,
+    String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String sortBy = 'relevance',
+    int limit = 20,
+  }) async {
+    var posts = _posts.values.toList();
+
+    if (channelId != null) {
+      posts = posts.where((p) => p.channelId == channelId).toList();
+    }
+    if (authorId != null) {
+      posts = posts.where((p) => p.authorId == authorId).toList();
+    }
+    if (status != null) {
+      posts = posts.where((p) => p.status.name == status).toList();
+    }
+    if (fromDate != null) {
+      posts = posts.where((p) => p.createdAt.isAfter(fromDate)).toList();
+    }
+    if (toDate != null) {
+      posts = posts.where((p) => p.createdAt.isBefore(toDate)).toList();
+    }
+
+    final results = <SearchResult>[];
+    for (final post in posts) {
+      final content = '${post.title} ${post.content}'.toLowerCase();
+      final queryTerms = query.toLowerCase().split(' ');
+      var relevance = 0.0;
+
+      for (final term in queryTerms) {
+        if (content.contains(term)) {
+          relevance += 1.0;
+        }
+      }
+      relevance = relevance / queryTerms.length;
+
+      results.add(SearchResult(
+        resultId: post.postId,
+        query: query,
+        contentType: 'post',
+        contentId: post.postId,
+        title: post.title,
+        snippet: post.content.substring(0, min(150, post.content.length)),
+        relevanceScore: relevance,
+        author: post.authorName ?? '',
+        authorId: post.authorId,
+        channelId: post.channelId,
+        tags: post.tags,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        replyCount: post.replies,
+        reactionCount: post.likes,
+        viewCount: post.views,
+        url: '/post/${post.postId}',
+      ));
+    }
+
+    results.sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<List<SearchResult>> searchPostsByDateRange({
+    required String query,
+    required DateTime fromDate,
+    required DateTime toDate,
+    int limit = 20,
+  }) async {
+    return searchPosts(query, fromDate: fromDate, toDate: toDate, limit: limit);
+  }
+
+  @override
+  Future<List<SearchResult>> searchPostsByTags({
+    required List<String> tags,
+    int limit = 20,
+  }) async {
+    final results = <SearchResult>[];
+
+    for (final post in _posts.values) {
+      for (final tag in tags) {
+        if (post.tags.contains(tag)) {
+          results.add(SearchResult(
+            resultId: post.postId,
+            query: tags.join(','),
+            contentType: 'post',
+            contentId: post.postId,
+            title: post.title,
+            snippet: post.content.substring(0, min(150, post.content.length)),
+            relevanceScore: 1.0,
+            author: post.authorName ?? '',
+            authorId: post.authorId,
+            channelId: post.channelId,
+            tags: post.tags,
+            createdAt: post.createdAt,
+            updatedAt: post.updatedAt,
+            replyCount: post.replies,
+            reactionCount: post.likes,
+            viewCount: post.views,
+            url: '/post/${post.postId}',
+          ));
+          break;
+        }
+      }
+    }
+
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<SearchResult?> getSearchResult(String resultId) async {
+    final post = await getPost(resultId);
+    if (post == null) return null;
+
+    return SearchResult(
+      resultId: post.postId,
+      query: '',
+      contentType: 'post',
+      contentId: post.postId,
+      title: post.title,
+      snippet: post.content.substring(0, min(150, post.content.length)),
+      relevanceScore: 1.0,
+      author: post.authorName ?? '',
+      authorId: post.authorId,
+      channelId: post.channelId,
+      tags: post.tags,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      replyCount: post.replies,
+      reactionCount: post.likes,
+      viewCount: post.views,
+      url: '/post/${post.postId}',
+    );
+  }
+
+  @override
+  Future<List<CommunityChannel>> searchChannels(
+    String query, {
+    String? category,
+    String sortBy = 'relevance',
+    int limit = 20,
+  }) async {
+    var channels = _channels.values
+        .where((c) => !c.isArchived && c.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    if (category != null) {
+      channels = channels.where((c) => c.category == category).toList();
+    }
+
+    return channels.take(limit).toList();
+  }
+
+  @override
+  Future<List<CommunityChannel>> getPopularChannels({int limit = 10}) async {
+    return _channels.values
+        .where((c) => !c.isArchived)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<CommunityChannel>> getTrendingChannels({int limit = 10}) async {
+    return _channels.values
+        .where((c) => !c.isArchived)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>?> searchUserByUsername(String username) async {
+    return null;
+  }
+
+  @override
+  Future<List<SearchSuggestion>> getSearchSuggestions(
+    String partialQuery, {
+    String category = 'all',
+    int limit = 10,
+  }) async {
+    return _suggestions.values
+        .where((s) => s.text.toLowerCase().startsWith(partialQuery.toLowerCase()))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<void> recordSearch({
+    required String userId,
+    required String query,
+    required int resultCount,
+    Map<String, dynamic>? filters,
+  }) async {
+    final queryId = 'query_${DateTime.now().millisecondsSinceEpoch}';
+
+    _searchQueries[queryId] = SearchQuery(
+      queryId: queryId,
+      userId: userId,
+      query: query,
+      resultCount: resultCount,
+      timeMs: DateTime.now().millisecondsSinceEpoch,
+      filters: filters ?? {},
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<List<SearchQuery>> getUserSearchHistory(
+    String userId, {
+    int limit = 20,
+  }) async {
+    return _searchQueries.values
+        .where((q) => q.userId == userId)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<SearchQuery>> getTrendingSearches({
+    String timeRange = 'week',
+    int limit = 10,
+  }) async {
+    return _searchQueries.values
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<void> clearSearchHistory(String userId) async {
+    final toRemove = _searchQueries.entries
+        .where((e) => e.value.userId == userId)
+        .map((e) => e.key)
+        .toList();
+
+    for (final key in toRemove) {
+      _searchQueries.remove(key);
+    }
+  }
+
+  @override
+  Future<String> saveSearch({
+    required String userId,
+    required String query,
+    required String name,
+    String? description,
+    Map<String, dynamic>? filters,
+  }) async {
+    final savedSearchId = 'saved_${DateTime.now().millisecondsSinceEpoch}';
+
+    _savedSearches[savedSearchId] = SavedSearch(
+      savedSearchId: savedSearchId,
+      userId: userId,
+      query: query,
+      name: name,
+      description: description,
+      filters: filters ?? {},
+      createdAt: DateTime.now(),
+    );
+
+    return savedSearchId;
+  }
+
+  @override
+  Future<SavedSearch?> getSavedSearch(String savedSearchId) async {
+    return _savedSearches[savedSearchId];
+  }
+
+  @override
+  Future<List<SavedSearch>> getSavedSearches(String userId) async {
+    return _savedSearches.values
+        .where((s) => s.userId == userId)
+        .toList();
+  }
+
+  @override
+  Future<void> updateSavedSearch(
+    String savedSearchId, {
+    String? name,
+    String? description,
+  }) async {
+    final saved = _savedSearches[savedSearchId];
+    if (saved == null) return;
+
+    _savedSearches[savedSearchId] = SavedSearch(
+      savedSearchId: saved.savedSearchId,
+      userId: saved.userId,
+      query: saved.query,
+      name: name ?? saved.name,
+      description: description ?? saved.description,
+      filters: saved.filters,
+      createdAt: saved.createdAt,
+      lastUsedAt: saved.lastUsedAt,
+      useCount: saved.useCount,
+    );
+  }
+
+  @override
+  Future<void> deleteSavedSearch(String savedSearchId) async {
+    _savedSearches.remove(savedSearchId);
+  }
+
+  @override
+  Future<void> useSavedSearch(String savedSearchId) async {
+    final saved = _savedSearches[savedSearchId];
+    if (saved == null) return;
+
+    _savedSearches[savedSearchId] = saved.copyWith(
+      lastUsedAt: DateTime.now(),
+      useCount: saved.useCount + 1,
+    );
+  }
+
+  @override
+  Future<List<SearchQuery>> getSearchAnalytics({
+    String? query,
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    return _searchQueries.values
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSearchStats() async {
+    return {
+      'totalSearches': _searchQueries.length,
+      'uniqueUsers': _searchQueries.values.map((q) => q.userId).toSet().length,
+      'averageResults': _searchQueries.values.isEmpty
+          ? 0.0
+          : _searchQueries.values.fold<int>(0, (sum, q) => sum + q.resultCount) / _searchQueries.length,
+      'trendingSearches': _searchQueries.values
+          .map((q) => q.query)
+          .toSet()
+          .take(10)
+          .toList(),
+    };
+  }
 }
+
+import 'dart:math' show min;

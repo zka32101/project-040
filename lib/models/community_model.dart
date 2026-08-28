@@ -27,6 +27,10 @@ enum MemberStatus { active, inactive, suspended, left }
 
 enum AccessAction { invited, joined, promoted, demoted, removed, left, invitedByLink }
 
+enum SearchType { query, tag, channel, user }
+
+enum SortBy { relevance, newest, oldest, trending, popular, members, activity }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -1661,6 +1665,441 @@ class AccessHistoryEntry {
       reason: reason ?? this.reason,
       createdAt: createdAt ?? this.createdAt,
       metadata: metadata ?? this.metadata,
+    );
+  }
+}
+
+/// Search result model for community search
+class SearchResult {
+  final String resultId;
+  final String query;
+  final String contentType; // 'post' or 'reply'
+  final String contentId;
+  final String title;
+  final String snippet;
+  final double relevanceScore;
+  final String author;
+  final String authorId;
+  final String channelId;
+  final List<String> tags;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int replyCount;
+  final int reactionCount;
+  final int viewCount;
+  final String url;
+
+  SearchResult({
+    required this.resultId,
+    required this.query,
+    required this.contentType,
+    required this.contentId,
+    required this.title,
+    required this.snippet,
+    required this.relevanceScore,
+    required this.author,
+    required this.authorId,
+    required this.channelId,
+    this.tags = const [],
+    required this.createdAt,
+    required this.updatedAt,
+    this.replyCount = 0,
+    this.reactionCount = 0,
+    this.viewCount = 0,
+    required this.url,
+  });
+
+  bool get isPost => contentType == 'post';
+  bool get isReply => contentType == 'reply';
+
+  factory SearchResult.empty() {
+    return SearchResult(
+      resultId: '',
+      query: '',
+      contentType: 'post',
+      contentId: '',
+      title: '',
+      snippet: '',
+      relevanceScore: 0.0,
+      author: '',
+      authorId: '',
+      channelId: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      url: '',
+    );
+  }
+
+  factory SearchResult.fromMap(Map<String, dynamic> map) {
+    return SearchResult(
+      resultId: map['resultId'] as String? ?? '',
+      query: map['query'] as String? ?? '',
+      contentType: map['contentType'] as String? ?? 'post',
+      contentId: map['contentId'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      snippet: map['snippet'] as String? ?? '',
+      relevanceScore: (map['relevanceScore'] as num?)?.toDouble() ?? 0.0,
+      author: map['author'] as String? ?? '',
+      authorId: map['authorId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      tags: (map['tags'] as List?)?.cast<String>() ?? [],
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      replyCount: map['replyCount'] as int? ?? 0,
+      reactionCount: map['reactionCount'] as int? ?? 0,
+      viewCount: map['viewCount'] as int? ?? 0,
+      url: map['url'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'resultId': resultId,
+      'query': query,
+      'contentType': contentType,
+      'contentId': contentId,
+      'title': title,
+      'snippet': snippet,
+      'relevanceScore': relevanceScore,
+      'author': author,
+      'authorId': authorId,
+      'channelId': channelId,
+      'tags': tags,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'replyCount': replyCount,
+      'reactionCount': reactionCount,
+      'viewCount': viewCount,
+      'url': url,
+    };
+  }
+
+  SearchResult copyWith({
+    double? relevanceScore,
+    int? viewCount,
+  }) {
+    return SearchResult(
+      resultId: resultId,
+      query: query,
+      contentType: contentType,
+      contentId: contentId,
+      title: title,
+      snippet: snippet,
+      relevanceScore: relevanceScore ?? this.relevanceScore,
+      author: author,
+      authorId: authorId,
+      channelId: channelId,
+      tags: tags,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      replyCount: replyCount,
+      reactionCount: reactionCount,
+      viewCount: viewCount ?? this.viewCount,
+      url: url,
+    );
+  }
+}
+
+/// Search query model for tracking searches
+class SearchQuery {
+  final String queryId;
+  final String userId;
+  final String query;
+  final int resultCount;
+  final int timeMs;
+  final Map<String, dynamic> filters;
+  final DateTime createdAt;
+  final String? selectedResultId;
+
+  SearchQuery({
+    required this.queryId,
+    required this.userId,
+    required this.query,
+    required this.resultCount,
+    required this.timeMs,
+    this.filters = const {},
+    required this.createdAt,
+    this.selectedResultId,
+  });
+
+  factory SearchQuery.empty(String userId, String query) {
+    return SearchQuery(
+      queryId: '',
+      userId: userId,
+      query: query,
+      resultCount: 0,
+      timeMs: 0,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory SearchQuery.fromMap(Map<String, dynamic> map) {
+    return SearchQuery(
+      queryId: map['queryId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      query: map['query'] as String? ?? '',
+      resultCount: map['resultCount'] as int? ?? 0,
+      timeMs: map['timeMs'] as int? ?? 0,
+      filters: (map['filters'] as Map<String, dynamic>?) ?? {},
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      selectedResultId: map['selectedResultId'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'queryId': queryId,
+      'userId': userId,
+      'query': query,
+      'resultCount': resultCount,
+      'timeMs': timeMs,
+      'filters': filters,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'selectedResultId': selectedResultId,
+    };
+  }
+
+  SearchQuery copyWith({
+    int? resultCount,
+    int? timeMs,
+    String? selectedResultId,
+  }) {
+    return SearchQuery(
+      queryId: queryId,
+      userId: userId,
+      query: query,
+      resultCount: resultCount ?? this.resultCount,
+      timeMs: timeMs ?? this.timeMs,
+      filters: filters,
+      createdAt: createdAt,
+      selectedResultId: selectedResultId ?? this.selectedResultId,
+    );
+  }
+}
+
+/// Saved search model
+class SavedSearch {
+  final String savedSearchId;
+  final String userId;
+  final String query;
+  final String name;
+  final String? description;
+  final Map<String, dynamic> filters;
+  final DateTime createdAt;
+  final DateTime? lastUsedAt;
+  final int useCount;
+
+  SavedSearch({
+    required this.savedSearchId,
+    required this.userId,
+    required this.query,
+    required this.name,
+    this.description,
+    this.filters = const {},
+    required this.createdAt,
+    this.lastUsedAt,
+    this.useCount = 0,
+  });
+
+  factory SavedSearch.empty(String userId) {
+    return SavedSearch(
+      savedSearchId: '',
+      userId: userId,
+      query: '',
+      name: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory SavedSearch.fromMap(Map<String, dynamic> map) {
+    return SavedSearch(
+      savedSearchId: map['savedSearchId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      query: map['query'] as String? ?? '',
+      name: map['name'] as String? ?? '',
+      description: map['description'] as String?,
+      filters: (map['filters'] as Map<String, dynamic>?) ?? {},
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastUsedAt: (map['lastUsedAt'] as Timestamp?)?.toDate(),
+      useCount: map['useCount'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'savedSearchId': savedSearchId,
+      'userId': userId,
+      'query': query,
+      'name': name,
+      'description': description,
+      'filters': filters,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastUsedAt': lastUsedAt != null ? Timestamp.fromDate(lastUsedAt!) : null,
+      'useCount': useCount,
+    };
+  }
+
+  SavedSearch copyWith({
+    DateTime? lastUsedAt,
+    int? useCount,
+  }) {
+    return SavedSearch(
+      savedSearchId: savedSearchId,
+      userId: userId,
+      query: query,
+      name: name,
+      description: description,
+      filters: filters,
+      createdAt: createdAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      useCount: useCount ?? this.useCount,
+    );
+  }
+}
+
+/// Search suggestion model
+class SearchSuggestion {
+  final String suggestionId;
+  final String text;
+  final String type; // query, tag, channel, user
+  final String category;
+  final int popularity;
+  final DateTime? lastUsedAt;
+
+  SearchSuggestion({
+    required this.suggestionId,
+    required this.text,
+    required this.type,
+    required this.category,
+    required this.popularity,
+    this.lastUsedAt,
+  });
+
+  bool get isQuery => type == 'query';
+  bool get isTag => type == 'tag';
+  bool get isChannel => type == 'channel';
+  bool get isUser => type == 'user';
+
+  factory SearchSuggestion.empty() {
+    return SearchSuggestion(
+      suggestionId: '',
+      text: '',
+      type: 'query',
+      category: '',
+      popularity: 0,
+    );
+  }
+
+  factory SearchSuggestion.fromMap(Map<String, dynamic> map) {
+    return SearchSuggestion(
+      suggestionId: map['suggestionId'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      type: map['type'] as String? ?? 'query',
+      category: map['category'] as String? ?? '',
+      popularity: map['popularity'] as int? ?? 0,
+      lastUsedAt: (map['lastUsedAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'suggestionId': suggestionId,
+      'text': text,
+      'type': type,
+      'category': category,
+      'popularity': popularity,
+      'lastUsedAt': lastUsedAt != null ? Timestamp.fromDate(lastUsedAt!) : null,
+    };
+  }
+
+  SearchSuggestion copyWith({
+    int? popularity,
+    DateTime? lastUsedAt,
+  }) {
+    return SearchSuggestion(
+      suggestionId: suggestionId,
+      text: text,
+      type: type,
+      category: category,
+      popularity: popularity ?? this.popularity,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+    );
+  }
+}
+
+/// Search filters model
+class SearchFilters {
+  final List<String> channelIds;
+  final List<String> authorIds;
+  final List<String> tags;
+  final String? status;
+  final bool? hasMedia;
+  final int? minReplies;
+  final int? minReactions;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+
+  const SearchFilters({
+    this.channelIds = const [],
+    this.authorIds = const [],
+    this.tags = const [],
+    this.status,
+    this.hasMedia,
+    this.minReplies,
+    this.minReactions,
+    this.fromDate,
+    this.toDate,
+  });
+
+  factory SearchFilters.fromMap(Map<String, dynamic> map) {
+    return SearchFilters(
+      channelIds: (map['channelIds'] as List?)?.cast<String>() ?? [],
+      authorIds: (map['authorIds'] as List?)?.cast<String>() ?? [],
+      tags: (map['tags'] as List?)?.cast<String>() ?? [],
+      status: map['status'] as String?,
+      hasMedia: map['hasMedia'] as bool?,
+      minReplies: map['minReplies'] as int?,
+      minReactions: map['minReactions'] as int?,
+      fromDate: (map['fromDate'] as Timestamp?)?.toDate(),
+      toDate: (map['toDate'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'channelIds': channelIds,
+      'authorIds': authorIds,
+      'tags': tags,
+      'status': status,
+      'hasMedia': hasMedia,
+      'minReplies': minReplies,
+      'minReactions': minReactions,
+      'fromDate': fromDate != null ? Timestamp.fromDate(fromDate!) : null,
+      'toDate': toDate != null ? Timestamp.fromDate(toDate!) : null,
+    };
+  }
+
+  SearchFilters copyWith({
+    List<String>? channelIds,
+    List<String>? authorIds,
+    List<String>? tags,
+    String? status,
+    bool? hasMedia,
+    int? minReplies,
+    int? minReactions,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) {
+    return SearchFilters(
+      channelIds: channelIds ?? this.channelIds,
+      authorIds: authorIds ?? this.authorIds,
+      tags: tags ?? this.tags,
+      status: status ?? this.status,
+      hasMedia: hasMedia ?? this.hasMedia,
+      minReplies: minReplies ?? this.minReplies,
+      minReactions: minReactions ?? this.minReactions,
+      fromDate: fromDate ?? this.fromDate,
+      toDate: toDate ?? this.toDate,
     );
   }
 }

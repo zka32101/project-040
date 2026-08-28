@@ -2491,4 +2491,346 @@ void main() {
       });
     });
   });
+
+  group('Phase 11 Step 5: Advanced Search & Content Discovery', () {
+    group('Full-Text Search', () {
+      test('Search posts by query', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        await service.createPost(
+          channelId: channelId,
+          authorId: 'user1',
+          content: 'bike maintenance guide',
+          tags: ['maintenance'],
+        );
+
+        final results = await service.searchPosts('maintenance');
+        expect(results, isNotEmpty);
+        expect(results.first.snippet, contains('maintenance'));
+      });
+
+      test('Search posts with channel filter', () async {
+        final channel1 = await service.createChannel(
+          name: 'Channel 1',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final channel2 = await service.createChannel(
+          name: 'Channel 2',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        await service.createPost(
+          channelId: channel1,
+          authorId: 'user1',
+          content: 'bike test',
+        );
+
+        await service.createPost(
+          channelId: channel2,
+          authorId: 'user1',
+          content: 'bike test',
+        );
+
+        final results = await service.searchPosts(
+          'bike',
+          channelId: channel1,
+        );
+
+        expect(results.isNotEmpty, true);
+      });
+
+      test('Search posts with date range filter', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        await service.createPost(
+          channelId: channelId,
+          authorId: 'user1',
+          content: 'bike maintenance',
+        );
+
+        final results = await service.searchPostsByDateRange(
+          query: 'bike',
+          fromDate: DateTime.now().subtract(Duration(days: 7)),
+          toDate: DateTime.now(),
+        );
+
+        expect(results, isNotEmpty);
+      });
+
+      test('Search posts by tags', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        await service.createPost(
+          channelId: channelId,
+          authorId: 'user1',
+          content: 'maintenance post',
+          tags: ['maintenance', 'safety'],
+        );
+
+        final results = await service.searchPostsByTags(
+          tags: ['maintenance'],
+        );
+
+        expect(results, isNotEmpty);
+      });
+
+      test('Get search result', () async {
+        final channelId = await service.createChannel(
+          name: 'Test Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final postId = await service.createPost(
+          channelId: channelId,
+          authorId: 'user1',
+          content: 'test content',
+        );
+
+        final result = await service.getSearchResult(postId);
+        expect(result, isNotNull);
+        expect(result?.contentId, postId);
+      });
+    });
+
+    group('Channel Discovery', () {
+      test('Search channels', () async {
+        await service.createChannel(
+          name: 'Maintenance Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final results = await service.searchChannels('Maintenance');
+        expect(results, isNotEmpty);
+      });
+
+      test('Get popular channels', () async {
+        await service.createChannel(
+          name: 'Popular Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final popular = await service.getPopularChannels(limit: 10);
+        expect(popular, isNotEmpty);
+      });
+
+      test('Get trending channels', () async {
+        await service.createChannel(
+          name: 'Trending Channel',
+          ownerId: 'user1',
+          type: ChannelType.public,
+        );
+
+        final trending = await service.getTrendingChannels(limit: 10);
+        expect(trending, isNotEmpty);
+      });
+    });
+
+    group('Search Suggestions', () {
+      test('Get search suggestions', () async {
+        final suggestions = await service.getSearchSuggestions(
+          'bike',
+          limit: 10,
+        );
+
+        expect(suggestions, isNotEmpty);
+      });
+
+      test('Suggestions by category', () async {
+        final suggestions = await service.getSearchSuggestions(
+          'bi',
+          category: 'posts',
+          limit: 10,
+        );
+
+        expect(suggestions, isNotEmpty);
+      });
+    });
+
+    group('Search History', () {
+      test('Record search', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'bike maintenance',
+          resultCount: 42,
+        );
+
+        final history = await service.getUserSearchHistory('user1');
+        expect(history, isNotEmpty);
+        expect(history.first.query, 'bike maintenance');
+      });
+
+      test('Get user search history', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'query1',
+          resultCount: 10,
+        );
+
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'query2',
+          resultCount: 20,
+        );
+
+        final history = await service.getUserSearchHistory('user1');
+        expect(history.length, greaterThanOrEqualTo(2));
+      });
+
+      test('Get trending searches', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'popular query',
+          resultCount: 100,
+        );
+
+        final trending = await service.getTrendingSearches(timeRange: 'week');
+        expect(trending, isNotEmpty);
+      });
+
+      test('Clear search history', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'test',
+          resultCount: 10,
+        );
+
+        await service.clearSearchHistory('user1');
+
+        final history = await service.getUserSearchHistory('user1');
+        expect(history, isEmpty);
+      });
+    });
+
+    group('Saved Searches', () {
+      test('Save search', () async {
+        final searchId = await service.saveSearch(
+          userId: 'user1',
+          query: 'bike maintenance',
+          name: 'Maintenance Tips',
+        );
+
+        expect(searchId, isNotEmpty);
+      });
+
+      test('Get saved search', () async {
+        final searchId = await service.saveSearch(
+          userId: 'user1',
+          query: 'test query',
+          name: 'Test Search',
+        );
+
+        final saved = await service.getSavedSearch(searchId);
+        expect(saved, isNotNull);
+        expect(saved?.name, 'Test Search');
+      });
+
+      test('Get user saved searches', () async {
+        await service.saveSearch(
+          userId: 'user1',
+          query: 'query1',
+          name: 'Search 1',
+        );
+
+        await service.saveSearch(
+          userId: 'user1',
+          query: 'query2',
+          name: 'Search 2',
+        );
+
+        final saved = await service.getSavedSearches('user1');
+        expect(saved.length, greaterThanOrEqualTo(2));
+      });
+
+      test('Update saved search', () async {
+        final searchId = await service.saveSearch(
+          userId: 'user1',
+          query: 'test',
+          name: 'Original Name',
+        );
+
+        await service.updateSavedSearch(
+          searchId,
+          name: 'Updated Name',
+        );
+
+        final saved = await service.getSavedSearch(searchId);
+        expect(saved?.name, 'Updated Name');
+      });
+
+      test('Delete saved search', () async {
+        final searchId = await service.saveSearch(
+          userId: 'user1',
+          query: 'test',
+          name: 'To Delete',
+        );
+
+        await service.deleteSavedSearch(searchId);
+
+        final saved = await service.getSavedSearch(searchId);
+        expect(saved, isNull);
+      });
+
+      test('Use saved search increments counter', () async {
+        final searchId = await service.saveSearch(
+          userId: 'user1',
+          query: 'test',
+          name: 'Test Search',
+        );
+
+        await service.useSavedSearch(searchId);
+
+        final saved = await service.getSavedSearch(searchId);
+        expect(saved?.useCount, greaterThan(0));
+      });
+    });
+
+    group('Search Analytics', () {
+      test('Get search analytics', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'test',
+          resultCount: 10,
+        );
+
+        final analytics = await service.getSearchAnalytics();
+        expect(analytics, isNotEmpty);
+      });
+
+      test('Get search stats', () async {
+        await service.recordSearch(
+          userId: 'user1',
+          query: 'query1',
+          resultCount: 10,
+        );
+
+        await service.recordSearch(
+          userId: 'user2',
+          query: 'query2',
+          resultCount: 20,
+        );
+
+        final stats = await service.getSearchStats();
+        expect(stats['totalSearches'], greaterThan(0));
+        expect(stats['uniqueUsers'], greaterThan(0));
+      });
+    });
+  });
 }
