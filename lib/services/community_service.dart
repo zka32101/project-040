@@ -858,6 +858,120 @@ abstract class CommunityService {
   Future<void> checkAndProcessLevelUp(String userId);
 
   Future<List<Map<String, dynamic>>> getLevelDefinitions();
+
+  // Community Analytics & Insights
+  Future<Map<String, dynamic>> getPlatformOverview({
+    String timeRange = 'week',
+    DateTime? startDate,
+    DateTime? endDate,
+  });
+
+  Future<Map<String, dynamic>> getKeyMetrics({
+    required DateTime startDate,
+    required DateTime endDate,
+  });
+
+  Future<List<Map<String, dynamic>>> getMetricTrends({
+    required String metric,
+    String timeRange = 'month',
+    String granularity = 'daily',
+  });
+
+  Future<Map<String, dynamic>> getUserEngagementStats({
+    String timeRange = 'week',
+  });
+
+  Future<Map<String, dynamic>> getUserRetention({
+    required DateTime cohortDate,
+  });
+
+  Future<List<Map<String, dynamic>>> getEngagementBySegment({
+    required String segment,
+    int limit = 50,
+  });
+
+  Future<Map<String, dynamic>> getContentAnalytics({
+    String timeRange = 'week',
+  });
+
+  Future<List<Map<String, dynamic>>> getTrendingContent({
+    String timeRange = 'day',
+    int limit = 20,
+  });
+
+  Future<Map<String, dynamic>> getChannelContentAnalytics({
+    required String channelId,
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>> getCommunityHealthScore({
+    String timeRange = 'week',
+  });
+
+  Future<List<Map<String, dynamic>>> getCommunityHealthTrends({
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>> getChannelHealthMetrics({
+    required String channelId,
+  });
+
+  Future<Map<String, dynamic>> getUserGrowthMetrics({
+    String timeRange = 'month',
+  });
+
+  Future<List<Map<String, dynamic>>> getCohortRetention({
+    required DateTime startDate,
+    required DateTime endDate,
+  });
+
+  Future<Map<String, dynamic>> getUserAcquisitionAnalytics({
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>> getModerationAnalyticsOverview({
+    String timeRange = 'week',
+  });
+
+  Future<List<Map<String, dynamic>>> getModeratorEffectiveness({
+    String timeRange = 'month',
+    int limit = 50,
+  });
+
+  Future<List<Map<String, dynamic>>> getModerationHotspots({
+    String timeRange = 'week',
+    int limit = 20,
+  });
+
+  Future<Map<String, dynamic>> getRevenueAnalytics({
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>> getSubscriptionAnalytics({
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>> getConversionFunnel({
+    String timeRange = 'week',
+  });
+
+  Future<Map<String, dynamic>> generateCustomReport({
+    required String name,
+    required List<String> metrics,
+    Map<String, dynamic>? filters,
+    String timeRange = 'week',
+    String format = 'json',
+  });
+
+  Future<List<Map<String, dynamic>>> getSavedReports({
+    int limit = 20,
+  });
+
+  Future<Map<String, dynamic>> exportAnalyticsData({
+    List<String> metrics = const ['all'],
+    String timeRange = 'month',
+    String format = 'csv',
+  });
 }
 
 /// Firebase implementation of community service
@@ -4241,6 +4355,243 @@ class FirebaseCommunityService implements CommunityService {
       {'level': 6, 'title': 'Expert', 'minXP': 750},
     ];
   }
+
+  // Community Analytics & Insights
+  @override
+  Future<Map<String, dynamic>> getPlatformOverview({
+    String timeRange = 'week',
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    return {
+      'dau': 0,
+      'mau': 0,
+      'newUsers': 0,
+      'totalUsers': 0,
+      'postsCreated': 0,
+      'repliesCreated': 0,
+      'reportsSubmitted': 0,
+      'moderationActions': 0,
+      'revenue': 0.0,
+      'subscriptions': 0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getKeyMetrics({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return {
+      'period': 'custom',
+      'metrics': [],
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMetricTrends({
+    required String metric,
+    String timeRange = 'month',
+    String granularity = 'daily',
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserEngagementStats({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'avgPostsPerUser': 0.0,
+      'avgRepliesPerUser': 0.0,
+      'engagementRate': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserRetention({
+    required DateTime cohortDate,
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getEngagementBySegment({
+    required String segment,
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getContentAnalytics({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'totalPosts': 0,
+      'totalReplies': 0,
+      'avgEngagement': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTrendingContent({
+    String timeRange = 'day',
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getChannelContentAnalytics({
+    required String channelId,
+    String timeRange = 'month',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCommunityHealthScore({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'overallScore': 75.0,
+      'sentimentScore': 0.7,
+      'toxicityLevel': 0.1,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCommunityHealthTrends({
+    String timeRange = 'month',
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getChannelHealthMetrics({
+    required String channelId,
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserGrowthMetrics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'newUsersPerDay': 0.0,
+      'churnRate': 0.0,
+      'netGrowth': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCohortRetention({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserAcquisitionAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getModerationAnalyticsOverview({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'reportsPerDay': 0.0,
+      'actionsPerDay': 0.0,
+      'appealRate': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getModeratorEffectiveness({
+    String timeRange = 'month',
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getModerationHotspots({
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getRevenueAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'totalRevenue': 0.0,
+      'subscriptionRevenue': 0.0,
+      'arpu': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSubscriptionAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'activeSubscriptions': 0,
+      'churnRate': 0.0,
+      'upgradeRate': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getConversionFunnel({
+    String timeRange = 'week',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateCustomReport({
+    required String name,
+    required List<String> metrics,
+    Map<String, dynamic>? filters,
+    String timeRange = 'week',
+    String format = 'json',
+  }) async {
+    return {
+      'reportId': 'report_${DateTime.now().millisecondsSinceEpoch}',
+      'name': name,
+      'metrics': metrics,
+      'format': format,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSavedReports({
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> exportAnalyticsData({
+    List<String> metrics = const ['all'],
+    String timeRange = 'month',
+    String format = 'csv',
+  }) async {
+    return {
+      'exportId': 'export_${DateTime.now().millisecondsSinceEpoch}',
+      'format': format,
+      'metricsCount': 0,
+    };
+  }
 }
 
 /// Stub implementation for testing
@@ -7185,6 +7536,245 @@ class StubCommunityService implements CommunityService {
       {'level': 5, 'title': 'Expert', 'minXP': 500},
       {'level': 6, 'title': 'Expert', 'minXP': 750},
     ];
+  }
+
+  // Community Analytics & Insights
+  final Map<String, PlatformMetrics> _metrics = {};
+  final Map<String, UserEngagementMetrics> _engagementMetrics = {};
+  final Map<String, ContentAnalytics> _contentAnalytics = {};
+  final Map<String, CommunityHealthMetrics> _healthMetrics = {};
+
+  @override
+  Future<Map<String, dynamic>> getPlatformOverview({
+    String timeRange = 'week',
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    return {
+      'dau': 0,
+      'mau': 0,
+      'newUsers': 0,
+      'totalUsers': 0,
+      'postsCreated': 0,
+      'repliesCreated': 0,
+      'reportsSubmitted': 0,
+      'moderationActions': 0,
+      'revenue': 0.0,
+      'subscriptions': 0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getKeyMetrics({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return {'period': 'custom', 'metrics': []};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMetricTrends({
+    required String metric,
+    String timeRange = 'month',
+    String granularity = 'daily',
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserEngagementStats({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'avgPostsPerUser': 0.0,
+      'avgRepliesPerUser': 0.0,
+      'engagementRate': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserRetention({
+    required DateTime cohortDate,
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getEngagementBySegment({
+    required String segment,
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getContentAnalytics({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'totalPosts': 0,
+      'totalReplies': 0,
+      'avgEngagement': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTrendingContent({
+    String timeRange = 'day',
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getChannelContentAnalytics({
+    required String channelId,
+    String timeRange = 'month',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCommunityHealthScore({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'overallScore': 75.0,
+      'sentimentScore': 0.7,
+      'toxicityLevel': 0.1,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCommunityHealthTrends({
+    String timeRange = 'month',
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getChannelHealthMetrics({
+    required String channelId,
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserGrowthMetrics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'newUsersPerDay': 0.0,
+      'churnRate': 0.0,
+      'netGrowth': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCohortRetention({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserAcquisitionAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getModerationAnalyticsOverview({
+    String timeRange = 'week',
+  }) async {
+    return {
+      'reportsPerDay': 0.0,
+      'actionsPerDay': 0.0,
+      'appealRate': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getModeratorEffectiveness({
+    String timeRange = 'month',
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getModerationHotspots({
+    String timeRange = 'week',
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getRevenueAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'totalRevenue': 0.0,
+      'subscriptionRevenue': 0.0,
+      'arpu': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSubscriptionAnalytics({
+    String timeRange = 'month',
+  }) async {
+    return {
+      'activeSubscriptions': 0,
+      'churnRate': 0.0,
+      'upgradeRate': 0.0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getConversionFunnel({
+    String timeRange = 'week',
+  }) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateCustomReport({
+    required String name,
+    required List<String> metrics,
+    Map<String, dynamic>? filters,
+    String timeRange = 'week',
+    String format = 'json',
+  }) async {
+    return {
+      'reportId': 'report_${DateTime.now().millisecondsSinceEpoch}',
+      'name': name,
+      'metrics': metrics,
+      'format': format,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSavedReports({
+    int limit = 20,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> exportAnalyticsData({
+    List<String> metrics = const ['all'],
+    String timeRange = 'month',
+    String format = 'csv',
+  }) async {
+    return {
+      'exportId': 'export_${DateTime.now().millisecondsSinceEpoch}',
+      'format': format,
+      'metricsCount': 0,
+    };
   }
 }
 

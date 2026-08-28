@@ -45,6 +45,10 @@ enum BadgeRarity { common, uncommon, rare, epic, legendary }
 
 enum BadgeCategory { social, expertise, moderation, milestone, achievement }
 
+enum MetricType { dau, mau, engagement, revenue, health, growth, moderation }
+
+enum TimeRange { day, week, month, quarter, year, custom }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -2950,6 +2954,307 @@ class UserBadge {
       reason: reason ?? this.reason,
       isDisplayed: isDisplayed ?? this.isDisplayed,
       level: level ?? this.level,
+    );
+  }
+}
+
+/// Platform metrics model
+class PlatformMetrics {
+  final String metricsId;
+  final DateTime date;
+  final int dau; // Daily active users
+  final int mau; // Monthly active users
+  final int newUsers;
+  final int totalUsers;
+  final int postsCreated;
+  final int repliesCreated;
+  final int reportsSubmitted;
+  final int moderationActions;
+  final double revenue;
+  final int subscriptions;
+  final Map<String, dynamic> metadata;
+
+  PlatformMetrics({
+    required this.metricsId,
+    required this.date,
+    this.dau = 0,
+    this.mau = 0,
+    this.newUsers = 0,
+    this.totalUsers = 0,
+    this.postsCreated = 0,
+    this.repliesCreated = 0,
+    this.reportsSubmitted = 0,
+    this.moderationActions = 0,
+    this.revenue = 0.0,
+    this.subscriptions = 0,
+    this.metadata = const {},
+  });
+
+  factory PlatformMetrics.empty() {
+    return PlatformMetrics(
+      metricsId: '',
+      date: DateTime.now(),
+    );
+  }
+
+  factory PlatformMetrics.fromMap(Map<String, dynamic> map) {
+    return PlatformMetrics(
+      metricsId: map['metricsId'] as String? ?? '',
+      date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      dau: map['dau'] as int? ?? 0,
+      mau: map['mau'] as int? ?? 0,
+      newUsers: map['newUsers'] as int? ?? 0,
+      totalUsers: map['totalUsers'] as int? ?? 0,
+      postsCreated: map['postsCreated'] as int? ?? 0,
+      repliesCreated: map['repliesCreated'] as int? ?? 0,
+      reportsSubmitted: map['reportsSubmitted'] as int? ?? 0,
+      moderationActions: map['moderationActions'] as int? ?? 0,
+      revenue: (map['revenue'] as num?)?.toDouble() ?? 0.0,
+      subscriptions: map['subscriptions'] as int? ?? 0,
+      metadata: Map<String, dynamic>.from(map['metadata'] as Map? ?? {}),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'metricsId': metricsId,
+      'date': Timestamp.fromDate(date),
+      'dau': dau,
+      'mau': mau,
+      'newUsers': newUsers,
+      'totalUsers': totalUsers,
+      'postsCreated': postsCreated,
+      'repliesCreated': repliesCreated,
+      'reportsSubmitted': reportsSubmitted,
+      'moderationActions': moderationActions,
+      'revenue': revenue,
+      'subscriptions': subscriptions,
+      'metadata': metadata,
+    };
+  }
+}
+
+/// User engagement metrics model
+class UserEngagementMetrics {
+  final String engagementId;
+  final String userId;
+  final DateTime date;
+  final int postsCreated;
+  final int repliesCreated;
+  final double engagementScore;
+  final int sessionCount;
+  final int timeSpent; // in minutes
+  final DateTime lastActiveAt;
+  final bool isActive;
+
+  UserEngagementMetrics({
+    required this.engagementId,
+    required this.userId,
+    required this.date,
+    this.postsCreated = 0,
+    this.repliesCreated = 0,
+    this.engagementScore = 0.0,
+    this.sessionCount = 0,
+    this.timeSpent = 0,
+    required this.lastActiveAt,
+    this.isActive = false,
+  });
+
+  factory UserEngagementMetrics.empty() {
+    return UserEngagementMetrics(
+      engagementId: '',
+      userId: '',
+      date: DateTime.now(),
+      lastActiveAt: DateTime.now(),
+    );
+  }
+
+  factory UserEngagementMetrics.fromMap(Map<String, dynamic> map) {
+    return UserEngagementMetrics(
+      engagementId: map['engagementId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      postsCreated: map['postsCreated'] as int? ?? 0,
+      repliesCreated: map['repliesCreated'] as int? ?? 0,
+      engagementScore: (map['engagementScore'] as num?)?.toDouble() ?? 0.0,
+      sessionCount: map['sessionCount'] as int? ?? 0,
+      timeSpent: map['timeSpent'] as int? ?? 0,
+      lastActiveAt: (map['lastActiveAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isActive: map['isActive'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'engagementId': engagementId,
+      'userId': userId,
+      'date': Timestamp.fromDate(date),
+      'postsCreated': postsCreated,
+      'repliesCreated': repliesCreated,
+      'engagementScore': engagementScore,
+      'sessionCount': sessionCount,
+      'timeSpent': timeSpent,
+      'lastActiveAt': Timestamp.fromDate(lastActiveAt),
+      'isActive': isActive,
+    };
+  }
+}
+
+/// Content analytics model
+class ContentAnalytics {
+  final String contentId;
+  final String contentType; // 'post' or 'reply'
+  final String authorId;
+  final String channelId;
+  final DateTime createdAt;
+  final int views;
+  final int reactions;
+  final int replies;
+  final int shares;
+  final double sentiment;
+  final double performanceScore;
+
+  ContentAnalytics({
+    required this.contentId,
+    required this.contentType,
+    required this.authorId,
+    required this.channelId,
+    required this.createdAt,
+    this.views = 0,
+    this.reactions = 0,
+    this.replies = 0,
+    this.shares = 0,
+    this.sentiment = 0.5,
+    this.performanceScore = 0.0,
+  });
+
+  factory ContentAnalytics.empty() {
+    return ContentAnalytics(
+      contentId: '',
+      contentType: '',
+      authorId: '',
+      channelId: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ContentAnalytics.fromMap(Map<String, dynamic> map) {
+    return ContentAnalytics(
+      contentId: map['contentId'] as String? ?? '',
+      contentType: map['contentType'] as String? ?? '',
+      authorId: map['authorId'] as String? ?? '',
+      channelId: map['channelId'] as String? ?? '',
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      views: map['views'] as int? ?? 0,
+      reactions: map['reactions'] as int? ?? 0,
+      replies: map['replies'] as int? ?? 0,
+      shares: map['shares'] as int? ?? 0,
+      sentiment: (map['sentiment'] as num?)?.toDouble() ?? 0.5,
+      performanceScore: (map['performanceScore'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'contentId': contentId,
+      'contentType': contentType,
+      'authorId': authorId,
+      'channelId': channelId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'views': views,
+      'reactions': reactions,
+      'replies': replies,
+      'shares': shares,
+      'sentiment': sentiment,
+      'performanceScore': performanceScore,
+    };
+  }
+}
+
+/// Community health metrics model
+class CommunityHealthMetrics {
+  final String healthId;
+  final DateTime date;
+  final double overallScore;
+  final double sentimentScore;
+  final double toxicityLevel;
+  final double memberSatisfaction;
+  final double retentionIndex;
+  final double moderatorEffectiveness;
+  final double reportResolutionRate;
+  final double communityGrowth;
+
+  CommunityHealthMetrics({
+    required this.healthId,
+    required this.date,
+    this.overallScore = 75.0,
+    this.sentimentScore = 0.7,
+    this.toxicityLevel = 0.1,
+    this.memberSatisfaction = 0.75,
+    this.retentionIndex = 0.8,
+    this.moderatorEffectiveness = 0.85,
+    this.reportResolutionRate = 0.9,
+    this.communityGrowth = 0.1,
+  });
+
+  factory CommunityHealthMetrics.empty() {
+    return CommunityHealthMetrics(
+      healthId: '',
+      date: DateTime.now(),
+    );
+  }
+
+  factory CommunityHealthMetrics.fromMap(Map<String, dynamic> map) {
+    return CommunityHealthMetrics(
+      healthId: map['healthId'] as String? ?? '',
+      date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      overallScore: (map['overallScore'] as num?)?.toDouble() ?? 75.0,
+      sentimentScore: (map['sentimentScore'] as num?)?.toDouble() ?? 0.7,
+      toxicityLevel: (map['toxicityLevel'] as num?)?.toDouble() ?? 0.1,
+      memberSatisfaction: (map['memberSatisfaction'] as num?)?.toDouble() ?? 0.75,
+      retentionIndex: (map['retentionIndex'] as num?)?.toDouble() ?? 0.8,
+      moderatorEffectiveness: (map['moderatorEffectiveness'] as num?)?.toDouble() ?? 0.85,
+      reportResolutionRate: (map['reportResolutionRate'] as num?)?.toDouble() ?? 0.9,
+      communityGrowth: (map['communityGrowth'] as num?)?.toDouble() ?? 0.1,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'healthId': healthId,
+      'date': Timestamp.fromDate(date),
+      'overallScore': overallScore,
+      'sentimentScore': sentimentScore,
+      'toxicityLevel': toxicityLevel,
+      'memberSatisfaction': memberSatisfaction,
+      'retentionIndex': retentionIndex,
+      'moderatorEffectiveness': moderatorEffectiveness,
+      'reportResolutionRate': reportResolutionRate,
+      'communityGrowth': communityGrowth,
+    };
+  }
+
+  CommunityHealthMetrics copyWith({
+    double? overallScore,
+    double? sentimentScore,
+    double? toxicityLevel,
+    double? memberSatisfaction,
+    double? retentionIndex,
+    double? moderatorEffectiveness,
+    double? reportResolutionRate,
+    double? communityGrowth,
+  }) {
+    return CommunityHealthMetrics(
+      healthId: healthId,
+      date: date,
+      overallScore: overallScore ?? this.overallScore,
+      sentimentScore: sentimentScore ?? this.sentimentScore,
+      toxicityLevel: toxicityLevel ?? this.toxicityLevel,
+      memberSatisfaction: memberSatisfaction ?? this.memberSatisfaction,
+      retentionIndex: retentionIndex ?? this.retentionIndex,
+      moderatorEffectiveness: moderatorEffectiveness ?? this.moderatorEffectiveness,
+      reportResolutionRate: reportResolutionRate ?? this.reportResolutionRate,
+      communityGrowth: communityGrowth ?? this.communityGrowth,
     );
   }
 }

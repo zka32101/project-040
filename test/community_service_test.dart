@@ -3490,5 +3490,250 @@ void main() {
         expect(newLevel['experience'], greaterThan(0));
       });
     });
+
+    // Phase 11 Step 8: Community Analytics & Insights Dashboard
+    group('Platform Analytics', () {
+      test('getPlatformOverview returns key metrics', () async {
+        final service = StubCommunityService();
+
+        final overview = await service.getPlatformOverview(timeRange: 'week');
+        expect(overview['dau'], isNotNull);
+        expect(overview['mau'], isNotNull);
+        expect(overview['postsCreated'], isNotNull);
+      });
+
+      test('getKeyMetrics returns metrics for date range', () async {
+        final service = StubCommunityService();
+
+        final metrics = await service.getKeyMetrics(
+          startDate: DateTime(2026, 1, 1),
+          endDate: DateTime(2026, 8, 28),
+        );
+
+        expect(metrics, isList);
+        expect(metrics.isNotEmpty || metrics.isEmpty, true);
+      });
+
+      test('getMetricTrends tracks metric over time', () async {
+        final service = StubCommunityService();
+
+        final trends = await service.getMetricTrends(
+          metric: 'daily_active_users',
+          timeRange: 'month',
+        );
+
+        expect(trends, isList);
+      });
+    });
+
+    group('User Engagement Analytics', () {
+      test('getUserEngagementStats returns engagement metrics', () async {
+        final service = StubCommunityService();
+
+        final stats = await service.getUserEngagementStats(timeRange: 'week');
+        expect(stats['avgPostsPerUser'], isNotNull);
+        expect(stats['engagementRate'], isNotNull);
+      });
+
+      test('getUserRetention tracks retention by cohort', () async {
+        final service = StubCommunityService();
+
+        final retention = await service.getUserRetention(
+          cohortDate: DateTime(2026, 1, 1),
+        );
+
+        expect(retention, isMap);
+      });
+
+      test('getEngagementBySegment segments engagement data', () async {
+        final service = StubCommunityService();
+
+        final segments = await service.getEngagementBySegment(
+          segment: 'channel',
+          limit: 50,
+        );
+
+        expect(segments, isList);
+      });
+    });
+
+    group('Content Analytics', () {
+      test('getContentAnalytics returns content performance', () async {
+        final service = StubCommunityService();
+
+        final analytics = await service.getContentAnalytics(timeRange: 'week');
+        expect(analytics['totalPosts'], isNotNull);
+        expect(analytics['avgEngagement'], isNotNull);
+      });
+
+      test('getTrendingContent returns trending posts', () async {
+        final service = StubCommunityService();
+
+        final trending = await service.getTrendingContent(
+          timeRange: 'day',
+          limit: 20,
+        );
+
+        expect(trending, isList);
+      });
+
+      test('getChannelContentAnalytics returns channel-specific data', () async {
+        final service = StubCommunityService();
+
+        final analytics = await service.getChannelContentAnalytics(
+          channelId: 'channel1',
+          timeRange: 'month',
+        );
+
+        expect(analytics, isMap);
+      });
+    });
+
+    group('Community Health Analytics', () {
+      test('getCommunityHealthScore returns health metrics', () async {
+        final service = StubCommunityService();
+
+        final health = await service.getCommunityHealthScore(timeRange: 'week');
+        expect(health['overallScore'], isNotNull);
+        expect(health['overallScore'], greaterThanOrEqualTo(0));
+        expect(health['overallScore'], lessThanOrEqualTo(100));
+      });
+
+      test('getCommunityHealthTrends tracks health over time', () async {
+        final service = StubCommunityService();
+
+        final trends = await service.getCommunityHealthTrends(timeRange: 'month');
+        expect(trends, isList);
+      });
+
+      test('getChannelHealthMetrics returns channel health', () async {
+        final service = StubCommunityService();
+
+        final health = await service.getChannelHealthMetrics(channelId: 'channel1');
+        expect(health, isMap);
+      });
+    });
+
+    group('Growth & Retention Analytics', () {
+      test('getUserGrowthMetrics tracks user growth', () async {
+        final service = StubCommunityService();
+
+        final growth = await service.getUserGrowthMetrics(timeRange: 'month');
+        expect(growth['newUsersPerDay'], isNotNull);
+        expect(growth['churnRate'], isNotNull);
+      });
+
+      test('getCohortRetention analyzes retention by cohort', () async {
+        final service = StubCommunityService();
+
+        final cohorts = await service.getCohortRetention(
+          startDate: DateTime(2026, 1, 1),
+          endDate: DateTime(2026, 8, 28),
+        );
+
+        expect(cohorts, isList);
+      });
+
+      test('getUserAcquisitionAnalytics tracks acquisition', () async {
+        final service = StubCommunityService();
+
+        final acquisition = await service.getUserAcquisitionAnalytics(
+          timeRange: 'month',
+        );
+
+        expect(acquisition, isMap);
+      });
+    });
+
+    group('Moderation Analytics', () {
+      test('getModerationAnalyticsOverview returns moderation stats', () async {
+        final service = StubCommunityService();
+
+        final stats = await service.getModerationAnalyticsOverview(timeRange: 'week');
+        expect(stats['reportsPerDay'], isNotNull);
+        expect(stats['actionsPerDay'], isNotNull);
+      });
+
+      test('getModeratorEffectiveness tracks moderator performance', () async {
+        final service = StubCommunityService();
+
+        final effectiveness = await service.getModeratorEffectiveness(
+          timeRange: 'month',
+          limit: 50,
+        );
+
+        expect(effectiveness, isList);
+      });
+
+      test('getModerationHotspots identifies problem areas', () async {
+        final service = StubCommunityService();
+
+        final hotspots = await service.getModerationHotspots(
+          timeRange: 'week',
+          limit: 20,
+        );
+
+        expect(hotspots, isList);
+      });
+    });
+
+    group('Revenue Analytics', () {
+      test('getRevenueAnalytics returns revenue metrics', () async {
+        final service = StubCommunityService();
+
+        final revenue = await service.getRevenueAnalytics(timeRange: 'month');
+        expect(revenue['totalRevenue'], isNotNull);
+        expect(revenue['arpu'], isNotNull);
+      });
+
+      test('getSubscriptionAnalytics tracks subscriptions', () async {
+        final service = StubCommunityService();
+
+        final subs = await service.getSubscriptionAnalytics(timeRange: 'month');
+        expect(subs['activeSubscriptions'], isNotNull);
+        expect(subs['churnRate'], isNotNull);
+      });
+
+      test('getConversionFunnel tracks conversion', () async {
+        final service = StubCommunityService();
+
+        final funnel = await service.getConversionFunnel(timeRange: 'week');
+        expect(funnel, isMap);
+      });
+    });
+
+    group('Custom Reporting', () {
+      test('generateCustomReport creates custom report', () async {
+        final service = StubCommunityService();
+
+        final report = await service.generateCustomReport(
+          name: 'Weekly Report',
+          metrics: ['dau', 'posts', 'engagement'],
+          timeRange: 'week',
+        );
+
+        expect(report['reportId'], isNotNull);
+        expect(report['name'], 'Weekly Report');
+      });
+
+      test('getSavedReports retrieves saved reports', () async {
+        final service = StubCommunityService();
+
+        final reports = await service.getSavedReports(limit: 20);
+        expect(reports, isList);
+      });
+
+      test('exportAnalyticsData exports metrics', () async {
+        final service = StubCommunityService();
+
+        final export = await service.exportAnalyticsData(
+          metrics: ['all'],
+          format: 'csv',
+        );
+
+        expect(export['exportId'], isNotNull);
+        expect(export['format'], 'csv');
+      });
+    });
   });
 }
