@@ -39,6 +39,12 @@ enum EscalationTarget { adminReview, legalTeam, executive }
 
 enum EscalationStatus { pending, processing, approved, denied, returned }
 
+enum ReputationEventType { postCreated, replyCreated, postUpvoted, replyUpvoted, answerMarkedHelpful, contentApproved, reportApproved, contentModerated, receivedMention }
+
+enum BadgeRarity { common, uncommon, rare, epic, legendary }
+
+enum BadgeCategory { social, expertise, moderation, milestone, achievement }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -2621,6 +2627,329 @@ class Escalation {
       processedAt: processedAt ?? this.processedAt,
       decision: decision ?? this.decision,
       notes: notes ?? this.notes,
+    );
+  }
+}
+
+/// User reputation model
+class UserReputation {
+  final String reputationId;
+  final String userId;
+  final int totalScore;
+  final int currentLevel;
+  final String levelTitle;
+  final int postsCount;
+  final int repliesCount;
+  final int upvotesReceived;
+  final int badgesCount;
+  final DateTime createdAt;
+  final DateTime lastActivityAt;
+
+  UserReputation({
+    required this.reputationId,
+    required this.userId,
+    this.totalScore = 0,
+    this.currentLevel = 1,
+    this.levelTitle = 'Novice',
+    this.postsCount = 0,
+    this.repliesCount = 0,
+    this.upvotesReceived = 0,
+    this.badgesCount = 0,
+    required this.createdAt,
+    required this.lastActivityAt,
+  });
+
+  factory UserReputation.empty() {
+    return UserReputation(
+      reputationId: '',
+      userId: '',
+      createdAt: DateTime.now(),
+      lastActivityAt: DateTime.now(),
+    );
+  }
+
+  factory UserReputation.fromMap(Map<String, dynamic> map) {
+    return UserReputation(
+      reputationId: map['reputationId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      totalScore: map['totalScore'] as int? ?? 0,
+      currentLevel: map['currentLevel'] as int? ?? 1,
+      levelTitle: map['levelTitle'] as String? ?? 'Novice',
+      postsCount: map['postsCount'] as int? ?? 0,
+      repliesCount: map['repliesCount'] as int? ?? 0,
+      upvotesReceived: map['upvotesReceived'] as int? ?? 0,
+      badgesCount: map['badgesCount'] as int? ?? 0,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastActivityAt: (map['lastActivityAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reputationId': reputationId,
+      'userId': userId,
+      'totalScore': totalScore,
+      'currentLevel': currentLevel,
+      'levelTitle': levelTitle,
+      'postsCount': postsCount,
+      'repliesCount': repliesCount,
+      'upvotesReceived': upvotesReceived,
+      'badgesCount': badgesCount,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastActivityAt': Timestamp.fromDate(lastActivityAt),
+    };
+  }
+
+  UserReputation copyWith({
+    int? totalScore,
+    int? currentLevel,
+    String? levelTitle,
+    int? postsCount,
+    int? repliesCount,
+    int? upvotesReceived,
+    int? badgesCount,
+    DateTime? lastActivityAt,
+  }) {
+    return UserReputation(
+      reputationId: reputationId,
+      userId: userId,
+      totalScore: totalScore ?? this.totalScore,
+      currentLevel: currentLevel ?? this.currentLevel,
+      levelTitle: levelTitle ?? this.levelTitle,
+      postsCount: postsCount ?? this.postsCount,
+      repliesCount: repliesCount ?? this.repliesCount,
+      upvotesReceived: upvotesReceived ?? this.upvotesReceived,
+      badgesCount: badgesCount ?? this.badgesCount,
+      createdAt: createdAt,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
+    );
+  }
+}
+
+/// Reputation event model
+class ReputationEvent {
+  final String eventId;
+  final String userId;
+  final ReputationEventType eventType;
+  final int points;
+  final String reason;
+  final String? relatedContentId;
+  final DateTime createdAt;
+  final Map<String, dynamic> metadata;
+
+  ReputationEvent({
+    required this.eventId,
+    required this.userId,
+    required this.eventType,
+    required this.points,
+    required this.reason,
+    this.relatedContentId,
+    required this.createdAt,
+    this.metadata = const {},
+  });
+
+  factory ReputationEvent.empty() {
+    return ReputationEvent(
+      eventId: '',
+      userId: '',
+      eventType: ReputationEventType.postCreated,
+      points: 0,
+      reason: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ReputationEvent.fromMap(Map<String, dynamic> map) {
+    return ReputationEvent(
+      eventId: map['eventId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      eventType: ReputationEventType.values[(map['eventType'] as int?) ?? ReputationEventType.postCreated.index],
+      points: map['points'] as int? ?? 0,
+      reason: map['reason'] as String? ?? '',
+      relatedContentId: map['relatedContentId'] as String?,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      metadata: Map<String, dynamic>.from(map['metadata'] as Map? ?? {}),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'eventId': eventId,
+      'userId': userId,
+      'eventType': eventType.index,
+      'points': points,
+      'reason': reason,
+      'relatedContentId': relatedContentId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'metadata': metadata,
+    };
+  }
+}
+
+/// Badge definition model
+class BadgeDefinition {
+  final String badgeId;
+  final String name;
+  final String description;
+  final BadgeCategory category;
+  final BadgeRarity rarity;
+  final int pointsValue;
+  final String iconUrl;
+  final Map<String, dynamic> requirements;
+  final DateTime createdAt;
+  final bool isActive;
+
+  BadgeDefinition({
+    required this.badgeId,
+    required this.name,
+    required this.description,
+    required this.category,
+    required this.rarity,
+    required this.pointsValue,
+    required this.iconUrl,
+    this.requirements = const {},
+    required this.createdAt,
+    this.isActive = true,
+  });
+
+  factory BadgeDefinition.empty() {
+    return BadgeDefinition(
+      badgeId: '',
+      name: '',
+      description: '',
+      category: BadgeCategory.social,
+      rarity: BadgeRarity.common,
+      pointsValue: 0,
+      iconUrl: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory BadgeDefinition.fromMap(Map<String, dynamic> map) {
+    return BadgeDefinition(
+      badgeId: map['badgeId'] as String? ?? '',
+      name: map['name'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      category: BadgeCategory.values[(map['category'] as int?) ?? BadgeCategory.social.index],
+      rarity: BadgeRarity.values[(map['rarity'] as int?) ?? BadgeRarity.common.index],
+      pointsValue: map['pointsValue'] as int? ?? 0,
+      iconUrl: map['iconUrl'] as String? ?? '',
+      requirements: Map<String, dynamic>.from(map['requirements'] as Map? ?? {}),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isActive: map['isActive'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'badgeId': badgeId,
+      'name': name,
+      'description': description,
+      'category': category.index,
+      'rarity': rarity.index,
+      'pointsValue': pointsValue,
+      'iconUrl': iconUrl,
+      'requirements': requirements,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'isActive': isActive,
+    };
+  }
+
+  BadgeDefinition copyWith({
+    String? name,
+    String? description,
+    BadgeRarity? rarity,
+    int? pointsValue,
+    String? iconUrl,
+    Map<String, dynamic>? requirements,
+    bool? isActive,
+  }) {
+    return BadgeDefinition(
+      badgeId: badgeId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category,
+      rarity: rarity ?? this.rarity,
+      pointsValue: pointsValue ?? this.pointsValue,
+      iconUrl: iconUrl ?? this.iconUrl,
+      requirements: requirements ?? this.requirements,
+      createdAt: createdAt,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+}
+
+/// User badge model
+class UserBadge {
+  final String userBadgeId;
+  final String badgeId;
+  final String userId;
+  final DateTime earnedAt;
+  final String? awardedBy;
+  final String? reason;
+  final bool isDisplayed;
+  final int level;
+
+  UserBadge({
+    required this.userBadgeId,
+    required this.badgeId,
+    required this.userId,
+    required this.earnedAt,
+    this.awardedBy,
+    this.reason,
+    this.isDisplayed = true,
+    this.level = 1,
+  });
+
+  factory UserBadge.empty() {
+    return UserBadge(
+      userBadgeId: '',
+      badgeId: '',
+      userId: '',
+      earnedAt: DateTime.now(),
+    );
+  }
+
+  factory UserBadge.fromMap(Map<String, dynamic> map) {
+    return UserBadge(
+      userBadgeId: map['userBadgeId'] as String? ?? '',
+      badgeId: map['badgeId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      earnedAt: (map['earnedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      awardedBy: map['awardedBy'] as String?,
+      reason: map['reason'] as String?,
+      isDisplayed: map['isDisplayed'] as bool? ?? true,
+      level: map['level'] as int? ?? 1,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userBadgeId': userBadgeId,
+      'badgeId': badgeId,
+      'userId': userId,
+      'earnedAt': Timestamp.fromDate(earnedAt),
+      'awardedBy': awardedBy,
+      'reason': reason,
+      'isDisplayed': isDisplayed,
+      'level': level,
+    };
+  }
+
+  UserBadge copyWith({
+    bool? isDisplayed,
+    int? level,
+    String? reason,
+  }) {
+    return UserBadge(
+      userBadgeId: userBadgeId,
+      badgeId: badgeId,
+      userId: userId,
+      earnedAt: earnedAt,
+      awardedBy: awardedBy,
+      reason: reason ?? this.reason,
+      isDisplayed: isDisplayed ?? this.isDisplayed,
+      level: level ?? this.level,
     );
   }
 }

@@ -775,6 +775,89 @@ abstract class CommunityService {
     required String decision,
     String? notes,
   });
+
+  // User Reputation & Gamification
+  Future<String> addReputationEvent({
+    required String userId,
+    required String eventType,
+    required int points,
+    required String reason,
+    String? relatedContentId,
+    Map<String, dynamic>? metadata,
+  });
+
+  Future<UserReputation?> getUserReputation(String userId);
+
+  Future<List<ReputationEvent>> getReputationEvents({
+    required String userId,
+    int limit = 50,
+  });
+
+  Future<Map<String, dynamic>> getUserStatistics(String userId);
+
+  Future<int> getTotalReputation(String userId);
+
+  // Badges
+  Future<String> createBadgeDefinition({
+    required String name,
+    required String description,
+    required String category,
+    required String rarity,
+    required int pointsValue,
+    required String iconUrl,
+    Map<String, dynamic>? requirements,
+  });
+
+  Future<BadgeDefinition?> getBadgeDefinition(String badgeId);
+
+  Future<List<BadgeDefinition>> getBadgeDefinitions({
+    String? category,
+    int limit = 50,
+  });
+
+  Future<List<UserBadge>> getUserBadges(String userId);
+
+  Future<void> awardBadge({
+    required String userId,
+    required String badgeId,
+    String? awardedBy,
+    String? reason,
+  });
+
+  Future<Map<String, dynamic>> getBadgeProgress({
+    required String userId,
+    required String badgeId,
+  });
+
+  // Leaderboards
+  Future<List<Map<String, dynamic>>> getTopContributors({
+    int limit = 100,
+    String timeRange = 'all',
+  });
+
+  Future<List<Map<String, dynamic>>> getLeaderboard({
+    required String metric,
+    int limit = 50,
+    String timeRange = 'month',
+  });
+
+  Future<Map<String, dynamic>?> getUserRank({
+    required String userId,
+    required String metric,
+  });
+
+  Future<List<Map<String, dynamic>>> getNearbyRanks({
+    required String userId,
+    required String metric,
+    int range = 5,
+  });
+
+  // Levels & Progression
+  Future<Map<String, dynamic>> getUserLevel(String userId);
+
+  Future<void> checkAndProcessLevelUp(String userId);
+
+  Future<List<Map<String, dynamic>>> getLevelDefinitions();
 }
 
 /// Firebase implementation of community service
@@ -3798,6 +3881,366 @@ class FirebaseCommunityService implements CommunityService {
       'notes': notes,
     });
   }
+
+  // User Reputation & Gamification
+  @override
+  Future<String> addReputationEvent({
+    required String userId,
+    required String eventType,
+    required int points,
+    required String reason,
+    String? relatedContentId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final eventId = _db.collection('reputationEvents').doc().id;
+    final typeIndex = ReputationEventType.values.indexWhere((t) => t.toString().split('.').last == eventType);
+
+    await _db.collection('reputationEvents').doc(eventId).set({
+      'eventId': eventId,
+      'userId': userId,
+      'eventType': typeIndex >= 0 ? typeIndex : ReputationEventType.postCreated.index,
+      'points': points,
+      'reason': reason,
+      'relatedContentId': relatedContentId,
+      'createdAt': Timestamp.now(),
+      'metadata': metadata ?? {},
+    });
+
+    await _updateUserReputation(userId, points);
+    return eventId;
+  }
+
+  Future<void> _updateUserReputation(String userId, int points) async {
+    final repDoc = await _db.collection('userReputation').where('userId', isEqualTo: userId).limit(1).get();
+
+    if (repDoc.docs.isEmpty) {
+      final repId = _db.collection('userReputation').doc().id;
+      await _db.collection('userReputation').doc(repId).set({
+        'reputationId': repId,
+        'userId': userId,
+        'totalScore': points,
+        'currentLevel': 1,
+        'levelTitle': 'Novice',
+        'postsCount': 0,
+        'repliesCount': 0,
+        'upvotesReceived': 0,
+        'badgesCount': 0,
+        'createdAt': Timestamp.now(),
+        'lastActivityAt': Timestamp.now(),
+      });
+    } else {
+      final doc = repDoc.docs.first;
+      final currentScore = (doc['totalScore'] as int? ?? 0) + points;
+      await doc.reference.update({
+        'totalScore': currentScore,
+        'lastActivityAt': Timestamp.now(),
+      });
+    }
+  }
+
+  @override
+  Future<UserReputation?> getUserReputation(String userId) async {
+    final doc = await _db.collection('userReputation').where('userId', isEqualTo: userId).limit(1).get();
+    if (doc.docs.isEmpty) return null;
+    return UserReputation.fromMap(doc.docs.first.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<ReputationEvent>> getReputationEvents({
+    required String userId,
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('reputationEvents')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ReputationEvent.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserStatistics(String userId) async {
+    final rep = await getUserReputation(userId);
+    if (rep == null) {
+      return {
+        'totalReputation': 0,
+        'level': 1,
+        'posts': 0,
+        'replies': 0,
+        'badges': 0,
+      };
+    }
+
+    return {
+      'totalReputation': rep.totalScore,
+      'level': rep.currentLevel,
+      'levelTitle': rep.levelTitle,
+      'posts': rep.postsCount,
+      'replies': rep.repliesCount,
+      'upvotes': rep.upvotesReceived,
+      'badges': rep.badgesCount,
+    };
+  }
+
+  @override
+  Future<int> getTotalReputation(String userId) async {
+    final rep = await getUserReputation(userId);
+    return rep?.totalScore ?? 0;
+  }
+
+  // Badges
+  @override
+  Future<String> createBadgeDefinition({
+    required String name,
+    required String description,
+    required String category,
+    required String rarity,
+    required int pointsValue,
+    required String iconUrl,
+    Map<String, dynamic>? requirements,
+  }) async {
+    final badgeId = _db.collection('badgeDefinitions').doc().id;
+    final categoryIndex = BadgeCategory.values.indexWhere((c) => c.toString().split('.').last == category);
+    final rarityIndex = BadgeRarity.values.indexWhere((r) => r.toString().split('.').last == rarity);
+
+    await _db.collection('badgeDefinitions').doc(badgeId).set({
+      'badgeId': badgeId,
+      'name': name,
+      'description': description,
+      'category': categoryIndex >= 0 ? categoryIndex : BadgeCategory.social.index,
+      'rarity': rarityIndex >= 0 ? rarityIndex : BadgeRarity.common.index,
+      'pointsValue': pointsValue,
+      'iconUrl': iconUrl,
+      'requirements': requirements ?? {},
+      'createdAt': Timestamp.now(),
+      'isActive': true,
+    });
+
+    return badgeId;
+  }
+
+  @override
+  Future<BadgeDefinition?> getBadgeDefinition(String badgeId) async {
+    final doc = await _db.collection('badgeDefinitions').doc(badgeId).get();
+    if (!doc.exists) return null;
+    return BadgeDefinition.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<BadgeDefinition>> getBadgeDefinitions({
+    String? category,
+    int limit = 50,
+  }) async {
+    var query = _db.collection('badgeDefinitions') as Query<Map<String, dynamic>>;
+
+    if (category != null && category.isNotEmpty) {
+      final categoryIndex = BadgeCategory.values.indexWhere((c) => c.toString().split('.').last == category);
+      if (categoryIndex >= 0) {
+        query = query.where('category', isEqualTo: categoryIndex);
+      }
+    }
+
+    final snapshot = await query.limit(limit).get();
+    return snapshot.docs
+        .map((doc) => BadgeDefinition.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<UserBadge>> getUserBadges(String userId) async {
+    final snapshot = await _db
+        .collection('userBadges')
+        .where('userId', isEqualTo: userId)
+        .orderBy('earnedAt', descending: true)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => UserBadge.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> awardBadge({
+    required String userId,
+    required String badgeId,
+    String? awardedBy,
+    String? reason,
+  }) async {
+    final userBadgeId = _db.collection('userBadges').doc().id;
+
+    await _db.collection('userBadges').doc(userBadgeId).set({
+      'userBadgeId': userBadgeId,
+      'badgeId': badgeId,
+      'userId': userId,
+      'earnedAt': Timestamp.now(),
+      'awardedBy': awardedBy,
+      'reason': reason,
+      'isDisplayed': true,
+      'level': 1,
+    });
+
+    final rep = await getUserReputation(userId);
+    if (rep != null) {
+      await _db.collection('userReputation').doc(rep.reputationId).update({
+        'badgesCount': rep.badgesCount + 1,
+      });
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getBadgeProgress({
+    required String userId,
+    required String badgeId,
+  }) async {
+    final badges = await getUserBadges(userId);
+    final earned = badges.any((b) => b.badgeId == badgeId);
+
+    return {
+      'badgeId': badgeId,
+      'userId': userId,
+      'earned': earned,
+      'progress': earned ? 1.0 : 0.0,
+    };
+  }
+
+  // Leaderboards
+  @override
+  Future<List<Map<String, dynamic>>> getTopContributors({
+    int limit = 100,
+    String timeRange = 'all',
+  }) async {
+    final snapshot = await _db
+        .collection('userReputation')
+        .orderBy('totalScore', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs.asMap().entries.map((e) {
+      final data = e.value.data() as Map<String, dynamic>;
+      return {
+        ...data,
+        'rank': e.key + 1,
+      };
+    }).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getLeaderboard({
+    required String metric,
+    int limit = 50,
+    String timeRange = 'month',
+  }) async {
+    var query = _db.collection('userReputation') as Query<Map<String, dynamic>>;
+
+    if (metric == 'reputation') {
+      query = query.orderBy('totalScore', descending: true);
+    } else if (metric == 'posts') {
+      query = query.orderBy('postsCount', descending: true);
+    } else if (metric == 'badges') {
+      query = query.orderBy('badgesCount', descending: true);
+    } else {
+      query = query.orderBy('totalScore', descending: true);
+    }
+
+    final snapshot = await query.limit(limit).get();
+
+    return snapshot.docs.asMap().entries.map((e) {
+      final data = e.value.data();
+      return {
+        ...data,
+        'rank': e.key + 1,
+      };
+    }).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserRank({
+    required String userId,
+    required String metric,
+  }) async {
+    final leaderboard = await getLeaderboard(metric: metric, limit: 10000);
+    for (final entry in leaderboard) {
+      if (entry['userId'] == userId) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getNearbyRanks({
+    required String userId,
+    required String metric,
+    int range = 5,
+  }) async {
+    final userRank = await getUserRank(userId: userId, metric: metric);
+    if (userRank == null) return [];
+
+    final rank = (userRank['rank'] as int?) ?? 0;
+    final leaderboard = await getLeaderboard(metric: metric, limit: 10000);
+
+    return leaderboard
+        .where((e) {
+          final entryRank = (e['rank'] as int?) ?? 0;
+          return (entryRank >= rank - range) && (entryRank <= rank + range);
+        })
+        .toList();
+  }
+
+  // Levels & Progression
+  @override
+  Future<Map<String, dynamic>> getUserLevel(String userId) async {
+    final rep = await getUserReputation(userId);
+    if (rep == null) {
+      return {
+        'level': 1,
+        'title': 'Novice',
+        'experience': 0,
+        'nextLevelAt': 50,
+      };
+    }
+
+    return {
+      'level': rep.currentLevel,
+      'title': rep.levelTitle,
+      'experience': rep.totalScore,
+      'nextLevelAt': rep.currentLevel * 50,
+    };
+  }
+
+  @override
+  Future<void> checkAndProcessLevelUp(String userId) async {
+    final rep = await getUserReputation(userId);
+    if (rep == null) return;
+
+    final nextLevelThreshold = rep.currentLevel * 50;
+    if (rep.totalScore >= nextLevelThreshold) {
+      final newLevel = rep.currentLevel + 1;
+      final levelTitles = ['Novice', 'Contributor', 'Expert', 'Authority', 'Specialist', 'Legend'];
+      final titleIndex = ((newLevel - 1) ~/ 5).clamp(0, levelTitles.length - 1);
+
+      await _db.collection('userReputation').doc(rep.reputationId).update({
+        'currentLevel': newLevel,
+        'levelTitle': levelTitles[titleIndex],
+      });
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getLevelDefinitions() async {
+    return [
+      {'level': 1, 'title': 'Novice', 'minXP': 0},
+      {'level': 2, 'title': 'Novice', 'minXP': 50},
+      {'level': 3, 'title': 'Contributor', 'minXP': 150},
+      {'level': 4, 'title': 'Contributor', 'minXP': 300},
+      {'level': 5, 'title': 'Expert', 'minXP': 500},
+      {'level': 6, 'title': 'Expert', 'minXP': 750},
+    ];
+  }
 }
 
 /// Stub implementation for testing
@@ -6417,6 +6860,331 @@ class StubCommunityService implements CommunityService {
       decision: decision,
       notes: notes,
     );
+  }
+
+  // User Reputation & Gamification
+  final Map<String, UserReputation> _reputations = {};
+  final Map<String, ReputationEvent> _reputationEvents = {};
+  final Map<String, BadgeDefinition> _badgeDefinitions = {};
+  final Map<String, UserBadge> _userBadges = {};
+
+  @override
+  Future<String> addReputationEvent({
+    required String userId,
+    required String eventType,
+    required int points,
+    required String reason,
+    String? relatedContentId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final eventId = 'event_${DateTime.now().millisecondsSinceEpoch}';
+    final typeIndex = ReputationEventType.values.indexWhere((t) => t.toString().split('.').last == eventType);
+
+    _reputationEvents[eventId] = ReputationEvent(
+      eventId: eventId,
+      userId: userId,
+      eventType: typeIndex >= 0 ? ReputationEventType.values[typeIndex] : ReputationEventType.postCreated,
+      points: points,
+      reason: reason,
+      relatedContentId: relatedContentId,
+      createdAt: DateTime.now(),
+      metadata: metadata ?? {},
+    );
+
+    final rep = _reputations[userId] ?? UserReputation(
+      reputationId: 'rep_$userId',
+      userId: userId,
+      createdAt: DateTime.now(),
+      lastActivityAt: DateTime.now(),
+    );
+
+    _reputations[userId] = rep.copyWith(
+      totalScore: rep.totalScore + points,
+      lastActivityAt: DateTime.now(),
+    );
+
+    return eventId;
+  }
+
+  @override
+  Future<UserReputation?> getUserReputation(String userId) async {
+    return _reputations[userId];
+  }
+
+  @override
+  Future<List<ReputationEvent>> getReputationEvents({
+    required String userId,
+    int limit = 50,
+  }) async {
+    return _reputationEvents.values
+        .where((e) => e.userId == userId)
+        .toList()
+        .sorted((a, b) => b.createdAt.compareTo(a.createdAt))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserStatistics(String userId) async {
+    final rep = _reputations[userId];
+    if (rep == null) {
+      return {
+        'totalReputation': 0,
+        'level': 1,
+        'posts': 0,
+        'replies': 0,
+        'badges': 0,
+      };
+    }
+
+    return {
+      'totalReputation': rep.totalScore,
+      'level': rep.currentLevel,
+      'levelTitle': rep.levelTitle,
+      'posts': rep.postsCount,
+      'replies': rep.repliesCount,
+      'upvotes': rep.upvotesReceived,
+      'badges': rep.badgesCount,
+    };
+  }
+
+  @override
+  Future<int> getTotalReputation(String userId) async {
+    return _reputations[userId]?.totalScore ?? 0;
+  }
+
+  // Badges
+  @override
+  Future<String> createBadgeDefinition({
+    required String name,
+    required String description,
+    required String category,
+    required String rarity,
+    required int pointsValue,
+    required String iconUrl,
+    Map<String, dynamic>? requirements,
+  }) async {
+    final badgeId = 'badge_${DateTime.now().millisecondsSinceEpoch}';
+    final categoryIndex = BadgeCategory.values.indexWhere((c) => c.toString().split('.').last == category);
+    final rarityIndex = BadgeRarity.values.indexWhere((r) => r.toString().split('.').last == rarity);
+
+    _badgeDefinitions[badgeId] = BadgeDefinition(
+      badgeId: badgeId,
+      name: name,
+      description: description,
+      category: categoryIndex >= 0 ? BadgeCategory.values[categoryIndex] : BadgeCategory.social,
+      rarity: rarityIndex >= 0 ? BadgeRarity.values[rarityIndex] : BadgeRarity.common,
+      pointsValue: pointsValue,
+      iconUrl: iconUrl,
+      requirements: requirements ?? {},
+      createdAt: DateTime.now(),
+    );
+
+    return badgeId;
+  }
+
+  @override
+  Future<BadgeDefinition?> getBadgeDefinition(String badgeId) async {
+    return _badgeDefinitions[badgeId];
+  }
+
+  @override
+  Future<List<BadgeDefinition>> getBadgeDefinitions({
+    String? category,
+    int limit = 50,
+  }) async {
+    var results = _badgeDefinitions.values.toList();
+
+    if (category != null && category.isNotEmpty) {
+      results = results.where((b) {
+        final catStr = b.category.toString().split('.').last;
+        return catStr == category;
+      }).toList();
+    }
+
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<List<UserBadge>> getUserBadges(String userId) async {
+    return _userBadges.values
+        .where((b) => b.userId == userId)
+        .toList()
+        .sorted((a, b) => b.earnedAt.compareTo(a.earnedAt));
+  }
+
+  @override
+  Future<void> awardBadge({
+    required String userId,
+    required String badgeId,
+    String? awardedBy,
+    String? reason,
+  }) async {
+    final userBadgeId = 'ubadge_${DateTime.now().millisecondsSinceEpoch}';
+
+    _userBadges[userBadgeId] = UserBadge(
+      userBadgeId: userBadgeId,
+      badgeId: badgeId,
+      userId: userId,
+      earnedAt: DateTime.now(),
+      awardedBy: awardedBy,
+      reason: reason,
+    );
+
+    final rep = _reputations[userId];
+    if (rep != null) {
+      _reputations[userId] = rep.copyWith(badgesCount: rep.badgesCount + 1);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getBadgeProgress({
+    required String userId,
+    required String badgeId,
+  }) async {
+    final earned = _userBadges.values.any((b) => b.userId == userId && b.badgeId == badgeId);
+    return {
+      'badgeId': badgeId,
+      'userId': userId,
+      'earned': earned,
+      'progress': earned ? 1.0 : 0.0,
+    };
+  }
+
+  // Leaderboards
+  @override
+  Future<List<Map<String, dynamic>>> getTopContributors({
+    int limit = 100,
+    String timeRange = 'all',
+  }) async {
+    final sorted = _reputations.values
+        .toList()
+        .sorted((a, b) => b.totalScore.compareTo(a.totalScore))
+        .take(limit);
+
+    return sorted.asMap().entries.map((e) {
+      final rep = e.value;
+      return {
+        'userId': rep.userId,
+        'totalScore': rep.totalScore,
+        'level': rep.currentLevel,
+        'rank': e.key + 1,
+      };
+    }).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getLeaderboard({
+    required String metric,
+    int limit = 50,
+    String timeRange = 'month',
+  }) async {
+    final reps = _reputations.values.toList();
+
+    if (metric == 'reputation') {
+      reps.sort((a, b) => b.totalScore.compareTo(a.totalScore));
+    } else if (metric == 'posts') {
+      reps.sort((a, b) => b.postsCount.compareTo(a.postsCount));
+    } else if (metric == 'badges') {
+      reps.sort((a, b) => b.badgesCount.compareTo(a.badgesCount));
+    } else {
+      reps.sort((a, b) => b.totalScore.compareTo(a.totalScore));
+    }
+
+    return reps.take(limit).asMap().entries.map((e) {
+      final rep = e.value;
+      return {
+        'userId': rep.userId,
+        'score': metric == 'posts' ? rep.postsCount : metric == 'badges' ? rep.badgesCount : rep.totalScore,
+        'level': rep.currentLevel,
+        'rank': e.key + 1,
+      };
+    }).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserRank({
+    required String userId,
+    required String metric,
+  }) async {
+    final leaderboard = await getLeaderboard(metric: metric, limit: 10000);
+    for (final entry in leaderboard) {
+      if (entry['userId'] == userId) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getNearbyRanks({
+    required String userId,
+    required String metric,
+    int range = 5,
+  }) async {
+    final userRank = await getUserRank(userId: userId, metric: metric);
+    if (userRank == null) return [];
+
+    final rank = (userRank['rank'] as int?) ?? 0;
+    final leaderboard = await getLeaderboard(metric: metric, limit: 10000);
+
+    return leaderboard
+        .where((e) {
+          final entryRank = (e['rank'] as int?) ?? 0;
+          return (entryRank >= rank - range) && (entryRank <= rank + range);
+        })
+        .toList();
+  }
+
+  // Levels & Progression
+  @override
+  Future<Map<String, dynamic>> getUserLevel(String userId) async {
+    final rep = _reputations[userId];
+    if (rep == null) {
+      return {
+        'level': 1,
+        'title': 'Novice',
+        'experience': 0,
+        'nextLevelAt': 50,
+      };
+    }
+
+    return {
+      'level': rep.currentLevel,
+      'title': rep.levelTitle,
+      'experience': rep.totalScore,
+      'nextLevelAt': rep.currentLevel * 50,
+    };
+  }
+
+  @override
+  Future<void> checkAndProcessLevelUp(String userId) async {
+    final rep = _reputations[userId];
+    if (rep == null) return;
+
+    final nextLevelThreshold = rep.currentLevel * 50;
+    if (rep.totalScore >= nextLevelThreshold) {
+      final newLevel = rep.currentLevel + 1;
+      final levelTitles = ['Novice', 'Contributor', 'Expert', 'Authority', 'Specialist', 'Legend'];
+      final titleIndex = ((newLevel - 1) ~/ 5).clamp(0, levelTitles.length - 1);
+
+      _reputations[userId] = rep.copyWith(
+        currentLevel: newLevel,
+        levelTitle: levelTitles[titleIndex],
+      );
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getLevelDefinitions() async {
+    return [
+      {'level': 1, 'title': 'Novice', 'minXP': 0},
+      {'level': 2, 'title': 'Novice', 'minXP': 50},
+      {'level': 3, 'title': 'Contributor', 'minXP': 150},
+      {'level': 4, 'title': 'Contributor', 'minXP': 300},
+      {'level': 5, 'title': 'Expert', 'minXP': 500},
+      {'level': 6, 'title': 'Expert', 'minXP': 750},
+    ];
   }
 }
 

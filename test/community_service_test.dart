@@ -3141,5 +3141,354 @@ void main() {
         }
       });
     });
+
+    // Phase 11 Step 7: Community Gamification & User Badges
+    group('User Reputation & Gamification', () {
+      test('addReputationEvent creates event and updates reputation', () async {
+        final service = StubCommunityService();
+
+        final eventId = await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 10,
+          reason: 'Created high-quality post',
+        );
+
+        expect(eventId, isNotEmpty);
+
+        final reputation = await service.getUserReputation('user1');
+        expect(reputation, isNotNull);
+        expect(reputation!.totalScore, 10);
+      });
+
+      test('getUserReputation retrieves user reputation', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'replyCreated',
+          points: 5,
+          reason: 'Helpful reply',
+        );
+
+        final reputation = await service.getUserReputation('user1');
+        expect(reputation!.userId, 'user1');
+        expect(reputation.totalScore, 5);
+      });
+
+      test('getReputationEvents returns user\'s events', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 10,
+          reason: 'Event 1',
+        );
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'replyCreated',
+          points: 5,
+          reason: 'Event 2',
+        );
+
+        final events = await service.getReputationEvents(userId: 'user1');
+        expect(events.length, 2);
+      });
+
+      test('getUserStatistics returns comprehensive stats', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 10,
+          reason: 'Created post',
+        );
+
+        final stats = await service.getUserStatistics('user1');
+        expect(stats['totalReputation'], greaterThan(0));
+        expect(stats['level'], isNotNull);
+      });
+
+      test('getTotalReputation returns only score', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 25,
+          reason: 'High-value post',
+        );
+
+        final total = await service.getTotalReputation('user1');
+        expect(total, 25);
+      });
+    });
+
+    group('Badges', () {
+      test('createBadgeDefinition creates new badge', () async {
+        final service = StubCommunityService();
+
+        final badgeId = await service.createBadgeDefinition(
+          name: 'First Post',
+          description: 'Created your first post',
+          category: 'social',
+          rarity: 'common',
+          pointsValue: 5,
+          iconUrl: 'url_to_icon',
+        );
+
+        expect(badgeId, isNotEmpty);
+
+        final badge = await service.getBadgeDefinition(badgeId);
+        expect(badge, isNotNull);
+        expect(badge!.name, 'First Post');
+      });
+
+      test('getBadgeDefinitions filters by category', () async {
+        final service = StubCommunityService();
+
+        await service.createBadgeDefinition(
+          name: 'Social Badge',
+          description: 'Social badge',
+          category: 'social',
+          rarity: 'common',
+          pointsValue: 5,
+          iconUrl: 'url',
+        );
+
+        await service.createBadgeDefinition(
+          name: 'Expert Badge',
+          description: 'Expert badge',
+          category: 'expertise',
+          rarity: 'rare',
+          pointsValue: 20,
+          iconUrl: 'url',
+        );
+
+        final badges = await service.getBadgeDefinitions(category: 'social');
+        expect(badges.isNotEmpty, true);
+      });
+
+      test('getUserBadges returns user\'s earned badges', () async {
+        final service = StubCommunityService();
+
+        final badgeId = await service.createBadgeDefinition(
+          name: 'Test Badge',
+          description: 'Test badge',
+          category: 'social',
+          rarity: 'common',
+          pointsValue: 5,
+          iconUrl: 'url',
+        );
+
+        await service.awardBadge(
+          userId: 'user1',
+          badgeId: badgeId,
+        );
+
+        final badges = await service.getUserBadges('user1');
+        expect(badges.length, 1);
+        expect(badges.first.badgeId, badgeId);
+      });
+
+      test('awardBadge increases badge count', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 10,
+          reason: 'Create post',
+        );
+
+        final badgeId = await service.createBadgeDefinition(
+          name: 'Badge',
+          description: 'Badge desc',
+          category: 'achievement',
+          rarity: 'uncommon',
+          pointsValue: 10,
+          iconUrl: 'url',
+        );
+
+        await service.awardBadge(userId: 'user1', badgeId: badgeId);
+
+        final rep = await service.getUserReputation('user1');
+        expect(rep!.badgesCount, 1);
+      });
+
+      test('getBadgeProgress tracks badge earning', () async {
+        final service = StubCommunityService();
+
+        final badgeId = await service.createBadgeDefinition(
+          name: 'Progress Badge',
+          description: 'Track progress',
+          category: 'milestone',
+          rarity: 'rare',
+          pointsValue: 15,
+          iconUrl: 'url',
+        );
+
+        var progress = await service.getBadgeProgress(
+          userId: 'user1',
+          badgeId: badgeId,
+        );
+        expect(progress['earned'], false);
+
+        await service.awardBadge(userId: 'user1', badgeId: badgeId);
+
+        progress = await service.getBadgeProgress(
+          userId: 'user1',
+          badgeId: badgeId,
+        );
+        expect(progress['earned'], true);
+      });
+    });
+
+    group('Leaderboards', () {
+      test('getTopContributors returns ranked list', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 50,
+          reason: 'High contribution',
+        );
+
+        await service.addReputationEvent(
+          userId: 'user2',
+          eventType: 'postCreated',
+          points: 30,
+          reason: 'Medium contribution',
+        );
+
+        final top = await service.getTopContributors(limit: 10);
+        expect(top.isNotEmpty, true);
+        expect(top.first['rank'], 1);
+      });
+
+      test('getLeaderboard returns sorted by metric', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 40,
+          reason: 'Post',
+        );
+
+        final leaderboard = await service.getLeaderboard(
+          metric: 'reputation',
+          limit: 50,
+        );
+
+        expect(leaderboard, isList);
+        expect(leaderboard.isNotEmpty, true);
+      });
+
+      test('getUserRank finds user position', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 100,
+          reason: 'Top contributor',
+        );
+
+        final rank = await service.getUserRank(
+          userId: 'user1',
+          metric: 'reputation',
+        );
+
+        expect(rank, isNotNull);
+        expect(rank!['rank'], 1);
+      });
+
+      test('getNearbyRanks shows users around target', () async {
+        final service = StubCommunityService();
+
+        for (int i = 1; i <= 10; i++) {
+          await service.addReputationEvent(
+            userId: 'user$i',
+            eventType: 'postCreated',
+            points: i * 10,
+            reason: 'User $i contribution',
+          );
+        }
+
+        final nearby = await service.getNearbyRanks(
+          userId: 'user5',
+          metric: 'reputation',
+          range: 2,
+        );
+
+        expect(nearby, isList);
+      });
+    });
+
+    group('Levels & Progression', () {
+      test('getUserLevel returns current level info', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 50,
+          reason: 'Reach level threshold',
+        );
+
+        final level = await service.getUserLevel('user1');
+        expect(level['level'], isNotNull);
+        expect(level['title'], isNotNull);
+      });
+
+      test('checkAndProcessLevelUp levels up when threshold met', () async {
+        final service = StubCommunityService();
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 75,
+          reason: 'Exceed level threshold',
+        );
+
+        await service.checkAndProcessLevelUp('user1');
+
+        final rep = await service.getUserReputation('user1');
+        expect(rep!.currentLevel, greaterThanOrEqualTo(1));
+      });
+
+      test('getLevelDefinitions returns level progression', () async {
+        final service = StubCommunityService();
+
+        final levels = await service.getLevelDefinitions();
+        expect(levels, isList);
+        expect(levels.isNotEmpty, true);
+        expect(levels.first['level'], 1);
+      });
+
+      test('Level progression increases with reputation', () async {
+        final service = StubCommunityService();
+
+        final initialLevel = await service.getUserLevel('user1');
+        expect(initialLevel['level'], 1);
+
+        await service.addReputationEvent(
+          userId: 'user1',
+          eventType: 'postCreated',
+          points: 100,
+          reason: 'Major contribution',
+        );
+
+        await service.checkAndProcessLevelUp('user1');
+
+        final newLevel = await service.getUserLevel('user1');
+        expect(newLevel['experience'], greaterThan(0));
+      });
+    });
   });
 }
