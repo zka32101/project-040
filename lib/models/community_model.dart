@@ -31,6 +31,14 @@ enum SearchType { query, tag, channel, user }
 
 enum SortBy { relevance, newest, oldest, trending, popular, members, activity }
 
+enum AppealStatus { pending, approved, denied, upheld, overturned, partiallyUpheld }
+
+enum ModerationActionType { warning, mute, removeContent, ban, escalate, dismiss }
+
+enum EscalationTarget { adminReview, legalTeam, executive }
+
+enum EscalationStatus { pending, processing, approved, denied, returned }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -2100,6 +2108,519 @@ class SearchFilters {
       minReactions: minReactions ?? this.minReactions,
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
+    );
+  }
+}
+
+/// Report appeal model for appealing moderation decisions
+class ReportAppeal {
+  final String appealId;
+  final String reportId;
+  final String userId;
+  final String? userName;
+  final String reason;
+  final String? attachmentUrl;
+  final AppealStatus status;
+  final DateTime createdAt;
+  final DateTime? respondedAt;
+  final String? respondedByUserId;
+  final String? reasoning;
+  final String? newAction;
+  final bool canAppealFurther;
+
+  ReportAppeal({
+    required this.appealId,
+    required this.reportId,
+    required this.userId,
+    this.userName,
+    required this.reason,
+    this.attachmentUrl,
+    this.status = AppealStatus.pending,
+    required this.createdAt,
+    this.respondedAt,
+    this.respondedByUserId,
+    this.reasoning,
+    this.newAction,
+    this.canAppealFurther = true,
+  });
+
+  factory ReportAppeal.empty() {
+    return ReportAppeal(
+      appealId: '',
+      reportId: '',
+      userId: '',
+      reason: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ReportAppeal.fromMap(Map<String, dynamic> map) {
+    return ReportAppeal(
+      appealId: map['appealId'] as String? ?? '',
+      reportId: map['reportId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String?,
+      reason: map['reason'] as String? ?? '',
+      attachmentUrl: map['attachmentUrl'] as String?,
+      status: AppealStatus.values[(map['status'] as int?) ?? AppealStatus.pending.index],
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      respondedAt: (map['respondedAt'] as Timestamp?)?.toDate(),
+      respondedByUserId: map['respondedByUserId'] as String?,
+      reasoning: map['reasoning'] as String?,
+      newAction: map['newAction'] as String?,
+      canAppealFurther: map['canAppealFurther'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'appealId': appealId,
+      'reportId': reportId,
+      'userId': userId,
+      'userName': userName,
+      'reason': reason,
+      'attachmentUrl': attachmentUrl,
+      'status': status.index,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'respondedAt': respondedAt != null ? Timestamp.fromDate(respondedAt!) : null,
+      'respondedByUserId': respondedByUserId,
+      'reasoning': reasoning,
+      'newAction': newAction,
+      'canAppealFurther': canAppealFurther,
+    };
+  }
+
+  ReportAppeal copyWith({
+    AppealStatus? status,
+    DateTime? respondedAt,
+    String? respondedByUserId,
+    String? reasoning,
+    String? newAction,
+  }) {
+    return ReportAppeal(
+      appealId: appealId,
+      reportId: reportId,
+      userId: userId,
+      userName: userName,
+      reason: reason,
+      attachmentUrl: attachmentUrl,
+      status: status ?? this.status,
+      createdAt: createdAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      respondedByUserId: respondedByUserId ?? this.respondedByUserId,
+      reasoning: reasoning ?? this.reasoning,
+      newAction: newAction ?? this.newAction,
+      canAppealFurther: canAppealFurther,
+    );
+  }
+}
+
+/// Moderation summary statistics model
+class ModerationSummary {
+  final String summaryId;
+  final String timeRange; // day, week, month
+  final DateTime startDate;
+  final DateTime endDate;
+  final int totalReports;
+  final int reviewedReports;
+  final int pendingReports;
+  final int actionsApproved;
+  final int actionsDenied;
+  final int appealsReceived;
+  final int appealsPending;
+  final int appealsApproved;
+  final int appealsOverturned;
+  final int averageReviewTime;
+  final double communityHealthScore;
+
+  ModerationSummary({
+    required this.summaryId,
+    required this.timeRange,
+    required this.startDate,
+    required this.endDate,
+    this.totalReports = 0,
+    this.reviewedReports = 0,
+    this.pendingReports = 0,
+    this.actionsApproved = 0,
+    this.actionsDenied = 0,
+    this.appealsReceived = 0,
+    this.appealsPending = 0,
+    this.appealsApproved = 0,
+    this.appealsOverturned = 0,
+    this.averageReviewTime = 0,
+    this.communityHealthScore = 100.0,
+  });
+
+  factory ModerationSummary.empty() {
+    return ModerationSummary(
+      summaryId: '',
+      timeRange: 'day',
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+    );
+  }
+
+  factory ModerationSummary.fromMap(Map<String, dynamic> map) {
+    return ModerationSummary(
+      summaryId: map['summaryId'] as String? ?? '',
+      timeRange: map['timeRange'] as String? ?? 'day',
+      startDate: (map['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      endDate: (map['endDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      totalReports: map['totalReports'] as int? ?? 0,
+      reviewedReports: map['reviewedReports'] as int? ?? 0,
+      pendingReports: map['pendingReports'] as int? ?? 0,
+      actionsApproved: map['actionsApproved'] as int? ?? 0,
+      actionsDenied: map['actionsDenied'] as int? ?? 0,
+      appealsReceived: map['appealsReceived'] as int? ?? 0,
+      appealsPending: map['appealsPending'] as int? ?? 0,
+      appealsApproved: map['appealsApproved'] as int? ?? 0,
+      appealsOverturned: map['appealsOverturned'] as int? ?? 0,
+      averageReviewTime: map['averageReviewTime'] as int? ?? 0,
+      communityHealthScore: (map['communityHealthScore'] as num?)?.toDouble() ?? 100.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'summaryId': summaryId,
+      'timeRange': timeRange,
+      'startDate': Timestamp.fromDate(startDate),
+      'endDate': Timestamp.fromDate(endDate),
+      'totalReports': totalReports,
+      'reviewedReports': reviewedReports,
+      'pendingReports': pendingReports,
+      'actionsApproved': actionsApproved,
+      'actionsDenied': actionsDenied,
+      'appealsReceived': appealsReceived,
+      'appealsPending': appealsPending,
+      'appealsApproved': appealsApproved,
+      'appealsOverturned': appealsOverturned,
+      'averageReviewTime': averageReviewTime,
+      'communityHealthScore': communityHealthScore,
+    };
+  }
+
+  ModerationSummary copyWith({
+    int? totalReports,
+    int? reviewedReports,
+    int? pendingReports,
+    int? actionsApproved,
+    int? actionsDenied,
+    int? appealsReceived,
+    int? appealsPending,
+    int? appealsApproved,
+    int? appealsOverturned,
+    int? averageReviewTime,
+    double? communityHealthScore,
+  }) {
+    return ModerationSummary(
+      summaryId: summaryId,
+      timeRange: timeRange,
+      startDate: startDate,
+      endDate: endDate,
+      totalReports: totalReports ?? this.totalReports,
+      reviewedReports: reviewedReports ?? this.reviewedReports,
+      pendingReports: pendingReports ?? this.pendingReports,
+      actionsApproved: actionsApproved ?? this.actionsApproved,
+      actionsDenied: actionsDenied ?? this.actionsDenied,
+      appealsReceived: appealsReceived ?? this.appealsReceived,
+      appealsPending: appealsPending ?? this.appealsPending,
+      appealsApproved: appealsApproved ?? this.appealsApproved,
+      appealsOverturned: appealsOverturned ?? this.appealsOverturned,
+      averageReviewTime: averageReviewTime ?? this.averageReviewTime,
+      communityHealthScore: communityHealthScore ?? this.communityHealthScore,
+    );
+  }
+}
+
+/// Moderator statistics model
+class ModeratorStats {
+  final String statsId;
+  final String moderatorId;
+  final String? moderatorName;
+  final String timeRange; // day, week, month
+  final int totalActionsCount;
+  final int averageDecisionTimeMs;
+  final Map<String, int> reportsByCategory;
+  final Map<String, int> actionsByType;
+  final int appealsOnDecisions;
+  final double appealOverturnRate;
+  final double consistencyScore;
+  final double communityFeedbackScore;
+  final DateTime lastActivityAt;
+
+  ModeratorStats({
+    required this.statsId,
+    required this.moderatorId,
+    this.moderatorName,
+    required this.timeRange,
+    this.totalActionsCount = 0,
+    this.averageDecisionTimeMs = 0,
+    this.reportsByCategory = const {},
+    this.actionsByType = const {},
+    this.appealsOnDecisions = 0,
+    this.appealOverturnRate = 0.0,
+    this.consistencyScore = 100.0,
+    this.communityFeedbackScore = 0.0,
+    required this.lastActivityAt,
+  });
+
+  factory ModeratorStats.empty() {
+    return ModeratorStats(
+      statsId: '',
+      moderatorId: '',
+      timeRange: 'month',
+      lastActivityAt: DateTime.now(),
+    );
+  }
+
+  factory ModeratorStats.fromMap(Map<String, dynamic> map) {
+    return ModeratorStats(
+      statsId: map['statsId'] as String? ?? '',
+      moderatorId: map['moderatorId'] as String? ?? '',
+      moderatorName: map['moderatorName'] as String?,
+      timeRange: map['timeRange'] as String? ?? 'month',
+      totalActionsCount: map['totalActionsCount'] as int? ?? 0,
+      averageDecisionTimeMs: map['averageDecisionTimeMs'] as int? ?? 0,
+      reportsByCategory: Map<String, int>.from(map['reportsByCategory'] as Map? ?? {}),
+      actionsByType: Map<String, int>.from(map['actionsByType'] as Map? ?? {}),
+      appealsOnDecisions: map['appealsOnDecisions'] as int? ?? 0,
+      appealOverturnRate: (map['appealOverturnRate'] as num?)?.toDouble() ?? 0.0,
+      consistencyScore: (map['consistencyScore'] as num?)?.toDouble() ?? 100.0,
+      communityFeedbackScore: (map['communityFeedbackScore'] as num?)?.toDouble() ?? 0.0,
+      lastActivityAt: (map['lastActivityAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'statsId': statsId,
+      'moderatorId': moderatorId,
+      'moderatorName': moderatorName,
+      'timeRange': timeRange,
+      'totalActionsCount': totalActionsCount,
+      'averageDecisionTimeMs': averageDecisionTimeMs,
+      'reportsByCategory': reportsByCategory,
+      'actionsByType': actionsByType,
+      'appealsOnDecisions': appealsOnDecisions,
+      'appealOverturnRate': appealOverturnRate,
+      'consistencyScore': consistencyScore,
+      'communityFeedbackScore': communityFeedbackScore,
+      'lastActivityAt': Timestamp.fromDate(lastActivityAt),
+    };
+  }
+
+  ModeratorStats copyWith({
+    int? totalActionsCount,
+    int? averageDecisionTimeMs,
+    Map<String, int>? reportsByCategory,
+    Map<String, int>? actionsByType,
+    int? appealsOnDecisions,
+    double? appealOverturnRate,
+    double? consistencyScore,
+    double? communityFeedbackScore,
+    DateTime? lastActivityAt,
+  }) {
+    return ModeratorStats(
+      statsId: statsId,
+      moderatorId: moderatorId,
+      moderatorName: moderatorName,
+      timeRange: timeRange,
+      totalActionsCount: totalActionsCount ?? this.totalActionsCount,
+      averageDecisionTimeMs: averageDecisionTimeMs ?? this.averageDecisionTimeMs,
+      reportsByCategory: reportsByCategory ?? this.reportsByCategory,
+      actionsByType: actionsByType ?? this.actionsByType,
+      appealsOnDecisions: appealsOnDecisions ?? this.appealsOnDecisions,
+      appealOverturnRate: appealOverturnRate ?? this.appealOverturnRate,
+      consistencyScore: consistencyScore ?? this.consistencyScore,
+      communityFeedbackScore: communityFeedbackScore ?? this.communityFeedbackScore,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
+    );
+  }
+}
+
+/// Moderation action record model
+class ModerationActionRecord {
+  final String actionId;
+  final String reportId;
+  final String moderatorId;
+  final ModerationActionType actionType;
+  final String targetUserId;
+  final String? targetPostId;
+  final String reason;
+  final int? duration; // in days
+  final Map<String, dynamic> metadata;
+  final DateTime createdAt;
+  final DateTime? resolvedAt;
+
+  ModerationActionRecord({
+    required this.actionId,
+    required this.reportId,
+    required this.moderatorId,
+    required this.actionType,
+    required this.targetUserId,
+    this.targetPostId,
+    required this.reason,
+    this.duration,
+    this.metadata = const {},
+    required this.createdAt,
+    this.resolvedAt,
+  });
+
+  factory ModerationActionRecord.empty() {
+    return ModerationActionRecord(
+      actionId: '',
+      reportId: '',
+      moderatorId: '',
+      actionType: ModerationActionType.warning,
+      targetUserId: '',
+      reason: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory ModerationActionRecord.fromMap(Map<String, dynamic> map) {
+    return ModerationActionRecord(
+      actionId: map['actionId'] as String? ?? '',
+      reportId: map['reportId'] as String? ?? '',
+      moderatorId: map['moderatorId'] as String? ?? '',
+      actionType: ModerationActionType.values[(map['actionType'] as int?) ?? ModerationActionType.warning.index],
+      targetUserId: map['targetUserId'] as String? ?? '',
+      targetPostId: map['targetPostId'] as String?,
+      reason: map['reason'] as String? ?? '',
+      duration: map['duration'] as int?,
+      metadata: Map<String, dynamic>.from(map['metadata'] as Map? ?? {}),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      resolvedAt: (map['resolvedAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'actionId': actionId,
+      'reportId': reportId,
+      'moderatorId': moderatorId,
+      'actionType': actionType.index,
+      'targetUserId': targetUserId,
+      'targetPostId': targetPostId,
+      'reason': reason,
+      'duration': duration,
+      'metadata': metadata,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'resolvedAt': resolvedAt != null ? Timestamp.fromDate(resolvedAt!) : null,
+    };
+  }
+
+  ModerationActionRecord copyWith({
+    DateTime? resolvedAt,
+    Map<String, dynamic>? metadata,
+  }) {
+    return ModerationActionRecord(
+      actionId: actionId,
+      reportId: reportId,
+      moderatorId: moderatorId,
+      actionType: actionType,
+      targetUserId: targetUserId,
+      targetPostId: targetPostId,
+      reason: reason,
+      duration: duration,
+      metadata: metadata ?? this.metadata,
+      createdAt: createdAt,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
+    );
+  }
+}
+
+/// Escalation model for routing complex cases
+class Escalation {
+  final String escalationId;
+  final String reportId;
+  final String escalatedByUserId;
+  final DateTime escalatedAt;
+  final EscalationTarget escalateTo;
+  final String reason;
+  final EscalationStatus status;
+  final String? processedByUserId;
+  final DateTime? processedAt;
+  final String? decision;
+  final String? notes;
+
+  Escalation({
+    required this.escalationId,
+    required this.reportId,
+    required this.escalatedByUserId,
+    required this.escalatedAt,
+    required this.escalateTo,
+    required this.reason,
+    this.status = EscalationStatus.pending,
+    this.processedByUserId,
+    this.processedAt,
+    this.decision,
+    this.notes,
+  });
+
+  factory Escalation.empty() {
+    return Escalation(
+      escalationId: '',
+      reportId: '',
+      escalatedByUserId: '',
+      escalatedAt: DateTime.now(),
+      escalateTo: EscalationTarget.adminReview,
+      reason: '',
+    );
+  }
+
+  factory Escalation.fromMap(Map<String, dynamic> map) {
+    return Escalation(
+      escalationId: map['escalationId'] as String? ?? '',
+      reportId: map['reportId'] as String? ?? '',
+      escalatedByUserId: map['escalatedByUserId'] as String? ?? '',
+      escalatedAt: (map['escalatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      escalateTo: EscalationTarget.values[(map['escalateTo'] as int?) ?? EscalationTarget.adminReview.index],
+      reason: map['reason'] as String? ?? '',
+      status: EscalationStatus.values[(map['status'] as int?) ?? EscalationStatus.pending.index],
+      processedByUserId: map['processedByUserId'] as String?,
+      processedAt: (map['processedAt'] as Timestamp?)?.toDate(),
+      decision: map['decision'] as String?,
+      notes: map['notes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'escalationId': escalationId,
+      'reportId': reportId,
+      'escalatedByUserId': escalatedByUserId,
+      'escalatedAt': Timestamp.fromDate(escalatedAt),
+      'escalateTo': escalateTo.index,
+      'reason': reason,
+      'status': status.index,
+      'processedByUserId': processedByUserId,
+      'processedAt': processedAt != null ? Timestamp.fromDate(processedAt!) : null,
+      'decision': decision,
+      'notes': notes,
+    };
+  }
+
+  Escalation copyWith({
+    EscalationStatus? status,
+    String? processedByUserId,
+    DateTime? processedAt,
+    String? decision,
+    String? notes,
+  }) {
+    return Escalation(
+      escalationId: escalationId,
+      reportId: reportId,
+      escalatedByUserId: escalatedByUserId,
+      escalatedAt: escalatedAt,
+      escalateTo: escalateTo,
+      reason: reason,
+      status: status ?? this.status,
+      processedByUserId: processedByUserId ?? this.processedByUserId,
+      processedAt: processedAt ?? this.processedAt,
+      decision: decision ?? this.decision,
+      notes: notes ?? this.notes,
     );
   }
 }

@@ -681,6 +681,100 @@ abstract class CommunityService {
   });
 
   Future<Map<String, dynamic>> getSearchStats();
+
+  // Report Appeals
+  Future<String> createReportAppeal({
+    required String reportId,
+    required String userId,
+    String? userName,
+    required String reason,
+    String? attachmentUrl,
+  });
+
+  Future<ReportAppeal?> getReportAppeal(String appealId);
+
+  Future<List<ReportAppeal>> getReportAppeals({
+    required String reportId,
+    String? status,
+    int limit = 20,
+  });
+
+  Future<List<ReportAppeal>> getUserAppeals({
+    required String userId,
+    String status = 'all',
+    int limit = 20,
+  });
+
+  Future<void> respondToAppeal({
+    required String appealId,
+    required String respondedByUserId,
+    required String decision,
+    String? reasoning,
+    String? newAction,
+  });
+
+  // Moderation Dashboard
+  Future<ModerationSummary?> getModerationSummary({
+    String timeRange = 'day',
+  });
+
+  Future<ModerationSummary?> getModerationAnalytics({
+    required DateTime startDate,
+    required DateTime endDate,
+  });
+
+  Future<ModeratorStats?> getModeratorStats({
+    required String userId,
+    String timeRange = 'month',
+  });
+
+  Future<List<ModeratorStats>> getTeamModerationStats({
+    String timeRange = 'month',
+    int limit = 50,
+  });
+
+  Future<Map<String, dynamic>> compareModerators({
+    required List<String> moderatorIds,
+    required String metric,
+  });
+
+  // Action History & Audit Trail
+  Future<List<ModerationActionRecord>> getModerationActionHistory({
+    int limit = 100,
+    String? actionType,
+  });
+
+  Future<List<ModerationActionRecord>> getModeratorActionHistory({
+    required String userId,
+    int limit = 50,
+  });
+
+  Future<List<ModerationActionRecord>> getUserModerationHistory({
+    required String userId,
+    int limit = 50,
+  });
+
+  Future<ModerationActionRecord?> getModerationAction(String actionId);
+
+  // Escalation Management
+  Future<void> escalateReport({
+    required String reportId,
+    required String escalatedByUserId,
+    required String reason,
+    required String escalateTo,
+  });
+
+  Future<List<Escalation>> getEscalations({
+    String status = 'pending',
+    int limit = 50,
+  });
+
+  Future<void> processEscalation({
+    required String escalationId,
+    required String processedByUserId,
+    required String decision,
+    String? notes,
+  });
 }
 
 /// Firebase implementation of community service
@@ -3397,6 +3491,313 @@ class FirebaseCommunityService implements CommunityService {
       'trendingSearches': [],
     };
   }
+
+  // Report Appeals
+  @override
+  Future<String> createReportAppeal({
+    required String reportId,
+    required String userId,
+    String? userName,
+    required String reason,
+    String? attachmentUrl,
+  }) async {
+    final appealId = _db.collection('reportAppeals').doc().id;
+
+    await _db.collection('reportAppeals').doc(appealId).set({
+      'appealId': appealId,
+      'reportId': reportId,
+      'userId': userId,
+      'userName': userName,
+      'reason': reason,
+      'attachmentUrl': attachmentUrl,
+      'status': AppealStatus.pending.index,
+      'createdAt': Timestamp.now(),
+      'canAppealFurther': true,
+    });
+
+    return appealId;
+  }
+
+  @override
+  Future<ReportAppeal?> getReportAppeal(String appealId) async {
+    final doc = await _db.collection('reportAppeals').doc(appealId).get();
+    if (!doc.exists) return null;
+    return ReportAppeal.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<ReportAppeal>> getReportAppeals({
+    required String reportId,
+    String? status,
+    int limit = 20,
+  }) async {
+    var query = _db
+        .collection('reportAppeals')
+        .where('reportId', isEqualTo: reportId) as Query<Map<String, dynamic>>;
+
+    if (status != null && status.isNotEmpty) {
+      final statusIndex = AppealStatus.values.indexWhere((s) => s.toString().split('.').last == status);
+      if (statusIndex >= 0) {
+        query = query.where('status', isEqualTo: statusIndex);
+      }
+    }
+
+    final snapshot = await query.limit(limit).get();
+    return snapshot.docs
+        .map((doc) => ReportAppeal.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<ReportAppeal>> getUserAppeals({
+    required String userId,
+    String status = 'all',
+    int limit = 20,
+  }) async {
+    var query = _db
+        .collection('reportAppeals')
+        .where('userId', isEqualTo: userId) as Query<Map<String, dynamic>>;
+
+    if (status != 'all' && status.isNotEmpty) {
+      final statusIndex = AppealStatus.values.indexWhere((s) => s.toString().split('.').last == status);
+      if (statusIndex >= 0) {
+        query = query.where('status', isEqualTo: statusIndex);
+      }
+    }
+
+    final snapshot = await query.limit(limit).get();
+    return snapshot.docs
+        .map((doc) => ReportAppeal.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<void> respondToAppeal({
+    required String appealId,
+    required String respondedByUserId,
+    required String decision,
+    String? reasoning,
+    String? newAction,
+  }) async {
+    final appealStatus = AppealStatus.values
+        .firstWhere((s) => s.toString().split('.').last == decision, orElse: () => AppealStatus.pending);
+
+    await _db.collection('reportAppeals').doc(appealId).update({
+      'status': appealStatus.index,
+      'respondedByUserId': respondedByUserId,
+      'respondedAt': Timestamp.now(),
+      'reasoning': reasoning,
+      'newAction': newAction,
+    });
+  }
+
+  // Moderation Dashboard
+  @override
+  Future<ModerationSummary?> getModerationSummary({
+    String timeRange = 'day',
+  }) async {
+    final snapshot = await _db
+        .collection('moderationSummaries')
+        .where('timeRange', isEqualTo: timeRange)
+        .orderBy('startDate', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return ModerationSummary.fromMap(snapshot.docs.first.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<ModerationSummary?> getModerationAnalytics({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final snapshot = await _db
+        .collection('moderationSummaries')
+        .where('startDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+        .where('endDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return ModerationSummary.fromMap(snapshot.docs.first.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<ModeratorStats?> getModeratorStats({
+    required String userId,
+    String timeRange = 'month',
+  }) async {
+    final doc = await _db
+        .collection('moderatorStats')
+        .where('moderatorId', isEqualTo: userId)
+        .where('timeRange', isEqualTo: timeRange)
+        .limit(1)
+        .get();
+
+    if (doc.docs.isEmpty) return null;
+    return ModeratorStats.fromMap(doc.docs.first.data() as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<ModeratorStats>> getTeamModerationStats({
+    String timeRange = 'month',
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('moderatorStats')
+        .where('timeRange', isEqualTo: timeRange)
+        .orderBy('totalActionsCount', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ModeratorStats.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> compareModerators({
+    required List<String> moderatorIds,
+    required String metric,
+  }) async {
+    final statsList = <ModeratorStats>[];
+    for (final modId in moderatorIds) {
+      final stats = await getModeratorStats(userId: modId);
+      if (stats != null) {
+        statsList.add(stats);
+      }
+    }
+
+    return {
+      'moderators': statsList.map((s) => s.toMap()).toList(),
+      'metric': metric,
+    };
+  }
+
+  // Action History & Audit Trail
+  @override
+  Future<List<ModerationActionRecord>> getModerationActionHistory({
+    int limit = 100,
+    String? actionType,
+  }) async {
+    var query = _db.collection('moderationActions') as Query<Map<String, dynamic>>;
+
+    if (actionType != null) {
+      final typeIndex = ModerationActionType.values
+          .indexWhere((t) => t.toString().split('.').last == actionType);
+      if (typeIndex >= 0) {
+        query = query.where('actionType', isEqualTo: typeIndex);
+      }
+    }
+
+    final snapshot = await query.orderBy('createdAt', descending: true).limit(limit).get();
+    return snapshot.docs
+        .map((doc) => ModerationActionRecord.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<List<ModerationActionRecord>> getModeratorActionHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('moderationActions')
+        .where('moderatorId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ModerationActionRecord.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<ModerationActionRecord>> getUserModerationHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    final snapshot = await _db
+        .collection('moderationActions')
+        .where('targetUserId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ModerationActionRecord.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<ModerationActionRecord?> getModerationAction(String actionId) async {
+    final doc = await _db.collection('moderationActions').doc(actionId).get();
+    if (!doc.exists) return null;
+    return ModerationActionRecord.fromMap(doc.data() as Map<String, dynamic>);
+  }
+
+  // Escalation Management
+  @override
+  Future<void> escalateReport({
+    required String reportId,
+    required String escalatedByUserId,
+    required String reason,
+    required String escalateTo,
+  }) async {
+    final escalationId = _db.collection('escalations').doc().id;
+    final targetIndex = EscalationTarget.values
+        .indexWhere((t) => t.toString().split('.').last == escalateTo);
+
+    await _db.collection('escalations').doc(escalationId).set({
+      'escalationId': escalationId,
+      'reportId': reportId,
+      'escalatedByUserId': escalatedByUserId,
+      'escalatedAt': Timestamp.now(),
+      'escalateTo': targetIndex >= 0 ? targetIndex : EscalationTarget.adminReview.index,
+      'reason': reason,
+      'status': EscalationStatus.pending.index,
+    });
+  }
+
+  @override
+  Future<List<Escalation>> getEscalations({
+    String status = 'pending',
+    int limit = 50,
+  }) async {
+    final statusIndex = EscalationStatus.values
+        .indexWhere((s) => s.toString().split('.').last == status);
+
+    var query = _db.collection('escalations') as Query<Map<String, dynamic>>;
+    if (statusIndex >= 0) {
+      query = query.where('status', isEqualTo: statusIndex);
+    }
+
+    final snapshot = await query.orderBy('escalatedAt', descending: true).limit(limit).get();
+    return snapshot.docs
+        .map((doc) => Escalation.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  Future<void> processEscalation({
+    required String escalationId,
+    required String processedByUserId,
+    required String decision,
+    String? notes,
+  }) async {
+    final decisionStatus = EscalationStatus.values
+        .firstWhere((s) => s.toString().split('.').last == decision, orElse: () => EscalationStatus.pending);
+
+    await _db.collection('escalations').doc(escalationId).update({
+      'status': decisionStatus.index,
+      'processedByUserId': processedByUserId,
+      'processedAt': Timestamp.now(),
+      'decision': decision,
+      'notes': notes,
+    });
+  }
 }
 
 /// Stub implementation for testing
@@ -5739,6 +6140,283 @@ class StubCommunityService implements CommunityService {
           .take(10)
           .toList(),
     };
+  }
+
+  // Report Appeals
+  final Map<String, ReportAppeal> _appeals = {};
+
+  @override
+  Future<String> createReportAppeal({
+    required String reportId,
+    required String userId,
+    String? userName,
+    required String reason,
+    String? attachmentUrl,
+  }) async {
+    final appealId = 'appeal_${DateTime.now().millisecondsSinceEpoch}';
+
+    _appeals[appealId] = ReportAppeal(
+      appealId: appealId,
+      reportId: reportId,
+      userId: userId,
+      userName: userName,
+      reason: reason,
+      attachmentUrl: attachmentUrl,
+      createdAt: DateTime.now(),
+    );
+
+    return appealId;
+  }
+
+  @override
+  Future<ReportAppeal?> getReportAppeal(String appealId) async {
+    return _appeals[appealId];
+  }
+
+  @override
+  Future<List<ReportAppeal>> getReportAppeals({
+    required String reportId,
+    String? status,
+    int limit = 20,
+  }) async {
+    var results = _appeals.values.where((a) => a.reportId == reportId).toList();
+
+    if (status != null && status.isNotEmpty) {
+      results = results.where((a) {
+        final statusStr = a.status.toString().split('.').last;
+        return statusStr == status;
+      }).toList();
+    }
+
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<List<ReportAppeal>> getUserAppeals({
+    required String userId,
+    String status = 'all',
+    int limit = 20,
+  }) async {
+    var results = _appeals.values.where((a) => a.userId == userId).toList();
+
+    if (status != 'all' && status.isNotEmpty) {
+      results = results.where((a) {
+        final statusStr = a.status.toString().split('.').last;
+        return statusStr == status;
+      }).toList();
+    }
+
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<void> respondToAppeal({
+    required String appealId,
+    required String respondedByUserId,
+    required String decision,
+    String? reasoning,
+    String? newAction,
+  }) async {
+    final appeal = _appeals[appealId];
+    if (appeal == null) return;
+
+    final status = AppealStatus.values
+        .firstWhere((s) => s.toString().split('.').last == decision, orElse: () => AppealStatus.pending);
+
+    _appeals[appealId] = appeal.copyWith(
+      status: status,
+      respondedByUserId: respondedByUserId,
+      respondedAt: DateTime.now(),
+      reasoning: reasoning,
+      newAction: newAction,
+    );
+  }
+
+  // Moderation Dashboard
+  final Map<String, ModerationSummary> _summaries = {};
+  final Map<String, ModeratorStats> _stats = {};
+
+  @override
+  Future<ModerationSummary?> getModerationSummary({
+    String timeRange = 'day',
+  }) async {
+    return _summaries.values.firstWhere(
+      (s) => s.timeRange == timeRange,
+      orElse: () => ModerationSummary.empty(),
+    ) as ModerationSummary?;
+  }
+
+  @override
+  Future<ModerationSummary?> getModerationAnalytics({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return _summaries.values.firstWhere(
+      (s) => s.startDate.isBefore(endDate) && s.endDate.isAfter(startDate),
+      orElse: () => ModerationSummary.empty(),
+    ) as ModerationSummary?;
+  }
+
+  @override
+  Future<ModeratorStats?> getModeratorStats({
+    required String userId,
+    String timeRange = 'month',
+  }) async {
+    return _stats.values.firstWhere(
+      (s) => s.moderatorId == userId && s.timeRange == timeRange,
+      orElse: () => ModeratorStats.empty(),
+    ) as ModeratorStats?;
+  }
+
+  @override
+  Future<List<ModeratorStats>> getTeamModerationStats({
+    String timeRange = 'month',
+    int limit = 50,
+  }) async {
+    return _stats.values
+        .where((s) => s.timeRange == timeRange)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> compareModerators({
+    required List<String> moderatorIds,
+    required String metric,
+  }) async {
+    final statsList = <ModeratorStats>[];
+    for (final modId in moderatorIds) {
+      final stats = await getModeratorStats(userId: modId);
+      if (stats != null) {
+        statsList.add(stats);
+      }
+    }
+
+    return {
+      'moderators': statsList.map((s) => s.toMap()).toList(),
+      'metric': metric,
+    };
+  }
+
+  // Action History & Audit Trail
+  final Map<String, ModerationActionRecord> _actions = {};
+
+  @override
+  Future<List<ModerationActionRecord>> getModerationActionHistory({
+    int limit = 100,
+    String? actionType,
+  }) async {
+    var results = _actions.values.toList();
+
+    if (actionType != null && actionType.isNotEmpty) {
+      results = results.where((a) {
+        final typeStr = a.actionType.toString().split('.').last;
+        return typeStr == actionType;
+      }).toList();
+    }
+
+    return results
+        .sorted((a, b) => b.createdAt.compareTo(a.createdAt))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<ModerationActionRecord>> getModeratorActionHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    return _actions.values
+        .where((a) => a.moderatorId == userId)
+        .toList()
+        .sorted((a, b) => b.createdAt.compareTo(a.createdAt))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<ModerationActionRecord>> getUserModerationHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    return _actions.values
+        .where((a) => a.targetUserId == userId)
+        .toList()
+        .sorted((a, b) => b.createdAt.compareTo(a.createdAt))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<ModerationActionRecord?> getModerationAction(String actionId) async {
+    return _actions[actionId];
+  }
+
+  // Escalation Management
+  final Map<String, Escalation> _escalations = {};
+
+  @override
+  Future<void> escalateReport({
+    required String reportId,
+    required String escalatedByUserId,
+    required String reason,
+    required String escalateTo,
+  }) async {
+    final escalationId = 'escalation_${DateTime.now().millisecondsSinceEpoch}';
+    final targetIndex = EscalationTarget.values
+        .indexWhere((t) => t.toString().split('.').last == escalateTo);
+
+    _escalations[escalationId] = Escalation(
+      escalationId: escalationId,
+      reportId: reportId,
+      escalatedByUserId: escalatedByUserId,
+      escalatedAt: DateTime.now(),
+      escalateTo: targetIndex >= 0 ? EscalationTarget.values[targetIndex] : EscalationTarget.adminReview,
+      reason: reason,
+    );
+  }
+
+  @override
+  Future<List<Escalation>> getEscalations({
+    String status = 'pending',
+    int limit = 50,
+  }) async {
+    var results = _escalations.values.toList();
+
+    if (status.isNotEmpty) {
+      results = results.where((e) {
+        final statusStr = e.status.toString().split('.').last;
+        return statusStr == status;
+      }).toList();
+    }
+
+    return results
+        .sorted((a, b) => b.escalatedAt.compareTo(a.escalatedAt))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<void> processEscalation({
+    required String escalationId,
+    required String processedByUserId,
+    required String decision,
+    String? notes,
+  }) async {
+    final escalation = _escalations[escalationId];
+    if (escalation == null) return;
+
+    final decisionStatus = EscalationStatus.values
+        .firstWhere((s) => s.toString().split('.').last == decision, orElse: () => EscalationStatus.pending);
+
+    _escalations[escalationId] = escalation.copyWith(
+      status: decisionStatus,
+      processedByUserId: processedByUserId,
+      processedAt: DateTime.now(),
+      decision: decision,
+      notes: notes,
+    );
   }
 }
 

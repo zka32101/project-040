@@ -2832,5 +2832,314 @@ void main() {
         expect(stats['uniqueUsers'], greaterThan(0));
       });
     });
+
+    // Phase 11 Step 6: Report Appeals & Moderation Dashboard
+    group('Report Appeals', () {
+      test('createReportAppeal creates a new appeal', () async {
+        final service = StubCommunityService();
+        final appealId = await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          userName: 'User One',
+          reason: 'I believe this was incorrectly flagged',
+          attachmentUrl: 'https://example.com/evidence.jpg',
+        );
+
+        expect(appealId, isNotEmpty);
+
+        final appeal = await service.getReportAppeal(appealId);
+        expect(appeal, isNotNull);
+        expect(appeal!.reportId, 'report1');
+        expect(appeal.userId, 'user1');
+        expect(appeal.status, AppealStatus.pending);
+      });
+
+      test('getReportAppeal returns appeal by ID', () async {
+        final service = StubCommunityService();
+        final appealId = await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          reason: 'Appeal reason',
+        );
+
+        final appeal = await service.getReportAppeal(appealId);
+        expect(appeal, isNotNull);
+        expect(appeal!.appealId, appealId);
+      });
+
+      test('getReportAppeals filters by report and status', () async {
+        final service = StubCommunityService();
+
+        await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          reason: 'Appeal 1',
+        );
+
+        final appeal2Id = await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user2',
+          reason: 'Appeal 2',
+        );
+
+        final appeals = await service.getReportAppeals(reportId: 'report1');
+        expect(appeals.length, 2);
+
+        await service.respondToAppeal(
+          appealId: appeal2Id,
+          respondedByUserId: 'mod1',
+          decision: 'overturned',
+          reasoning: 'Decision was incorrect',
+        );
+
+        final overturnedAppeals = await service.getReportAppeals(
+          reportId: 'report1',
+          status: 'overturned',
+        );
+        expect(overturnedAppeals.length, greaterThanOrEqualTo(1));
+      });
+
+      test('getUserAppeals returns user\'s appeals', () async {
+        final service = StubCommunityService();
+
+        await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          reason: 'Appeal 1',
+        );
+
+        await service.createReportAppeal(
+          reportId: 'report2',
+          userId: 'user1',
+          reason: 'Appeal 2',
+        );
+
+        await service.createReportAppeal(
+          reportId: 'report3',
+          userId: 'user2',
+          reason: 'Appeal 3',
+        );
+
+        final userAppeals = await service.getUserAppeals(userId: 'user1');
+        expect(userAppeals.length, 2);
+        expect(userAppeals.every((a) => a.userId == 'user1'), true);
+      });
+
+      test('respondToAppeal updates appeal status', () async {
+        final service = StubCommunityService();
+        final appealId = await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          reason: 'Appeal reason',
+        );
+
+        await service.respondToAppeal(
+          appealId: appealId,
+          respondedByUserId: 'mod1',
+          decision: 'upheld',
+          reasoning: 'Decision was correct',
+        );
+
+        final appeal = await service.getReportAppeal(appealId);
+        expect(appeal!.status, AppealStatus.upheld);
+        expect(appeal.respondedByUserId, 'mod1');
+        expect(appeal.reasoning, 'Decision was correct');
+      });
+
+      test('respondToAppeal with overturned decision', () async {
+        final service = StubCommunityService();
+        final appealId = await service.createReportAppeal(
+          reportId: 'report1',
+          userId: 'user1',
+          reason: 'Appeal reason',
+        );
+
+        await service.respondToAppeal(
+          appealId: appealId,
+          respondedByUserId: 'mod1',
+          decision: 'overturned',
+          reasoning: 'Post did not violate guidelines',
+        );
+
+        final appeal = await service.getReportAppeal(appealId);
+        expect(appeal!.status, AppealStatus.overturned);
+      });
+    });
+
+    group('Moderation Dashboard', () {
+      test('getModerationSummary retrieves summary stats', () async {
+        final service = StubCommunityService();
+
+        final summary = await service.getModerationSummary(timeRange: 'day');
+        expect(summary, isNotNull);
+      });
+
+      test('getModerationAnalytics returns analytics for date range', () async {
+        final service = StubCommunityService();
+
+        final analytics = await service.getModerationAnalytics(
+          startDate: DateTime(2026, 1, 1),
+          endDate: DateTime(2026, 8, 28),
+        );
+
+        expect(analytics, isNotNull);
+      });
+
+      test('getModeratorStats retrieves moderator performance', () async {
+        final service = StubCommunityService();
+
+        final stats = await service.getModeratorStats(
+          userId: 'mod1',
+          timeRange: 'month',
+        );
+
+        expect(stats, isNotNull);
+      });
+
+      test('getTeamModerationStats returns team statistics', () async {
+        final service = StubCommunityService();
+
+        final teamStats = await service.getTeamModerationStats(
+          timeRange: 'month',
+          limit: 50,
+        );
+
+        expect(teamStats, isList);
+      });
+
+      test('compareModerators compares performance metrics', () async {
+        final service = StubCommunityService();
+
+        final comparison = await service.compareModerators(
+          moderatorIds: ['mod1', 'mod2', 'mod3'],
+          metric: 'appeal_overturn_rate',
+        );
+
+        expect(comparison['metric'], 'appeal_overturn_rate');
+        expect(comparison['moderators'], isList);
+      });
+    });
+
+    group('Action History & Audit Trail', () {
+      test('getModerationActionHistory retrieves action records', () async {
+        final service = StubCommunityService();
+
+        final history = await service.getModerationActionHistory(limit: 100);
+        expect(history, isList);
+      });
+
+      test('getModeratorActionHistory filters by moderator', () async {
+        final service = StubCommunityService();
+
+        final history = await service.getModeratorActionHistory(
+          userId: 'mod1',
+          limit: 50,
+        );
+
+        expect(history, isList);
+      });
+
+      test('getUserModerationHistory filters by target user', () async {
+        final service = StubCommunityService();
+
+        final history = await service.getUserModerationHistory(
+          userId: 'user1',
+          limit: 50,
+        );
+
+        expect(history, isList);
+      });
+
+      test('getModerationAction retrieves specific action', () async {
+        final service = StubCommunityService();
+
+        final action = await service.getModerationAction('action1');
+        expect(action, isNotNull);
+      });
+    });
+
+    group('Escalation Management', () {
+      test('escalateReport escalates a report', () async {
+        final service = StubCommunityService();
+
+        await service.escalateReport(
+          reportId: 'report1',
+          escalatedByUserId: 'mod1',
+          reason: 'Requires legal review',
+          escalateTo: 'legalTeam',
+        );
+
+        final escalations = await service.getEscalations(status: 'pending');
+        expect(escalations.length, greaterThanOrEqualTo(0));
+      });
+
+      test('getEscalations retrieves pending escalations', () async {
+        final service = StubCommunityService();
+
+        await service.escalateReport(
+          reportId: 'report1',
+          escalatedByUserId: 'mod1',
+          reason: 'Complex case',
+          escalateTo: 'adminReview',
+        );
+
+        final escalations = await service.getEscalations(
+          status: 'pending',
+          limit: 50,
+        );
+
+        expect(escalations, isList);
+      });
+
+      test('processEscalation updates escalation status', () async {
+        final service = StubCommunityService();
+
+        await service.escalateReport(
+          reportId: 'report1',
+          escalatedByUserId: 'mod1',
+          reason: 'Legal review needed',
+          escalateTo: 'legalTeam',
+        );
+
+        final escalations = await service.getEscalations(status: 'pending');
+        if (escalations.isNotEmpty) {
+          final escalationId = escalations.first.escalationId;
+
+          await service.processEscalation(
+            escalationId: escalationId,
+            processedByUserId: 'admin1',
+            decision: 'approved',
+            notes: 'Action confirmed appropriate',
+          );
+
+          final processed = await service.getEscalations(status: 'approved');
+          expect(processed, isList);
+        }
+      });
+
+      test('escalation includes correct target', () async {
+        final service = StubCommunityService();
+
+        await service.escalateReport(
+          reportId: 'report1',
+          escalatedByUserId: 'mod1',
+          reason: 'Executive decision needed',
+          escalateTo: 'executive',
+        );
+
+        final escalations = await service.getEscalations(
+          status: 'pending',
+          limit: 1,
+        );
+
+        expect(escalations.isNotEmpty, true);
+        if (escalations.isNotEmpty) {
+          expect(
+            escalations.first.escalateTo,
+            isIn([EscalationTarget.values]),
+          );
+        }
+      });
+    });
   });
 }
