@@ -3133,5 +3133,670 @@
     "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "o166",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特性で最も重要な認識は。",
+    "choices": [
+      "出力は低い",
+      "急加速・高速化が容易で、制御が困難",
+      "安定性が高い",
+      "出力は関係ない"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力で急加速が可能な一方、コントロールが困難で危険管理が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o167",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での排気量の重要性は。",
+    "choices": [
+      "影響なし",
+      "排気量大きいほど出力・トルク大で危険度増加",
+      "排気量小が危険",
+      "排気量は速度に影響なし"
+    ],
+    "answer": 1,
+    "explanation": "排気量が大きいほど出力が大きく、危険管理のための高度な技術が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o168",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗り走行での最初の注意点は。",
+    "choices": [
+      "乗客の体重は無視",
+      "乗客の重心位置と荷重分散を最大限考慮",
+      "運転者のみで対応",
+      "乗客の姿勢は不問"
+    ],
+    "answer": 1,
+    "explanation": "乗客乗車時は重心位置と荷重分散が走行安定性に大きく影響。慎重な対応が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o169",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "90kg",
+      "制限なし"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kgと定められている。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o170",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪でのウイリーの危険性について。",
+    "choices": [
+      "見た目カッコいい",
+      "前輪が浮き転倒リスク極大",
+      "操作性向上",
+      "影響なし"
+    ],
+    "answer": 1,
+    "explanation": "ウイリーは高出力で容易に発生。転倒リスク極大で違反行為。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o171",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での直線加速でのホイールスピン対策は。",
+    "choices": [
+      "アクセル全開で走行",
+      "段階的なアクセル操作でスリップ防止",
+      "低速走行のみ",
+      "加速不要"
+    ],
+    "answer": 1,
+    "explanation": "ホイールスピン防止には段階的なアクセル操作が重要。急加速は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o172",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での高速走行中のカーブ対応で正しいのは。",
+    "choices": [
+      "加速しながら曲がる",
+      "カーブ手前での十分な減速が必須",
+      "ハイビーム照射で視界確保",
+      "スピード維持"
+    ],
+    "answer": 1,
+    "explanation": "高速カーブは横転リスク。事前減速と適切な傾斜が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o173",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのブレーキング時の最重要注意点は。",
+    "choices": [
+      "片輪ブレーキで十分",
+      "前後ブレーキのバランス操作が必須",
+      "ブレーキは軽く",
+      "ニュートラルで走行"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の制動力は大きく、前後ブレーキの適切なバランスが必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "o174",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天走行での制動距離変化は。",
+    "choices": [
+      "変わらない",
+      "著しく延びる。スリップリスク増加",
+      "短くなる",
+      "影響なし"
+    ],
+    "answer": 1,
+    "explanation": "雨天時はグリップ低下で制動距離が大幅延長。速度低下が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "weatherConditions"
+  },
+  {
+    "id": "o175",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での横転防止策で最も重要なのは。",
+    "choices": [
+      "最高速度走行",
+      "適切な速度選択とハンドル操作",
+      "アクセル全開",
+      "カーブ中の加速"
+    ],
+    "answer": 1,
+    "explanation": "横転防止はカーブへの進入速度と体重移動の適切な制御が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o176",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での乗客乗車時のコーナリング注意点は。",
+    "choices": [
+      "乗客の体重は無視",
+      "乗客の体重移動を予測し、バランス調整が必須",
+      "運転者のみ傾斜",
+      "乗客は動かない"
+    ],
+    "answer": 1,
+    "explanation": "乗客乗車時のコーナリングは、乗客の体重移動を予測した運転が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o177",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での夜間走行時のハイビーム使用の重要性は。",
+    "choices": [
+      "不要",
+      "前方視界確保に必須。対向車への配慮も重要",
+      "ロービームで十分",
+      "ライト不要"
+    ],
+    "answer": 1,
+    "explanation": "夜間走行はハイビームで視界確保し、対向車へのロービーム切り替えが必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o178",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での高速走行での空気抵抗の影響は。",
+    "choices": [
+      "影響なし",
+      "高速でより顕著。バイク安定性への影響大",
+      "低速で影響大",
+      "横風のみ影響"
+    ],
+    "answer": 1,
+    "explanation": "高速走行では空気抵抗が顕著になり、バイクの安定性に影響。横風対策も必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o179",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での二人乗り可能開始時期は。",
+    "choices": [
+      "免許取得直後",
+      "免許取得後1年の実乗経験後",
+      "20歳以上で免許3年",
+      "制限なし"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは、免許取得後1年の実乗経験が必須条件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o180",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での積載物の固定方法で最適なのは。",
+    "choices": [
+      "ロープなし積載",
+      "確実なロープ固定で脱落防止",
+      "軽い物は固定不要",
+      "走行中固定"
+    ],
+    "answer": 1,
+    "explanation": "積載物の脱落は後続車への事故。確実なロープ固定が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o181",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での急ブレーキでの危険は。",
+    "choices": [
+      "効果的である",
+      "前輪ロック・転倒リスク高",
+      "安全である",
+      "速度低下のみ"
+    ],
+    "answer": 1,
+    "explanation": "急ブレーキは前輪をロックさせ、スリップや転倒につながり極めて危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "o182",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での積載位置と安全性の関係は。",
+    "choices": [
+      "高く積むと安定",
+      "中央低く積むが最適。高位置は転倒リスク増",
+      "位置は無関係",
+      "後部集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心位置は走行安定性に直結。中央低位置が最適。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o183",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での交差点での視界確保での注意は。",
+    "choices": [
+      "対向車のみ確認",
+      "対向車・歩行者・標識の総合確認が必須",
+      "信号のみ確認",
+      "音のみ確認"
+    ],
+    "answer": 1,
+    "explanation": "交差点進入時は複数の危険要因が重なるため、総合的な視界確認が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o184",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での横風の影響が最も大きい場所は。",
+    "choices": [
+      "平坦道",
+      "橋・トンネル出口・高架下",
+      "カーブ",
+      "駐車場"
+    ],
+    "answer": 1,
+    "explanation": "橋・トンネル出口・高架下は横風が集中しやすく、バイク安定性への影響大。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o185",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での白線踏み時の危険は。",
+    "choices": [
+      "影響なし",
+      "スリップリスク。特に雨天時は顕著",
+      "加速する",
+      "安全である"
+    ],
+    "answer": 1,
+    "explanation": "白線は水を含みやすく、スリップのリスク。雨天時に特に危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o186",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での凍結路面での走行判断で最適なのは。",
+    "choices": [
+      "通常速度で走行",
+      "走行回避。必要時は最低速で慎重",
+      "高速で脱出",
+      "徐々に加速"
+    ],
+    "answer": 1,
+    "explanation": "凍結路は極めて滑りやすい。走行回避が最適。必要時は最低速が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o187",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での蛇行走行についての法的評価は。",
+    "choices": [
+      "効率的",
+      "違反且つ危険。厳禁",
+      "夜間なら許可",
+      "低速で許可"
+    ],
+    "answer": 1,
+    "explanation": "蛇行走行は道路交通法違反で、極めて危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "o188",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での中央線越え走行について正しいのは。",
+    "choices": [
+      "自由に越える",
+      "追越し時のみ許可。それ以外は対向車衝突リスク",
+      "走行禁止",
+      "信号待ち時は可"
+    ],
+    "answer": 1,
+    "explanation": "中央線越えは追越し時のみ許可。その他は対向車との衝突リスク。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "o189",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での走行中の携帯電話使用について。",
+    "choices": [
+      "ハンズフリーなら可",
+      "完全禁止。安全な場所停止後のみ",
+      "短時間なら可",
+      "信号待ち時は許可"
+    ],
+    "answer": 1,
+    "explanation": "走行中の携帯使用は違反で危険。停止後の使用が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o190",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での眠気対策で最も効果的なのは。",
+    "choices": [
+      "運転継続",
+      "定期的な休憩が最優先",
+      "音楽大音量",
+      "走行速度上げる"
+    ],
+    "answer": 1,
+    "explanation": "運転中の眠気は極めて危険。定期的な休憩による対策が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o191",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での体調不良時の走行についての判断は。",
+    "choices": [
+      "気合で走行",
+      "走行を控え、回復後に走行が最優先",
+      "薬飲んで走行",
+      "短距離なら可"
+    ],
+    "answer": 1,
+    "explanation": "体調不良は判断力低下と反応時間延長を招く。走行回避が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o192",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での飲酒運転についての法的責任は。",
+    "choices": [
+      "少量なら許可",
+      "完全禁止。重大な法的責任が生じる",
+      "3時間後なら可",
+      "検査で引っかからなければOK"
+    ],
+    "answer": 1,
+    "explanation": "飲酒運転は完全禁止。少量でも重大な違反で法的責任が生じる。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o193",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での走行中のスマートフォン操作について。",
+    "choices": [
+      "GPS確認なら可",
+      "完全禁止。停止後のみ",
+      "通話なら可",
+      "短時間なら許可"
+    ],
+    "answer": 1,
+    "explanation": "走行中のスマートフォン操作は違反で危険。停止後の使用が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o194",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での煽り運転（あおり走行）についての評価は。",
+    "choices": [
+      "効果的",
+      "危険且つ違反。重大な法的責任が生じる",
+      "低速なら許可",
+      "クラクションと併用可"
+    ],
+    "answer": 1,
+    "explanation": "煽り運転は危険で違反。十分な車間距離保持が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o195",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での左右の目視確認の重要性は。",
+    "choices": [
+      "不要",
+      "後続車・歩行者把握に必須。死角確認が重要",
+      "バックミラーのみで十分",
+      "音のみで確認"
+    ],
+    "answer": 1,
+    "explanation": "バックミラーには死角がある。肩越し目視確認で後方の完全把握が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o196",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での教習所卒業後の実走行で最優先すべき項目は。",
+    "choices": [
+      "最高速度走行",
+      "実交通での危険認識と判断能力の習得",
+      "スピード感覚",
+      "高速走行練習"
+    ],
+    "answer": 1,
+    "explanation": "実走行では様々な危険状況に直面。確実な危険認識と判断能力習得が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o197",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での最適な走行速度決定の基準は。",
+    "choices": [
+      "最高速度値のみ",
+      "路面・天候・視界・交通量を総合判断",
+      "前車の速度",
+      "気分や気象"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は速度制限以下で、さらに状況に応じた速度調整が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o198",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での定期点検と安全性の関係は。",
+    "choices": [
+      "点検は不要",
+      "定期点検により機械的トラブル予防。安全性確保に必須",
+      "1年ごと不要",
+      "走行距離で判断"
+    ],
+    "answer": 1,
+    "explanation": "定期点検はバイク故障による事故予防に不可欠。法定義務。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o199",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での雨天走行での装備で必須なのは。",
+    "choices": [
+      "革ジャン",
+      "ライト点灯と高視認性ウェア・反射材装備",
+      "クラクション",
+      "消音器"
+    ],
+    "answer": 1,
+    "explanation": "雨天時の視認性向上にはライト点灯と反射材装備が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o200",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での安全運転習慣確立における最重要項目は。",
+    "choices": [
+      "スピード感覚",
+      "毎回の走行前点検と心身状態確認",
+      "バイク性能",
+      "運で判断"
+    ],
+    "answer": 1,
+    "explanation": "安全走行習慣は毎回の走行前点検と心身状態確認から始まる。これが基本。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]

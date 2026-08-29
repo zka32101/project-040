@@ -2563,5 +2563,1240 @@
     "explanation": "安全運転は他者の行動を予測し、事前に対応する危機管理能力が最重要。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "g136",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での通勤時の走行で最も注意すべきことは。",
+    "choices": [
+      "速度を上げる",
+      "朝の交通ラッシュで急カーブを避ける",
+      "周囲の交通状況変化への対応",
+      "ラジオを聴きながら運転"
+    ],
+    "answer": 2,
+    "explanation": "通勤時は交通量が多く、周囲の状況変化への即座な対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g137",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での停止線について正しいのは。",
+    "choices": [
+      "停止線を少し超えて停止",
+      "停止線の手前30cm以上で停止",
+      "停止線の位置は目安",
+      "停止線を越えて停止"
+    ],
+    "answer": 1,
+    "explanation": "停止線の手前で安全に停止することが道路交通法の要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g138",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での後退走行時の最優先事項は。",
+    "choices": [
+      "速く後退する",
+      "後方の人や障害物確認が最優先",
+      "ウインカー点灯は不要",
+      "スピード感"
+    ],
+    "answer": 1,
+    "explanation": "後退時は歩行者や物体との接触が最大のリスク。十分な確認が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g139",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での逆走について正しいのは。",
+    "choices": [
+      "短距離なら許可",
+      "完全禁止",
+      "深夜なら許可",
+      "一方通行でない道路なら可能"
+    ],
+    "answer": 1,
+    "explanation": "逆走は重大な違反であり、あらゆる状況で禁止。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g140",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付でペダル自転車を追い越す場合の注意は。",
+    "choices": [
+      "接近してアクセル全開",
+      "十分な横距離を取り、低速で追い越す",
+      "クラクションで警告",
+      "接近してウインカー点灯"
+    ],
+    "answer": 1,
+    "explanation": "自転車追い越しは十分な横距離とゆっくりな走行が安全。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g141",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での路面凍結時の走行について正しいのは。",
+    "choices": [
+      "通常速度で走行",
+      "走行を避け、徐行するか停止する",
+      "スピードを上げる",
+      "ライトを消す"
+    ],
+    "answer": 1,
+    "explanation": "凍結路面は極めて滑りやすく、走行回避か超低速での走行が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g142",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での交差点突入時の危険認識で最も重要なのは。",
+    "choices": [
+      "前方車両の追従",
+      "対向車・歩行者・標識の同時確認",
+      "信号の色のみ確認",
+      "走行速度の維持"
+    ],
+    "answer": 1,
+    "explanation": "交差点進入時は複数の危険要因が重なるため、総合的な確認が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g143",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付でのカーブ走行で危険な操作は。",
+    "choices": [
+      "カーブ手前での減速",
+      "カーブ中のブレーキ",
+      "低速でのカーブ侵入",
+      "カーブ手前から減速"
+    ],
+    "answer": 1,
+    "explanation": "カーブ中のブレーキはスリップやロックの原因となり極めて危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g144",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "原付でのハンドルの正しい握り方について。",
+    "choices": [
+      "両手で力強く握る",
+      "片手で握る",
+      "両手で軽く保持し、リラックス",
+      "手を放す"
+    ],
+    "answer": 2,
+    "explanation": "ハンドルは両手で軽く保持し、余分な力を入れないことで細かい操作が可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g145",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "原付での横断歩道上での停止について正しいのは。",
+    "choices": [
+      "歩道上での停止は許可",
+      "停止線手前での停止が正則",
+      "歩道を越えて停止",
+      "停止位置は自由"
+    ],
+    "answer": 1,
+    "explanation": "信号待ちは横断歩道を侵襲しない停止線手前で停止することが規則。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g146",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での反射板の役割について正しいのは。",
+    "choices": [
+      "装飾用",
+      "夜間走行時の視認性向上",
+      "スピード向上",
+      "不要"
+    ],
+    "answer": 1,
+    "explanation": "反射板は他の道路利用者による視認性を大幅に向上させ、夜間事故防止に不可欠。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g147",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付でのマニュアル・オートマ区別について。",
+    "choices": [
+      "原付はすべてオートマ",
+      "ほぼマニュアル",
+      "区別がない",
+      "形式で分かれている"
+    ],
+    "answer": 0,
+    "explanation": "ほぼ全ての原付はオートマチック構造で、特別な変速操作が不要。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g148",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での横転リスクが最も高いのは。",
+    "choices": [
+      "直線走行",
+      "低速カーブ",
+      "高速カーブ走行",
+      "直進加速"
+    ],
+    "answer": 2,
+    "explanation": "高速でのカーブ走行は遠心力と旋回による重心移動で横転リスクが最大。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g149",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での左右の側面制御で重要なのは。",
+    "choices": [
+      "アクセル",
+      "ハンドル",
+      "ブレーキ",
+      "ギア"
+    ],
+    "answer": 1,
+    "explanation": "左右の方向制御はハンドル操作で行われ、最も重要な操作要素。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g150",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での坂道での走行で最も注意すべき点は。",
+    "choices": [
+      "速度は気にしない",
+      "下り坂でのブレーキ過熱とニュートラル走行回避",
+      "上り坂での高速走行",
+      "スピード維持"
+    ],
+    "answer": 1,
+    "explanation": "下り坂ではブレーキ過熱を避けエンジンブレーキを活用し、ニュートラル走行は避けるべき。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g151",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での雨天走行で必須の装備は。",
+    "choices": [
+      "革ジャン",
+      "ライト点灯と反射材装備",
+      "クラクション",
+      "ヘッドライトのみ"
+    ],
+    "answer": 1,
+    "explanation": "雨天時はライト点灯と反射材が視認性向上に最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g152",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での滑りやすい路面で最も危険なのは。",
+    "choices": [
+      "アスファルト",
+      "白線・マンホール・グレーチング",
+      "砂利",
+      "土道"
+    ],
+    "answer": 1,
+    "explanation": "白線・マンホール・グレーチングなど金属表面や水を含む箇所は特に滑りやすい。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g153",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での走行中のウインカー誤操作での対応は。",
+    "choices": [
+      "そのまま続ける",
+      "即座に解除し、正しい方向を指示",
+      "速度を上げる",
+      "ハンドル操作"
+    ],
+    "answer": 1,
+    "explanation": "ウインカー誤操作に気付いたら即座に解除し、正しい意思表示をすることが重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g154",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "原付での鋭いカーブでのスリップ防止策は。",
+    "choices": [
+      "加速する",
+      "カーブ手前での十分な減速と滑らないタイヤ維持",
+      "カーブ中の急ブレーキ",
+      "全速力で曲がる"
+    ],
+    "answer": 1,
+    "explanation": "カーブ走行時のスリップ防止には、事前減速とタイヤの最適な空気圧維持が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g155",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での蛇行走行について。",
+    "choices": [
+      "走行幅を活用して効率的",
+      "蛇行走行は違反且つ危険",
+      "夜間なら許可",
+      "低速なら許可"
+    ],
+    "answer": 1,
+    "explanation": "蛇行走行は道路交通法違反であり、極めて危険。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g156",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での夜間走行時に対向車ハイビームに遭遇した場合の対応は。",
+    "choices": [
+      "ハイビームで応戦",
+      "落ち着いてロービームに切り替え、走行継続",
+      "急ブレーキ",
+      "減速して路肩に寄る"
+    ],
+    "answer": 1,
+    "explanation": "相手のハイビーム対抗は危険なため、冷静にロービームに切り替え走行継続が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "g157",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での急加速によるリスク。",
+    "choices": [
+      "安全である",
+      "ホイールスピンやバイク不安定化",
+      "効率的",
+      "燃費改善"
+    ],
+    "answer": 1,
+    "explanation": "急加速はホイールスピンを引き起こし、バイクが不安定化して危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g158",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付でのトンネル走行時の注意点は。",
+    "choices": [
+      "ライト点灯は不要",
+      "ライト点灯と速度低下",
+      "スピード上げる",
+      "目を閉じる"
+    ],
+    "answer": 1,
+    "explanation": "トンネル内はライト点灯で視認性を確保し、速度低下で安全性を高める。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g159",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での積載物が飛散する危険は。",
+    "choices": [
+      "他者に危険なし",
+      "他者への落下事故リスク",
+      "影響なし",
+      "前車へのリスク"
+    ],
+    "answer": 1,
+    "explanation": "不固定の積載物脱落は後続車への落下物事故につながり、極めて危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g160",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での歩行者自転車混合通路での走行。",
+    "choices": [
+      "徐行すれば走行可",
+      "押して歩行が必須",
+      "高速走行可",
+      "走行禁止"
+    ],
+    "answer": 1,
+    "explanation": "歩行者自転車混合通路ではバイクを押して歩くことが原則。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g161",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での異音・異臭の対応は。",
+    "choices": [
+      "無視して走行",
+      "安全な場所に停止して点検が必須",
+      "加速して確認",
+      "帰宅後確認"
+    ],
+    "answer": 1,
+    "explanation": "エンジン異音や異臭は重大な機械トラブルの兆候。即座に停止して点検が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g162",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での舗装されていない路面走行。",
+    "choices": [
+      "問題ない",
+      "転倒リスク高く、低速で慎重に走行",
+      "加速して走行",
+      "避けるべき"
+    ],
+    "answer": 1,
+    "explanation": "未舗装路はグリップが不安定でスリップリスクが高いため、低速慎重走行が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g163",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での駐輪違反の罰則で正しいのは。",
+    "choices": [
+      "口頭注意のみ",
+      "反則金2,000円",
+      "免許取消し",
+      "罰則なし"
+    ],
+    "answer": 1,
+    "explanation": "駐輪禁止区域への駐輪は反則金2,000円の違反。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g164",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での交差点での後方確認の重要性は。",
+    "choices": [
+      "不要",
+      "後続車両との衝突回避に重要",
+      "影響なし",
+      "前方確認で十分"
+    ],
+    "answer": 1,
+    "explanation": "交差点での車線変更時の後方確認は、後続車との接触事故防止に必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g165",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での路肩走行について正しいのは。",
+    "choices": [
+      "常に走行可能",
+      "路肩は駐停車以外は走行禁止",
+      "徐行なら可能",
+      "右折時のみ許可"
+    ],
+    "answer": 1,
+    "explanation": "路肩は駐停車以外の走行が禁止。走行は車道内で行うことが必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g166",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での学校・病院前での走行注意点。",
+    "choices": [
+      "スピード無制限",
+      "歩行者多く、超低速で最大警戒",
+      "通常速度",
+      "クラクション鳴らし続ける"
+    ],
+    "answer": 1,
+    "explanation": "学校・病院前は児童・患者など危険要因が多く、最大警戒と超低速が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g167",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での時間帯別ライト点灯基準で正しいのは。",
+    "choices": [
+      "夜間のみ点灯",
+      "薄暮時から夜間まで常時点灯",
+      "昼間も点灯",
+      "ライト点灯は任意"
+    ],
+    "answer": 1,
+    "explanation": "視認性が低下する薄暮時から夜間まで、ライト点灯が法定要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "g168",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での公道での練習走行について。",
+    "choices": [
+      "自由に走行できる",
+      "最低限の公道ルール遵守で走行可",
+      "禁止",
+      "許可証が必要"
+    ],
+    "answer": 1,
+    "explanation": "免許取得後の公道走行練習は、道路交通法完全遵守での走行が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g169",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での脱輪の危険箇所は。",
+    "choices": [
+      "平坦道",
+      "側溝・溝・段差周辺",
+      "直線路",
+      "広大駐車場"
+    ],
+    "answer": 1,
+    "explanation": "側溝や段差周辺での転倒・脱輪リスクが特に高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g170",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での非常時の停止位置で最適なのは。",
+    "choices": [
+      "走行車線内",
+      "路肩・広い場所で安全確保後停止",
+      "交差点内",
+      "カーブ内"
+    ],
+    "answer": 1,
+    "explanation": "故障や事故時は路肩など安全な場所への移動が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g171",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での駐車中のエンジン切断義務について。",
+    "choices": [
+      "義務なし",
+      "エンジン切断が必須",
+      "任意",
+      "1時間ごと"
+    ],
+    "answer": 1,
+    "explanation": "駐車時のエンジン切断は燃料節約と環境保全のために必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g172",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での歩行者保護の最優先順位は。",
+    "choices": [
+      "自分の走行優先",
+      "歩行者の安全を最優先",
+      "相手も考慮",
+      "判断は個人"
+    ],
+    "answer": 1,
+    "explanation": "道路交通法では歩行者保護が最高の優先順位。衝突回避が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g173",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での追越しで禁止される場所は。",
+    "choices": [
+      "交差点手前・横断歩道・カーブ・坂道頂上付近",
+      "広い直線路",
+      "信号青時",
+      "走行車線"
+    ],
+    "answer": 0,
+    "explanation": "交差点・横断歩道・カーブ・坂道頂上は視界不足で追越し禁止。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g174",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での路面の段差での走行注意。",
+    "choices": [
+      "問題なし",
+      "段差への激突はタイヤ損傷・転倒リスク",
+      "加速する",
+      "通常走行"
+    ],
+    "answer": 1,
+    "explanation": "段差への激突はタイヤパンク、バイク損傷、転倒のリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g175",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での消音器脱落での走行は。",
+    "choices": [
+      "走行可能",
+      "危険な騒音でありそのまま走行禁止",
+      "短距離なら可",
+      "一時的に許可"
+    ],
+    "answer": 1,
+    "explanation": "消音器脱落は違法な騒音発生により走行禁止。即座に修理が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g176",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付でのバリアフリー勾配での走行。",
+    "choices": [
+      "平坦と同じ",
+      "滑りやすく低速での走行が必須",
+      "加速する",
+      "走行禁止"
+    ],
+    "answer": 1,
+    "explanation": "スロープなど勾配のある場所は滑りやすく、低速での走行が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g177",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での片手運転について。",
+    "choices": [
+      "短距離なら可能",
+      "両手操作が必須で片手は禁止",
+      "低速なら可",
+      "信号待ちなら可"
+    ],
+    "answer": 1,
+    "explanation": "片手運転は操作困難でバランス喪失のリスク。両手操作が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g178",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での公道でのスタント走行について。",
+    "choices": [
+      "面白いなら可",
+      "危険で違法。走行禁止",
+      "低速で可",
+      "夜間なら可"
+    ],
+    "answer": 1,
+    "explanation": "ウイリーやドーナツ走行は危険且つ違法。厳禁。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g179",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での走行中の服装で重要なのは。",
+    "choices": [
+      "おしゃれ優先",
+      "肌の保護と視認性向上を優先",
+      "速さ",
+      "軽装備"
+    ],
+    "answer": 1,
+    "explanation": "走行時は肌露出を避け、目立つウェア着用で保護と視認性を確保。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g180",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での動物との遭遇時の対応は。",
+    "choices": [
+      "クラクション全開",
+      "速度低下して落ち着いた対応",
+      "加速して脱出",
+      "無視"
+    ],
+    "answer": 1,
+    "explanation": "野生動物との遭遇は予測不可。低速で慎重に対応し、衝突回避が優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g181",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での夜間走行での目の疲労対策。",
+    "choices": [
+      "運転し続ける",
+      "定期的な休憩で目を休める",
+      "目薬を差しっぱなし",
+      "走行禁止"
+    ],
+    "answer": 1,
+    "explanation": "夜間走行は目が疲労しやすい。定期的な休憩で目の疲れをリセット。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g182",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での前車への過度な接近走行（あおり走行）について。",
+    "choices": [
+      "効果的",
+      "危険且つ違反。煽り運転は厳禁",
+      "低速なら可",
+      "クラクションと併用"
+    ],
+    "answer": 1,
+    "explanation": "煽り運転は危険で違法。十分な距離保持が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g183",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での突然のエンジン停止での対応は。",
+    "choices": [
+      "そのまま走行",
+      "安全な場所に移動後確認",
+      "再スタート試行",
+      "走行継続"
+    ],
+    "answer": 1,
+    "explanation": "エンジン停止時は即座に安全な場所への移動が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g184",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "原付での最適な走行速度決定の基準は。",
+    "choices": [
+      "最高速度の法定値のみ",
+      "路面・天候・視界・交通量を総合判断",
+      "前車の速度",
+      "気分や気象"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は速度制限以下で、さらに路面・天候・視界など条件に応じた速度調整が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g185",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での積載位置が高い場合の影響は。",
+    "choices": [
+      "影響なし",
+      "重心上昇で安定性低下、転倒リスク増加",
+      "安定性向上",
+      "スピード向上"
+    ],
+    "answer": 1,
+    "explanation": "高い位置への積載は重心が上昇し、バイク安定性が大幅に低下。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "g186",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での中央線を越える走行について。",
+    "choices": [
+      "許可",
+      "追越し以外は禁止",
+      "夜間なら可",
+      "判断は運転手"
+    ],
+    "answer": 1,
+    "explanation": "中央線越えは追越し時のみ許可。それ以外は対向車との衝突リスク。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g187",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での信号機がない交差点での走行優先順位は。",
+    "choices": [
+      "右からの車を優先",
+      "左からの車を優先",
+      "道幅の広い方を優先",
+      "すべて同等"
+    ],
+    "answer": 2,
+    "explanation": "信号機がない交差点では、道幅広い方が優先権。確認して進行。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "g188",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での走行中のスマートフォン使用について。",
+    "choices": [
+      "通話なら可",
+      "GPS確認なら可",
+      "完全禁止。安全な場所停止後のみ確認可",
+      "短時間なら可"
+    ],
+    "answer": 2,
+    "explanation": "走行中のスマートフォン使用は違反で危険。停止後の使用が必須。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "g189",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での給油時の安全対策で重要なのは。",
+    "choices": [
+      "エンジンかけたまま給油",
+      "エンジン切断し、静電気除去後給油",
+      "火を持ちながら給油",
+      "走行中給油"
+    ],
+    "answer": 1,
+    "explanation": "給油時のエンジン切断と静電気除去は火災防止に必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g190",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での前方不注意による事故でのドライバー責任。",
+    "choices": [
+      "前方に支障物があれば責任なし",
+      "前方確認義務違反で重大責任",
+      "相手側責任",
+      "双方の責任"
+    ],
+    "answer": 1,
+    "explanation": "前方確認は運転の基本義務。不注意での事故は重大な法的責任が生じる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g191",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での安全運転の第一原則は。",
+    "choices": [
+      "最高速度で走行",
+      "自分と相手の安全を最優先",
+      "速度感覚",
+      "とにかく走行継続"
+    ],
+    "answer": 1,
+    "explanation": "安全運転の最高原則は自分と他者の安全。すべての判断がこれに基づく。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g192",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での後方確認を怠った場合の危険。",
+    "choices": [
+      "影響なし",
+      "後続車衝突や追越時の接触事故",
+      "前方のみ確認で十分",
+      "右側確認で十分"
+    ],
+    "answer": 1,
+    "explanation": "後方確認不足は、追従や追越時の衝突事故につながり極めて危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g193",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での交通ルール確認の最適な方法は。",
+    "choices": [
+      "運転しながら確認",
+      "走行前に十分確認",
+      "走行中に他者に確認",
+      "確認不要"
+    ],
+    "answer": 1,
+    "explanation": "走行前のルール確認は重大な違反や事故防止に必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g194",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での地面濡れた状態でのブレーキ効果。",
+    "choices": [
+      "変わらない",
+      "制動距離が著しく延びる",
+      "短くなる",
+      "不安定化のみ"
+    ],
+    "answer": 1,
+    "explanation": "濡れた路面はタイヤグリップが低下し、ブレーキ距離が大幅に延長される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "weatherConditions"
+  },
+  {
+    "id": "g195",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での右直事故の多くの原因は。",
+    "choices": [
+      "左折車の不注意",
+      "右折車の歩行者確認不足",
+      "標識無視",
+      "天候"
+    ],
+    "answer": 1,
+    "explanation": "右折車は対向車と歩行者の双方確認が必須。確認不足が事故原因。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g196",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での走行中の眠気対策で最も効果的なのは。",
+    "choices": [
+      "窓全開で走行継続",
+      "定期的な休憩が最優先",
+      "運転継続で我慢",
+      "音楽を大きく"
+    ],
+    "answer": 1,
+    "explanation": "運転中の眠気は極めて危険。定期的休憩による対策が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g197",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での雨の日での走行判断で最適なのは。",
+    "choices": [
+      "走行を避け、天候回復まで待つ",
+      "低速で十分な注意で走行",
+      "通常速度で走行",
+      "高速走行"
+    ],
+    "answer": 1,
+    "explanation": "雨天は危険が増加。低速走行と最大警戒が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g198",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での健康状態不良時の走行について。",
+    "choices": [
+      "気合で走行",
+      "走行を控え、回復まで待つが最優先",
+      "薬飲んで走行",
+      "短距離なら可"
+    ],
+    "answer": 1,
+    "explanation": "体調不良は判断力低下と反応時間延長を招く。走行回避が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g199",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "原付での道路工事区間での走行注意。",
+    "choices": [
+      "スピード上げ早期通過",
+      "標識指示に従い、低速で慎重に走行",
+      "無視して走行",
+      "工事中は走行禁止"
+    ],
+    "answer": 1,
+    "explanation": "工事区間は標識指示に従い、予測不可能な状況への対応が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "g200",
+    "licenseCategory": [
+      "gentsuki"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "原付での安全走行習慣の確立における最重要項目は。",
+    "choices": [
+      "スピード感覚",
+      "毎回の走行前点検と心身確認",
+      "バイク性能",
+      "運で判断"
+    ],
+    "answer": 1,
+    "explanation": "安全走行習慣は毎回の走行前点検と心身状態確認から始まる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]
