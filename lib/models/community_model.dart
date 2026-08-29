@@ -49,6 +49,14 @@ enum MetricType { dau, mau, engagement, revenue, health, growth, moderation }
 
 enum TimeRange { day, week, month, quarter, year, custom }
 
+enum QuestionType { multipleChoice, trueFalse, essay, scenario }
+
+enum QuestionDifficulty { beginner, intermediate, advanced }
+
+enum TestStatus { inProgress, completed, abandoned }
+
+enum ExamType { fullLength, halfLength, quickReview }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -3256,5 +3264,414 @@ class CommunityHealthMetrics {
       reportResolutionRate: reportResolutionRate ?? this.reportResolutionRate,
       communityGrowth: communityGrowth ?? this.communityGrowth,
     );
+  }
+}
+
+/// Question model for practice tests and mock exams
+class Question {
+  final String questionId;
+  final String questionText;
+  final QuestionType questionType;
+  final String topic;
+  final QuestionDifficulty difficulty;
+  final List<String> options;
+  final int? correctAnswerIndex;
+  final String? correctAnswer;
+  final String explanation;
+  final List<String> tags;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int usageCount;
+  final double averageScore;
+  final bool isActive;
+
+  Question({
+    required this.questionId,
+    required this.questionText,
+    required this.questionType,
+    required this.topic,
+    required this.difficulty,
+    this.options = const [],
+    this.correctAnswerIndex,
+    this.correctAnswer,
+    this.explanation = '',
+    this.tags = const [],
+    required this.createdAt,
+    required this.updatedAt,
+    this.usageCount = 0,
+    this.averageScore = 0.0,
+    this.isActive = true,
+  });
+
+  factory Question.empty() {
+    return Question(
+      questionId: '',
+      questionText: '',
+      questionType: QuestionType.multipleChoice,
+      topic: '',
+      difficulty: QuestionDifficulty.beginner,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory Question.fromMap(Map<String, dynamic> map) {
+    return Question(
+      questionId: map['questionId'] as String? ?? '',
+      questionText: map['questionText'] as String? ?? '',
+      questionType: QuestionType.values[map['questionType'] as int? ?? 0],
+      topic: map['topic'] as String? ?? '',
+      difficulty: QuestionDifficulty.values[map['difficulty'] as int? ?? 0],
+      options: List<String>.from(map['options'] as List? ?? []),
+      correctAnswerIndex: map['correctAnswerIndex'] as int?,
+      correctAnswer: map['correctAnswer'] as String?,
+      explanation: map['explanation'] as String? ?? '',
+      tags: List<String>.from(map['tags'] as List? ?? []),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      usageCount: map['usageCount'] as int? ?? 0,
+      averageScore: (map['averageScore'] as num?)?.toDouble() ?? 0.0,
+      isActive: map['isActive'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'questionId': questionId,
+      'questionText': questionText,
+      'questionType': questionType.index,
+      'topic': topic,
+      'difficulty': difficulty.index,
+      'options': options,
+      'correctAnswerIndex': correctAnswerIndex,
+      'correctAnswer': correctAnswer,
+      'explanation': explanation,
+      'tags': tags,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'usageCount': usageCount,
+      'averageScore': averageScore,
+      'isActive': isActive,
+    };
+  }
+}
+
+/// Practice test model for tracking test attempts
+class PracticeTest {
+  final String testId;
+  final String userId;
+  final String topic;
+  final QuestionDifficulty difficulty;
+  final List<String> questionIds;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final int duration;
+  final int score;
+  final double percentage;
+  final bool passFail;
+  final Map<String, dynamic> answers;
+  final Map<String, int> timePerQuestion;
+  final TestStatus status;
+
+  PracticeTest({
+    required this.testId,
+    required this.userId,
+    required this.topic,
+    required this.difficulty,
+    required this.questionIds,
+    required this.startTime,
+    this.endTime,
+    this.duration = 0,
+    this.score = 0,
+    this.percentage = 0.0,
+    this.passFail = false,
+    this.answers = const {},
+    this.timePerQuestion = const {},
+    this.status = TestStatus.inProgress,
+  });
+
+  factory PracticeTest.empty() {
+    return PracticeTest(
+      testId: '',
+      userId: '',
+      topic: '',
+      difficulty: QuestionDifficulty.beginner,
+      questionIds: [],
+      startTime: DateTime.now(),
+    );
+  }
+
+  factory PracticeTest.fromMap(Map<String, dynamic> map) {
+    return PracticeTest(
+      testId: map['testId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      topic: map['topic'] as String? ?? '',
+      difficulty: QuestionDifficulty.values[map['difficulty'] as int? ?? 0],
+      questionIds: List<String>.from(map['questionIds'] as List? ?? []),
+      startTime: (map['startTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      endTime: (map['endTime'] as Timestamp?)?.toDate(),
+      duration: map['duration'] as int? ?? 0,
+      score: map['score'] as int? ?? 0,
+      percentage: (map['percentage'] as num?)?.toDouble() ?? 0.0,
+      passFail: map['passFail'] as bool? ?? false,
+      answers: Map<String, dynamic>.from(map['answers'] as Map? ?? {}),
+      timePerQuestion: Map<String, int>.from(map['timePerQuestion'] as Map? ?? {}),
+      status: TestStatus.values[map['status'] as int? ?? 0],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'testId': testId,
+      'userId': userId,
+      'topic': topic,
+      'difficulty': difficulty.index,
+      'questionIds': questionIds,
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
+      'duration': duration,
+      'score': score,
+      'percentage': percentage,
+      'passFail': passFail,
+      'answers': answers,
+      'timePerQuestion': timePerQuestion,
+      'status': status.index,
+    };
+  }
+}
+
+/// Mock exam model for full-length simulated exams
+class MockExam {
+  final String examId;
+  final String userId;
+  final ExamType examType;
+  final int totalQuestions;
+  final List<String> questionIds;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final int duration;
+  final int score;
+  final double percentage;
+  final int passingScore;
+  final bool isPassed;
+  final Map<String, double> topicScores;
+  final Map<String, dynamic> answers;
+  final TestStatus status;
+
+  MockExam({
+    required this.examId,
+    required this.userId,
+    required this.examType,
+    required this.totalQuestions,
+    required this.questionIds,
+    required this.startTime,
+    this.endTime,
+    this.duration = 0,
+    this.score = 0,
+    this.percentage = 0.0,
+    this.passingScore = 70,
+    this.isPassed = false,
+    this.topicScores = const {},
+    this.answers = const {},
+    this.status = TestStatus.inProgress,
+  });
+
+  factory MockExam.empty() {
+    return MockExam(
+      examId: '',
+      userId: '',
+      examType: ExamType.fullLength,
+      totalQuestions: 0,
+      questionIds: [],
+      startTime: DateTime.now(),
+    );
+  }
+
+  factory MockExam.fromMap(Map<String, dynamic> map) {
+    return MockExam(
+      examId: map['examId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      examType: ExamType.values[map['examType'] as int? ?? 0],
+      totalQuestions: map['totalQuestions'] as int? ?? 0,
+      questionIds: List<String>.from(map['questionIds'] as List? ?? []),
+      startTime: (map['startTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      endTime: (map['endTime'] as Timestamp?)?.toDate(),
+      duration: map['duration'] as int? ?? 0,
+      score: map['score'] as int? ?? 0,
+      percentage: (map['percentage'] as num?)?.toDouble() ?? 0.0,
+      passingScore: map['passingScore'] as int? ?? 70,
+      isPassed: map['isPassed'] as bool? ?? false,
+      topicScores: Map<String, double>.from((map['topicScores'] as Map? ?? {}).cast<String, double>()),
+      answers: Map<String, dynamic>.from(map['answers'] as Map? ?? {}),
+      status: TestStatus.values[map['status'] as int? ?? 0],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'examId': examId,
+      'userId': userId,
+      'examType': examType.index,
+      'totalQuestions': totalQuestions,
+      'questionIds': questionIds,
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
+      'duration': duration,
+      'score': score,
+      'percentage': percentage,
+      'passingScore': passingScore,
+      'isPassed': isPassed,
+      'topicScores': topicScores,
+      'answers': answers,
+      'status': status.index,
+    };
+  }
+}
+
+/// Test result model for tracking completed tests
+class TestResult {
+  final String resultId;
+  final String userId;
+  final String testId;
+  final int score;
+  final double percentage;
+  final int questions;
+  final int correctAnswers;
+  final int wrongAnswers;
+  final int unanswered;
+  final int duration;
+  final bool isPassed;
+  final Map<String, double> topicScores;
+  final DateTime createdAt;
+  final String? reportUrl;
+
+  TestResult({
+    required this.resultId,
+    required this.userId,
+    required this.testId,
+    required this.score,
+    required this.percentage,
+    required this.questions,
+    required this.correctAnswers,
+    required this.wrongAnswers,
+    required this.unanswered,
+    required this.duration,
+    required this.isPassed,
+    this.topicScores = const {},
+    required this.createdAt,
+    this.reportUrl,
+  });
+
+  factory TestResult.empty() {
+    return TestResult(
+      resultId: '',
+      userId: '',
+      testId: '',
+      score: 0,
+      percentage: 0.0,
+      questions: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      unanswered: 0,
+      duration: 0,
+      isPassed: false,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  factory TestResult.fromMap(Map<String, dynamic> map) {
+    return TestResult(
+      resultId: map['resultId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      testId: map['testId'] as String? ?? '',
+      score: map['score'] as int? ?? 0,
+      percentage: (map['percentage'] as num?)?.toDouble() ?? 0.0,
+      questions: map['questions'] as int? ?? 0,
+      correctAnswers: map['correctAnswers'] as int? ?? 0,
+      wrongAnswers: map['wrongAnswers'] as int? ?? 0,
+      unanswered: map['unanswered'] as int? ?? 0,
+      duration: map['duration'] as int? ?? 0,
+      isPassed: map['isPassed'] as bool? ?? false,
+      topicScores: Map<String, double>.from((map['topicScores'] as Map? ?? {}).cast<String, double>()),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reportUrl: map['reportUrl'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'resultId': resultId,
+      'userId': userId,
+      'testId': testId,
+      'score': score,
+      'percentage': percentage,
+      'questions': questions,
+      'correctAnswers': correctAnswers,
+      'wrongAnswers': wrongAnswers,
+      'unanswered': unanswered,
+      'duration': duration,
+      'isPassed': isPassed,
+      'topicScores': topicScores,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'reportUrl': reportUrl,
+    };
+  }
+}
+
+/// Study plan model for personalized learning paths
+class StudyPlan {
+  final String planId;
+  final String userId;
+  final DateTime createdAt;
+  final List<String> topics;
+  final Map<String, int> priority;
+  final List<String> recommendedTests;
+  final double estimatedHours;
+  final DateTime? deadline;
+
+  StudyPlan({
+    required this.planId,
+    required this.userId,
+    required this.createdAt,
+    required this.topics,
+    this.priority = const {},
+    this.recommendedTests = const [],
+    this.estimatedHours = 0.0,
+    this.deadline,
+  });
+
+  factory StudyPlan.empty() {
+    return StudyPlan(
+      planId: '',
+      userId: '',
+      createdAt: DateTime.now(),
+      topics: [],
+    );
+  }
+
+  factory StudyPlan.fromMap(Map<String, dynamic> map) {
+    return StudyPlan(
+      planId: map['planId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      topics: List<String>.from(map['topics'] as List? ?? []),
+      priority: Map<String, int>.from((map['priority'] as Map? ?? {}).cast<String, int>()),
+      recommendedTests: List<String>.from(map['recommendedTests'] as List? ?? []),
+      estimatedHours: (map['estimatedHours'] as num?)?.toDouble() ?? 0.0,
+      deadline: (map['deadline'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'planId': planId,
+      'userId': userId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'topics': topics,
+      'priority': priority,
+      'recommendedTests': recommendedTests,
+      'estimatedHours': estimatedHours,
+      'deadline': deadline != null ? Timestamp.fromDate(deadline!) : null,
+    };
   }
 }

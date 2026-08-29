@@ -972,6 +972,94 @@ abstract class CommunityService {
     String timeRange = 'month',
     String format = 'csv',
   });
+
+  // Practice Test & Mock Exam Methods
+  Future<String> createQuestion({
+    required String questionText,
+    required QuestionType questionType,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    List<String> options = const [],
+    int? correctAnswerIndex,
+    String? correctAnswer,
+    String explanation = '',
+    List<String> tags = const [],
+  });
+
+  Future<Question?> getQuestion(String questionId);
+
+  Future<List<Question>> getQuestions({
+    String? topic,
+    QuestionDifficulty? difficulty,
+    int limit = 50,
+  });
+
+  Future<List<Question>> getQuestionsByTopic(String topic);
+
+  Future<List<Question>> getQuestionsByDifficulty(QuestionDifficulty difficulty);
+
+  Future<List<Question>> searchQuestions(String query);
+
+  Future<String> startPracticeTest({
+    required String userId,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    int questionCount = 10,
+    int timeLimit = 600,
+  });
+
+  Future<void> submitAnswer({
+    required String testId,
+    required String questionId,
+    dynamic selectedAnswer,
+    int timeTaken = 0,
+  });
+
+  Future<Map<String, dynamic>> completePracticeTest(String testId);
+
+  Future<Map<String, dynamic>?> getPracticeTestResults(String testId);
+
+  Future<List<PracticeTest>> getPracticeTestHistory({
+    required String userId,
+    int limit = 50,
+  });
+
+  Future<Map<String, double>> getTopicPerformance(
+    String userId,
+    String topic,
+  );
+
+  Future<String> startMockExam({
+    required String userId,
+    required ExamType examType,
+    bool randomizeQuestions = true,
+    bool showTimer = true,
+  });
+
+  Future<List<Question>> getMockExamQuestions(String examId);
+
+  Future<Map<String, dynamic>> completeMockExam(String examId);
+
+  Future<Map<String, dynamic>> getTestStatistics({
+    required String userId,
+    String timeRange = 'month',
+  });
+
+  Future<List<Map<String, dynamic>>> getScoreTrends({
+    required String userId,
+    int limit = 30,
+  });
+
+  Future<Map<String, double>> getPerformanceByTopic(String userId);
+
+  Future<Map<String, dynamic>> generateStudyPlan(String userId);
+
+  Future<List<Map<String, dynamic>>> getWeakAreas({
+    required String userId,
+    double threshold = 70.0,
+  });
+
+  Future<List<Map<String, dynamic>>> getTestAchievements(String userId);
 }
 
 /// Firebase implementation of community service
@@ -4592,6 +4680,173 @@ class FirebaseCommunityService implements CommunityService {
       'metricsCount': 0,
     };
   }
+
+  // Practice Test & Mock Exam Implementation
+  @override
+  Future<String> createQuestion({
+    required String questionText,
+    required QuestionType questionType,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    List<String> options = const [],
+    int? correctAnswerIndex,
+    String? correctAnswer,
+    String explanation = '',
+    List<String> tags = const [],
+  }) async {
+    return 'question_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  @override
+  Future<Question?> getQuestion(String questionId) async {
+    return null;
+  }
+
+  @override
+  Future<List<Question>> getQuestions({
+    String? topic,
+    QuestionDifficulty? difficulty,
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<List<Question>> getQuestionsByTopic(String topic) async {
+    return [];
+  }
+
+  @override
+  Future<List<Question>> getQuestionsByDifficulty(QuestionDifficulty difficulty) async {
+    return [];
+  }
+
+  @override
+  Future<List<Question>> searchQuestions(String query) async {
+    return [];
+  }
+
+  @override
+  Future<String> startPracticeTest({
+    required String userId,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    int questionCount = 10,
+    int timeLimit = 600,
+  }) async {
+    return 'test_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  @override
+  Future<void> submitAnswer({
+    required String testId,
+    required String questionId,
+    dynamic selectedAnswer,
+    int timeTaken = 0,
+  }) async {
+    // No-op for Firebase stub
+  }
+
+  @override
+  Future<Map<String, dynamic>> completePracticeTest(String testId) async {
+    return {
+      'score': 0,
+      'percentage': 0.0,
+      'passed': false,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getPracticeTestResults(String testId) async {
+    return null;
+  }
+
+  @override
+  Future<List<PracticeTest>> getPracticeTestHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, double>> getTopicPerformance(
+    String userId,
+    String topic,
+  ) async {
+    return {};
+  }
+
+  @override
+  Future<String> startMockExam({
+    required String userId,
+    required ExamType examType,
+    bool randomizeQuestions = true,
+    bool showTimer = true,
+  }) async {
+    return 'exam_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  @override
+  Future<List<Question>> getMockExamQuestions(String examId) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> completeMockExam(String examId) async {
+    return {
+      'score': 0,
+      'percentage': 0.0,
+      'passed': false,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getTestStatistics({
+    required String userId,
+    String timeRange = 'month',
+  }) async {
+    return {
+      'totalTests': 0,
+      'averageScore': 0.0,
+      'passRate': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getScoreTrends({
+    required String userId,
+    int limit = 30,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Map<String, double>> getPerformanceByTopic(String userId) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateStudyPlan(String userId) async {
+    return {
+      'planId': 'plan_${DateTime.now().millisecondsSinceEpoch}',
+      'topics': [],
+      'estimatedHours': 0.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWeakAreas({
+    required String userId,
+    double threshold = 70.0,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTestAchievements(String userId) async {
+    return [];
+  }
 }
 
 /// Stub implementation for testing
@@ -7775,6 +8030,346 @@ class StubCommunityService implements CommunityService {
       'format': format,
       'metricsCount': 0,
     };
+  }
+
+  // Practice Test & Mock Exam Implementation (Stub)
+  final Map<String, Question> _questions = {};
+  final Map<String, PracticeTest> _practiceTests = {};
+  final Map<String, MockExam> _mockExams = {};
+  final Map<String, TestResult> _testResults = {};
+  final Map<String, StudyPlan> _studyPlans = {};
+
+  @override
+  Future<String> createQuestion({
+    required String questionText,
+    required QuestionType questionType,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    List<String> options = const [],
+    int? correctAnswerIndex,
+    String? correctAnswer,
+    String explanation = '',
+    List<String> tags = const [],
+  }) async {
+    final questionId = 'question_${DateTime.now().millisecondsSinceEpoch}';
+    _questions[questionId] = Question(
+      questionId: questionId,
+      questionText: questionText,
+      questionType: questionType,
+      topic: topic,
+      difficulty: difficulty,
+      options: options,
+      correctAnswerIndex: correctAnswerIndex,
+      correctAnswer: correctAnswer,
+      explanation: explanation,
+      tags: tags,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return questionId;
+  }
+
+  @override
+  Future<Question?> getQuestion(String questionId) async {
+    return _questions[questionId];
+  }
+
+  @override
+  Future<List<Question>> getQuestions({
+    String? topic,
+    QuestionDifficulty? difficulty,
+    int limit = 50,
+  }) async {
+    return _questions.values
+        .where((q) => (topic == null || q.topic == topic) && (difficulty == null || q.difficulty == difficulty))
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<Question>> getQuestionsByTopic(String topic) async {
+    return _questions.values.where((q) => q.topic == topic).toList();
+  }
+
+  @override
+  Future<List<Question>> getQuestionsByDifficulty(QuestionDifficulty difficulty) async {
+    return _questions.values.where((q) => q.difficulty == difficulty).toList();
+  }
+
+  @override
+  Future<List<Question>> searchQuestions(String query) async {
+    final queryLower = query.toLowerCase();
+    return _questions.values
+        .where((q) => q.questionText.toLowerCase().contains(queryLower) || q.tags.any((t) => t.toLowerCase().contains(queryLower)))
+        .toList();
+  }
+
+  @override
+  Future<String> startPracticeTest({
+    required String userId,
+    required String topic,
+    required QuestionDifficulty difficulty,
+    int questionCount = 10,
+    int timeLimit = 600,
+  }) async {
+    final testId = 'test_${DateTime.now().millisecondsSinceEpoch}';
+    final questions = await getQuestions(topic: topic, difficulty: difficulty, limit: questionCount);
+    _practiceTests[testId] = PracticeTest(
+      testId: testId,
+      userId: userId,
+      topic: topic,
+      difficulty: difficulty,
+      questionIds: questions.map((q) => q.questionId).toList(),
+      startTime: DateTime.now(),
+    );
+    return testId;
+  }
+
+  @override
+  Future<void> submitAnswer({
+    required String testId,
+    required String questionId,
+    dynamic selectedAnswer,
+    int timeTaken = 0,
+  }) async {
+    final test = _practiceTests[testId];
+    if (test != null) {
+      test.answers[questionId] = selectedAnswer;
+      test.timePerQuestion[questionId] = timeTaken;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> completePracticeTest(String testId) async {
+    final test = _practiceTests[testId];
+    if (test == null) return {};
+
+    int correct = 0;
+    for (final questionId in test.questionIds) {
+      final question = _questions[questionId];
+      if (question != null && test.answers[questionId] != null) {
+        if (test.answers[questionId] == question.correctAnswerIndex || test.answers[questionId] == question.correctAnswer) {
+          correct++;
+        }
+      }
+    }
+
+    final percentage = (correct / test.questionIds.length * 100).toDouble();
+    final result = TestResult(
+      resultId: 'result_${DateTime.now().millisecondsSinceEpoch}',
+      userId: test.userId,
+      testId: testId,
+      score: correct,
+      percentage: percentage,
+      questions: test.questionIds.length,
+      correctAnswers: correct,
+      wrongAnswers: test.questionIds.length - correct,
+      unanswered: 0,
+      duration: test.duration,
+      isPassed: percentage >= 70,
+      createdAt: DateTime.now(),
+    );
+    _testResults[result.resultId] = result;
+
+    return {
+      'score': correct,
+      'percentage': percentage,
+      'passed': percentage >= 70,
+      'correctCount': correct,
+      'totalCount': test.questionIds.length,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getPracticeTestResults(String testId) async {
+    final test = _practiceTests[testId];
+    if (test == null) return null;
+    return {
+      'testId': testId,
+      'score': test.score,
+      'percentage': test.percentage,
+      'passed': test.passFail,
+    };
+  }
+
+  @override
+  Future<List<PracticeTest>> getPracticeTestHistory({
+    required String userId,
+    int limit = 50,
+  }) async {
+    return _practiceTests.values
+        .where((t) => t.userId == userId)
+        .toList()
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, double>> getTopicPerformance(
+    String userId,
+    String topic,
+  ) async {
+    final userTests = await getPracticeTestHistory(userId: userId);
+    final topicTests = userTests.where((t) => t.topic == topic).toList();
+
+    if (topicTests.isEmpty) return {};
+
+    final avgScore = topicTests.fold(0.0, (sum, t) => sum + t.percentage) / topicTests.length;
+    return {'topic': topic, 'averageScore': avgScore, 'testsCount': topicTests.length};
+  }
+
+  @override
+  Future<String> startMockExam({
+    required String userId,
+    required ExamType examType,
+    bool randomizeQuestions = true,
+    bool showTimer = true,
+  }) async {
+    final examId = 'exam_${DateTime.now().millisecondsSinceEpoch}';
+    final questions = _questions.values.toList();
+    _mockExams[examId] = MockExam(
+      examId: examId,
+      userId: userId,
+      examType: examType,
+      totalQuestions: questions.length,
+      questionIds: questions.map((q) => q.questionId).toList(),
+      startTime: DateTime.now(),
+    );
+    return examId;
+  }
+
+  @override
+  Future<List<Question>> getMockExamQuestions(String examId) async {
+    final exam = _mockExams[examId];
+    if (exam == null) return [];
+    return exam.questionIds.map((id) => _questions[id]).whereType<Question>().toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> completeMockExam(String examId) async {
+    final exam = _mockExams[examId];
+    if (exam == null) return {};
+
+    int correct = 0;
+    for (final questionId in exam.questionIds) {
+      final question = _questions[questionId];
+      if (question != null && exam.answers[questionId] != null) {
+        if (exam.answers[questionId] == question.correctAnswerIndex || exam.answers[questionId] == question.correctAnswer) {
+          correct++;
+        }
+      }
+    }
+
+    final percentage = (correct / exam.questionIds.length * 100).toDouble();
+    return {
+      'score': correct,
+      'percentage': percentage,
+      'passed': percentage >= 70,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getTestStatistics({
+    required String userId,
+    String timeRange = 'month',
+  }) async {
+    final userTests = await getPracticeTestHistory(userId: userId);
+    if (userTests.isEmpty) {
+      return {'totalTests': 0, 'averageScore': 0.0, 'passRate': 0.0};
+    }
+
+    final avgScore = userTests.fold(0.0, (sum, t) => sum + t.percentage) / userTests.length;
+    final passCount = userTests.where((t) => t.passFail).length;
+    final passRate = (passCount / userTests.length * 100).toDouble();
+
+    return {
+      'totalTests': userTests.length,
+      'averageScore': avgScore,
+      'passRate': passRate,
+      'highestScore': userTests.map((t) => t.percentage).reduce((a, b) => a > b ? a : b),
+      'lowestScore': userTests.map((t) => t.percentage).reduce((a, b) => a < b ? a : b),
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getScoreTrends({
+    required String userId,
+    int limit = 30,
+  }) async {
+    final userTests = await getPracticeTestHistory(userId: userId, limit: limit);
+    return userTests
+        .map((t) => {
+          'date': t.startTime.toIso8601String(),
+          'score': t.percentage,
+          'topic': t.topic,
+        })
+        .toList();
+  }
+
+  @override
+  Future<Map<String, double>> getPerformanceByTopic(String userId) async {
+    final userTests = await getPracticeTestHistory(userId: userId);
+    final topicScores = <String, List<double>>{};
+
+    for (final test in userTests) {
+      if (!topicScores.containsKey(test.topic)) {
+        topicScores[test.topic] = [];
+      }
+      topicScores[test.topic]!.add(test.percentage);
+    }
+
+    return topicScores.map((topic, scores) => MapEntry(topic, scores.fold(0.0, (sum, s) => sum + s) / scores.length));
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateStudyPlan(String userId) async {
+    final userTests = await getPracticeTestHistory(userId: userId);
+    final performance = await getPerformanceByTopic(userId);
+
+    final weakAreas = performance.entries.where((e) => e.value < 70).map((e) => e.key).toList();
+    final planId = 'plan_${DateTime.now().millisecondsSinceEpoch}';
+
+    _studyPlans[planId] = StudyPlan(
+      planId: planId,
+      userId: userId,
+      createdAt: DateTime.now(),
+      topics: weakAreas,
+      estimatedHours: weakAreas.length * 2.0,
+    );
+
+    return {
+      'planId': planId,
+      'topics': weakAreas,
+      'estimatedHours': weakAreas.length * 2.0,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWeakAreas({
+    required String userId,
+    double threshold = 70.0,
+  }) async {
+    final performance = await getPerformanceByTopic(userId);
+    return performance.entries
+        .where((e) => e.value < threshold)
+        .map((e) => {'topic': e.key, 'score': e.value})
+        .toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getTestAchievements(String userId) async {
+    final userTests = await getPracticeTestHistory(userId: userId);
+    final achievements = <Map<String, dynamic>>[];
+
+    if (userTests.length >= 5) {
+      achievements.add({'type': 'first_five_tests', 'earned': true});
+    }
+    if (userTests.any((t) => t.passFail)) {
+      achievements.add({'type': 'first_pass', 'earned': true});
+    }
+
+    return achievements;
   }
 }
 

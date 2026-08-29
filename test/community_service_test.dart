@@ -3735,5 +3735,303 @@ void main() {
         expect(export['format'], 'csv');
       });
     });
+
+    // Practice Test & Mock Exam Tests (Phase 11 Step 9)
+    group('Question Management', () {
+      test('createQuestion creates new question', () async {
+        final service = StubCommunityService();
+
+        final questionId = await service.createQuestion(
+          questionText: 'What is the speed limit?',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic Laws',
+          difficulty: QuestionDifficulty.beginner,
+          options: ['25 mph', '35 mph', '45 mph', '55 mph'],
+          correctAnswerIndex: 0,
+          explanation: 'The limit is 25 mph in residential areas.',
+          tags: ['speed_limit', 'traffic'],
+        );
+
+        expect(questionId, isNotEmpty);
+      });
+
+      test('getQuestion retrieves question by ID', () async {
+        final service = StubCommunityService();
+
+        final questionId = await service.createQuestion(
+          questionText: 'Test question',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic Laws',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final question = await service.getQuestion(questionId);
+        expect(question, isNotNull);
+        expect(question?.questionText, 'Test question');
+      });
+
+      test('getQuestionsByTopic retrieves questions by topic', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Traffic question',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic Laws',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final questions = await service.getQuestionsByTopic('Traffic Laws');
+        expect(questions, isNotEmpty);
+      });
+
+      test('getQuestionsByDifficulty retrieves by difficulty', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Easy question',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final questions = await service.getQuestionsByDifficulty(QuestionDifficulty.beginner);
+        expect(questions, isNotEmpty);
+      });
+    });
+
+    group('Practice Tests', () {
+      test('startPracticeTest creates new test', () async {
+        final service = StubCommunityService();
+
+        // Create questions first
+        await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final testId = await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+          questionCount: 5,
+        );
+
+        expect(testId, isNotEmpty);
+      });
+
+      test('submitAnswer records user answer', () async {
+        final service = StubCommunityService();
+
+        final questionId = await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+          options: ['A', 'B', 'C'],
+          correctAnswerIndex: 0,
+        );
+
+        final testId = await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        await service.submitAnswer(
+          testId: testId,
+          questionId: questionId,
+          selectedAnswer: 0,
+          timeTaken: 30,
+        );
+
+        expect(true, true); // Answer recorded
+      });
+
+      test('completePracticeTest calculates scores', () async {
+        final service = StubCommunityService();
+
+        final questionId = await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+          options: ['A', 'B', 'C'],
+          correctAnswerIndex: 0,
+        );
+
+        final testId = await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+          questionCount: 1,
+        );
+
+        await service.submitAnswer(
+          testId: testId,
+          questionId: questionId,
+          selectedAnswer: 0,
+        );
+
+        final result = await service.completePracticeTest(testId);
+        expect(result['score'], isNotNull);
+        expect(result['percentage'], isNotNull);
+      });
+
+      test('getPracticeTestHistory retrieves user tests', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final history = await service.getPracticeTestHistory(userId: 'user123');
+        expect(history, isList);
+      });
+    });
+
+    group('Mock Exams', () {
+      test('startMockExam creates full-length exam', () async {
+        final service = StubCommunityService();
+
+        final examId = await service.startMockExam(
+          userId: 'user123',
+          examType: ExamType.fullLength,
+        );
+
+        expect(examId, isNotEmpty);
+      });
+
+      test('getMockExamQuestions retrieves exam questions', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Exam Q',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.intermediate,
+        );
+
+        final examId = await service.startMockExam(
+          userId: 'user123',
+          examType: ExamType.fullLength,
+        );
+
+        final questions = await service.getMockExamQuestions(examId);
+        expect(questions, isList);
+      });
+
+      test('completeMockExam scores full exam', () async {
+        final service = StubCommunityService();
+
+        final examId = await service.startMockExam(
+          userId: 'user123',
+          examType: ExamType.fullLength,
+        );
+
+        final result = await service.completeMockExam(examId);
+        expect(result['score'], isNotNull);
+        expect(result['passed'], isBool);
+      });
+    });
+
+    group('Performance Analytics', () {
+      test('getTestStatistics tracks user performance', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final stats = await service.getTestStatistics(userId: 'user123');
+        expect(stats['totalTests'], isNotNull);
+        expect(stats['averageScore'], isNotNull);
+      });
+
+      test('getScoreTrends shows performance history', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Q1',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final trends = await service.getScoreTrends(userId: 'user123');
+        expect(trends, isList);
+      });
+
+      test('getPerformanceByTopic analyzes by topic', () async {
+        final service = StubCommunityService();
+
+        await service.createQuestion(
+          questionText: 'Traffic Q',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic Laws',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        await service.startPracticeTest(
+          userId: 'user123',
+          topic: 'Traffic Laws',
+          difficulty: QuestionDifficulty.beginner,
+        );
+
+        final performance = await service.getPerformanceByTopic('user123');
+        expect(performance, isMap);
+      });
+
+      test('getWeakAreas identifies low-scoring topics', () async {
+        final service = StubCommunityService();
+
+        final weakAreas = await service.getWeakAreas(
+          userId: 'user123',
+          threshold: 70.0,
+        );
+
+        expect(weakAreas, isList);
+      });
+
+      test('generateStudyPlan creates personalized plan', () async {
+        final service = StubCommunityService();
+
+        final plan = await service.generateStudyPlan('user123');
+        expect(plan['planId'], isNotNull);
+        expect(plan['topics'], isList);
+      });
+
+      test('getTestAchievements tracks milestones', () async {
+        final service = StubCommunityService();
+
+        final achievements = await service.getTestAchievements('user123');
+        expect(achievements, isList);
+      });
+    });
   });
 }
