@@ -32,8 +32,8 @@
       "二人乗りは完全禁止",
       "16歳以上なら可能"
     ],
-    "answer": 0,
-    "explanation": "原付車での二人乗りは、乗客が20歳以上で、運転者の免許取得後3年以上の実乗経験が必須。",
+    "answer": 2,
+    "explanation": "原付車（原付一種）は二人乗りが完全に禁止されており、年齢や運転経験にかかわらず例外はない。「20歳以上・免許取得後3年以上」は高速道路での普通・大型自動二輪の二人乗り条件であり、原付には適用されない。",
     "isTrapQuestion": true,
     "trapNumberType": "twoPersonRiding"
   },
@@ -51,8 +51,8 @@
       "30kg",
       "50kg"
     ],
-    "answer": 0,
-    "explanation": "原付車の最大積載量は10kgと定められており、これを超える積載は違反。",
+    "answer": 2,
+    "explanation": "原付車の最大積載量は30kgと定められており、これを超える積載は違反。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
@@ -63,15 +63,15 @@
     ],
     "stageTag": "第二段階",
     "difficulty": 2,
-    "questionText": "原付車で二人乗りする際、乗客が荷物を持つ場合の積載量について正しいのはどれか。",
+    "questionText": "原付車は二人乗りができないが、代わりに積載できる荷物の最大重量は。",
     "choices": [
-      "積載量10kg＋乗客の荷物は別計算",
-      "積載量10kg以内に乗客の荷物も含まれる",
-      "乗客の荷物に制限はない",
-      "重さで判断する"
+      "10kg",
+      "20kg",
+      "30kg",
+      "制限はない"
     ],
-    "answer": 1,
-    "explanation": "原付車の積載量10kg以内に、乗客が持つ荷物も含まれるため、事前確認が必須。",
+    "answer": 2,
+    "explanation": "原付車（原付一種）は二人乗りが完全に禁止されている一方、積載装置に積める荷物は最大30kgまで認められている。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },

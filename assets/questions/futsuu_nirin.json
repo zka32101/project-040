@@ -53,11 +53,11 @@
     "choices": [
       "20kg",
       "30kg",
-      "50kg",
+      "60kg",
       "70kg"
     ],
-    "answer": 0,
-    "explanation": "普通二輪車の最大積載量は20kgと定められている。これを超える積載は違反になる。",
+    "answer": 2,
+    "explanation": "普通二輪車（側車付きを除く）の最大積載量は60kgと定められている。これを超える積載は違反になる。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
@@ -746,12 +746,12 @@
     "questionText": "普通二輪での積載物の規制について正しいのはどれか。",
     "choices": [
       "積載制限はなく自由",
-      "最大積載量は20kgであり、且つシートより高くない",
+      "最大積載量は60kgであり、且つシートより高くない",
       "シートより高ければ大丈夫",
       "重さに制限はなく、外観さえ大丈夫"
     ],
     "answer": 1,
-    "explanation": "普通二輪の積載物は最大20kgであり、且つシートの高さを超えてはいけない。",
+    "explanation": "普通二輪の積載物は最大60kgであり、且つシートの高さを超えてはいけない。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },

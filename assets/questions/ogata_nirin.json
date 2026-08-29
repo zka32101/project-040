@@ -29,11 +29,11 @@
     "choices": [
       "20kg",
       "30kg",
-      "40kg",
+      "60kg",
       "50kg"
     ],
     "answer": 2,
-    "explanation": "大型二輪の最大積載量は40kgと定められている。",
+    "explanation": "大型二輪の最大積載量は60kgと定められている。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
@@ -845,12 +845,12 @@
     "questionText": "大型二輪での積載物規制で正しいのはどれか。",
     "choices": [
       "積載制限なし",
-      "最大40kgで、シート高を超えない",
+      "最大60kgで、シート高を超えない",
       "シート高を超えればOK",
       "重さに制限なし"
     ],
     "answer": 1,
-    "explanation": "大型二輪の積載物は最大40kgで、シート高を超えてはいけない。",
+    "explanation": "大型二輪の積載物は最大60kgで、シート高を超えてはいけない。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
