@@ -4063,5 +4063,145 @@ void main() {
         expect(achievements, isList);
       });
     });
+
+    group('Video Explanation Methods', () {
+      test('addVideoExplanation creates video metadata', () async {
+        final videoId = await service.addVideoExplanation(
+          questionId: 'q001',
+          title: '30km/h速度制限の理由',
+          description: 'なぜ原付は30km/hに制限されているのか',
+          duration: 180,
+          url: 'https://example.com/videos/vid_001.mp4',
+          transcript: 'これは速度制限について説明しています...',
+          topics: ['交通法規', '速度制限'],
+          language: 'japanese',
+        );
+
+        expect(videoId, isNotEmpty);
+        final video = await service.getVideoExplanation(videoId);
+        expect(video, isNotNull);
+        expect(video!.questionId, 'q001');
+        expect(video.title, '30km/h速度制限の理由');
+        expect(video.duration, 180);
+        expect(video.status, VideoStatus.draft);
+      });
+
+      test('getVideosByQuestion retrieves question videos', () async {
+        await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Video 1',
+          description: 'Description 1',
+          duration: 180,
+          url: 'https://example.com/v1.mp4',
+          topics: ['topic1'],
+        );
+        await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Video 2',
+          description: 'Description 2',
+          duration: 200,
+          url: 'https://example.com/v2.mp4',
+          topics: ['topic1'],
+        );
+
+        final videos = await service.getVideosByQuestion('q001');
+        expect(videos.length, 2);
+        expect(videos.every((v) => v.questionId == 'q001'), true);
+      });
+
+      test('getVideosByTopic filters by topic', () async {
+        await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Safety Video',
+          description: 'Safety tips',
+          duration: 180,
+          url: 'https://example.com/v1.mp4',
+          topics: ['安全運転'],
+        );
+        await service.addVideoExplanation(
+          questionId: 'q002',
+          title: 'Law Video',
+          description: 'Traffic laws',
+          duration: 200,
+          url: 'https://example.com/v2.mp4',
+          topics: ['交通法規'],
+        );
+
+        final safetyVideos = await service.getVideosByTopic(topic: '安全運転');
+        expect(safetyVideos.length, 1);
+        expect(safetyVideos.first.topics.contains('安全運転'), true);
+      });
+
+      test('publishVideo updates status', () async {
+        final videoId = await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Test Video',
+          description: 'Testing',
+          duration: 180,
+          url: 'https://example.com/test.mp4',
+          topics: ['topic'],
+        );
+
+        await service.publishVideo(videoId);
+
+        final video = await service.getVideoExplanation(videoId);
+        expect(video!.status, VideoStatus.published);
+      });
+
+      test('updateVideoMetadata modifies content', () async {
+        final videoId = await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Original Title',
+          description: 'Original Description',
+          duration: 180,
+          url: 'https://example.com/test.mp4',
+          topics: ['topic'],
+        );
+
+        await service.updateVideoMetadata(
+          videoId: videoId,
+          title: 'Updated Title',
+          description: 'Updated Description',
+        );
+
+        final video = await service.getVideoExplanation(videoId);
+        expect(video!.title, 'Updated Title');
+        expect(video.description, 'Updated Description');
+      });
+
+      test('getVideoAnalytics provides engagement metrics', () async {
+        final videoId = await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Test Video',
+          description: 'Testing',
+          duration: 180,
+          url: 'https://example.com/test.mp4',
+          topics: ['topic'],
+        );
+
+        final analytics = await service.getVideoAnalytics(videoId);
+        expect(analytics['videoId'], videoId);
+        expect(analytics['viewCount'], 0);
+        expect(analytics['duration'], 180);
+      });
+
+      test('listVideosByStatus filters by status', () async {
+        final vid1 = await service.addVideoExplanation(
+          questionId: 'q001',
+          title: 'Draft Video',
+          description: 'In draft',
+          duration: 180,
+          url: 'https://example.com/v1.mp4',
+          topics: ['topic'],
+        );
+
+        await service.publishVideo(vid1);
+
+        final draftVideos = await service.listVideosByStatus(status: 'draft');
+        final publishedVideos = await service.listVideosByStatus(status: 'published');
+
+        expect(publishedVideos.length, greaterThan(0));
+      });
+    });
   });
 }
