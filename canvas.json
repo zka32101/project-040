@@ -1,0 +1,9 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "ダッシュボード" },
+    { "file": "Question.dc.html", "x": 480, "y": 0, "w": 390, "h": 844, "title": "問題画面" },
+    { "file": "Results.dc.html", "x": 960, "y": 0, "w": 390, "h": 844, "title": "結果画面" },
+    { "file": "StudyPlan.dc.html", "x": 1440, "y": 0, "w": 390, "h": 844, "title": "学習計画" }
+  ],
+  "launch": { "view": "canvas" }
+}
