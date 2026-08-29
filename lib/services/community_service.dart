@@ -1060,6 +1060,45 @@ abstract class CommunityService {
   });
 
   Future<List<Map<String, dynamic>>> getTestAchievements(String userId);
+
+  // Video explanation methods
+  Future<String> addVideoExplanation({
+    required String questionId,
+    required String title,
+    required String description,
+    required int duration,
+    required String url,
+    String? transcript,
+    String? thumbnailUrl,
+    required List<String> topics,
+    String language = 'japanese',
+  });
+
+  Future<VideoExplanation?> getVideoExplanation(String videoId);
+
+  Future<List<VideoExplanation>> getVideosByQuestion(String questionId);
+
+  Future<List<VideoExplanation>> getVideosByTopic({
+    required String topic,
+    int limit = 50,
+  });
+
+  Future<void> updateVideoMetadata({
+    required String videoId,
+    String? title,
+    String? description,
+    String? transcript,
+    String? status,
+  });
+
+  Future<void> publishVideo(String videoId);
+
+  Future<List<VideoExplanation>> listVideosByStatus({
+    required String status,
+    int limit = 50,
+  });
+
+  Future<Map<String, dynamic>> getVideoAnalytics(String videoId);
 }
 
 /// Firebase implementation of community service
@@ -4847,6 +4886,136 @@ class FirebaseCommunityService implements CommunityService {
   Future<List<Map<String, dynamic>>> getTestAchievements(String userId) async {
     return [];
   }
+
+  // Video explanation implementations
+  @override
+  Future<String> addVideoExplanation({
+    required String questionId,
+    required String title,
+    required String description,
+    required int duration,
+    required String url,
+    String? transcript,
+    String? thumbnailUrl,
+    required List<String> topics,
+    String language = 'japanese',
+  }) async {
+    final videoId = 'vid_${DateTime.now().millisecondsSinceEpoch}';
+    final video = VideoExplanation(
+      videoId: videoId,
+      questionId: questionId,
+      title: title,
+      description: description,
+      duration: duration,
+      url: url,
+      transcript: transcript,
+      thumbnailUrl: thumbnailUrl,
+      topics: topics,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      status: VideoStatus.draft,
+      language: language == 'english' ? VideoLanguage.english : VideoLanguage.japanese,
+    );
+    _videos[videoId] = video;
+    return videoId;
+  }
+
+  @override
+  Future<VideoExplanation?> getVideoExplanation(String videoId) async {
+    return _videos[videoId];
+  }
+
+  @override
+  Future<List<VideoExplanation>> getVideosByQuestion(String questionId) async {
+    return _videos.values
+        .where((v) => v.questionId == questionId)
+        .toList();
+  }
+
+  @override
+  Future<List<VideoExplanation>> getVideosByTopic({
+    required String topic,
+    int limit = 50,
+  }) async {
+    return _videos.values
+        .where((v) => v.topics.contains(topic))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<void> updateVideoMetadata({
+    required String videoId,
+    String? title,
+    String? description,
+    String? transcript,
+    String? status,
+  }) async {
+    final video = _videos[videoId];
+    if (video != null) {
+      final updatedStatus = status != null
+          ? VideoStatus.values.firstWhere(
+              (e) => e.name == status,
+              orElse: () => video.status,
+            )
+          : video.status;
+
+      _videos[videoId] = VideoExplanation(
+        videoId: video.videoId,
+        questionId: video.questionId,
+        title: title ?? video.title,
+        description: description ?? video.description,
+        duration: video.duration,
+        url: video.url,
+        transcript: transcript ?? video.transcript,
+        thumbnailUrl: video.thumbnailUrl,
+        status: updatedStatus,
+        language: video.language,
+        topics: video.topics,
+        createdAt: video.createdAt,
+        updatedAt: DateTime.now(),
+        viewCount: video.viewCount,
+        averageRating: video.averageRating,
+      );
+    }
+  }
+
+  @override
+  Future<void> publishVideo(String videoId) async {
+    await updateVideoMetadata(
+      videoId: videoId,
+      status: 'published',
+    );
+  }
+
+  @override
+  Future<List<VideoExplanation>> listVideosByStatus({
+    required String status,
+    int limit = 50,
+  }) async {
+    final statusEnum = VideoStatus.values.firstWhere(
+      (e) => e.name == status,
+      orElse: () => VideoStatus.draft,
+    );
+    return _videos.values
+        .where((v) => v.status == statusEnum)
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getVideoAnalytics(String videoId) async {
+    final video = _videos[videoId];
+    if (video == null) return {};
+    return {
+      'videoId': videoId,
+      'viewCount': video.viewCount,
+      'averageRating': video.averageRating,
+      'duration': video.duration,
+      'questionsLinked': 1,
+      'engagementRate': (video.viewCount > 0 ? video.averageRating / 5.0 : 0.0) * 100,
+    };
+  }
 }
 
 /// Stub implementation for testing
@@ -4864,6 +5033,7 @@ class StubCommunityService implements CommunityService {
   final Map<String, ReplyReaction> _replyReactions = {}; // Phase 11 Step 3
   final Map<String, ContentReport> _reports = {}; // Phase 11 Step 3
   final Map<String, PostEngagementAnalytics> _analytics = {}; // Phase 11 Step 3
+  final Map<String, VideoExplanation> _videos = {}; // Phase 11 Step 9 - Video Explanations
 
   @override
   Future<String> createChannel({

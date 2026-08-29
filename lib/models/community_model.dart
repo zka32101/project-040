@@ -57,6 +57,10 @@ enum TestStatus { inProgress, completed, abandoned }
 
 enum ExamType { fullLength, halfLength, quickReview }
 
+enum VideoStatus { draft, published, archived, processing }
+
+enum VideoLanguage { japanese, english, mixed }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -3284,6 +3288,10 @@ class Question {
   final int usageCount;
   final double averageScore;
   final bool isActive;
+  final String? videoId;
+  final String? videoTitle;
+  final int? videoDuration;
+  final String? videoTranscript;
 
   Question({
     required this.questionId,
@@ -3301,6 +3309,10 @@ class Question {
     this.usageCount = 0,
     this.averageScore = 0.0,
     this.isActive = true,
+    this.videoId,
+    this.videoTitle,
+    this.videoDuration,
+    this.videoTranscript,
   });
 
   factory Question.empty() {
@@ -3332,6 +3344,10 @@ class Question {
       usageCount: map['usageCount'] as int? ?? 0,
       averageScore: (map['averageScore'] as num?)?.toDouble() ?? 0.0,
       isActive: map['isActive'] as bool? ?? true,
+      videoId: map['videoId'] as String?,
+      videoTitle: map['videoTitle'] as String?,
+      videoDuration: map['videoDuration'] as int?,
+      videoTranscript: map['videoTranscript'] as String?,
     );
   }
 
@@ -3352,6 +3368,100 @@ class Question {
       'usageCount': usageCount,
       'averageScore': averageScore,
       'isActive': isActive,
+      'videoId': videoId,
+      'videoTitle': videoTitle,
+      'videoDuration': videoDuration,
+      'videoTranscript': videoTranscript,
+    };
+  }
+}
+
+/// Video explanation model for providing video content for questions
+class VideoExplanation {
+  final String videoId;
+  final String questionId;
+  final String title;
+  final String description;
+  final int duration; // in seconds
+  final String url;
+  final String? transcript;
+  final String? thumbnailUrl;
+  final VideoStatus status;
+  final VideoLanguage language;
+  final List<String> topics;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int viewCount;
+  final double averageRating;
+
+  VideoExplanation({
+    required this.videoId,
+    required this.questionId,
+    required this.title,
+    required this.description,
+    required this.duration,
+    required this.url,
+    this.transcript,
+    this.thumbnailUrl,
+    this.status = VideoStatus.draft,
+    this.language = VideoLanguage.japanese,
+    this.topics = const [],
+    required this.createdAt,
+    required this.updatedAt,
+    this.viewCount = 0,
+    this.averageRating = 0.0,
+  });
+
+  factory VideoExplanation.empty() {
+    return VideoExplanation(
+      videoId: '',
+      questionId: '',
+      title: '',
+      description: '',
+      duration: 0,
+      url: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory VideoExplanation.fromMap(Map<String, dynamic> map) {
+    return VideoExplanation(
+      videoId: map['videoId'] as String? ?? '',
+      questionId: map['questionId'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      duration: map['duration'] as int? ?? 0,
+      url: map['url'] as String? ?? '',
+      transcript: map['transcript'] as String?,
+      thumbnailUrl: map['thumbnailUrl'] as String?,
+      status: VideoStatus.values[map['status'] as int? ?? 0],
+      language: VideoLanguage.values[map['language'] as int? ?? 0],
+      topics: List<String>.from(map['topics'] as List? ?? []),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      viewCount: map['viewCount'] as int? ?? 0,
+      averageRating: (map['averageRating'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'videoId': videoId,
+      'questionId': questionId,
+      'title': title,
+      'description': description,
+      'duration': duration,
+      'url': url,
+      'transcript': transcript,
+      'thumbnailUrl': thumbnailUrl,
+      'status': status.index,
+      'language': language.index,
+      'topics': topics,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'viewCount': viewCount,
+      'averageRating': averageRating,
     };
   }
 }
