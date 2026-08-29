@@ -1024,5 +1024,2114 @@
     "explanation": "大型二輪の高出力は、段階的な加速制御で安全性を確保する必要がある。",
     "isTrapQuestion": false,
     "trapNumberType": "none"
+  },
+  {
+    "id": "o055",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o056",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o057",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o058",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o059",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o060",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o061",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o062",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o063",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o064",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o065",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o066",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o067",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o068",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o069",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o070",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o071",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o072",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o073",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o074",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o075",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o076",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o077",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o078",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o079",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o080",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o081",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o082",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o083",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o084",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o085",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o086",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o087",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o088",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o089",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o090",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o091",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o092",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o093",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o094",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o095",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o096",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o097",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o098",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o099",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o100",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o101",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o102",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o103",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o104",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o105",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o106",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o107",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o108",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o109",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o110",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o111",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o112",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o113",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o114",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o115",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o116",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o117",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o118",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o119",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o120",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o121",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o122",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o123",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o124",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o125",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o126",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o127",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o128",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o129",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o130",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o131",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o132",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o133",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o134",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o135",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o136",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o137",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o138",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o139",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o140",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o141",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o142",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o143",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o144",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o145",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o146",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o147",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o148",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o149",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o150",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o151",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o152",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o153",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o154",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o155",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o156",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での二人乗りについて正しいのは。",
+    "choices": [
+      "免許取得直後から可能",
+      "1年以上の実乗経験後に可能",
+      "3年以上必須",
+      "禁止"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪での二人乗りは免許取得後1年の実乗経験が要件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "o157",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での最大積載量は。",
+    "choices": [
+      "30kg",
+      "60kg",
+      "100kg",
+      "無制限"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の最大積載量は60kg（普通二輪と同じ）。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "o158",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪での制動力について正しいのは。",
+    "choices": [
+      "小型バイクと同じブレーキ力",
+      "高出力に対応した強力なブレーキ",
+      "ブレーキは不要",
+      "弱いブレーキで十分"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪は高出力に対応する強力なブレーキシステム搭載が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o159",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での過度な加速が危険な理由は。",
+    "choices": [
+      "燃費悪化",
+      "ホイールスピン・ウイリーのリスク",
+      "音が大きい",
+      "走行が遅くなる"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の過度な加速はホイールスピン、ウイリー、リアグリップ喪失を招く。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o160",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪でのカーブ走行での注意点は。",
+    "choices": [
+      "高速での侵入",
+      "事前に十分速度低下",
+      "カーブ中のアクセル全開",
+      "ブレーキなし"
+    ],
+    "answer": 1,
+    "explanation": "カーブは事前の十分な減速が安全の基本。カーブ内での急操作は危険。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o161",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "大型二輪での雨天時の走行で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度を大幅に低下させる",
+      "ハイビーム",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "雨天時は視界悪化とグリップ低下が顕著。速度大幅低下が必須。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o162",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "大型二輪での高速走行での安定性確保で重要なのは。",
+    "choices": [
+      "ハンドルを強く握る",
+      "緩くハンドルを保ち、バイクに任せる",
+      "ハンドル操作を頻繁に",
+      "両手を離す"
+    ],
+    "answer": 1,
+    "explanation": "高速走行時はハンドルを緩く保ち、バイクの安定性に任せることが基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "hazardRecognition"
+  },
+  {
+    "id": "o163",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "大型二輪免許の有効期限は。",
+    "choices": [
+      "1年",
+      "3年",
+      "5年",
+      "10年"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪免許の有効期限は3年。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "o164",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "大型二輪での最重要安全項目は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速競争",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪でも基本は周囲確認と予測運転による危機管理。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "o165",
+    "licenseCategory": [
+      "ogataNirin"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "大型二輪での高出力エンジンの特徴で最も注意が必要なのは。",
+    "choices": [
+      "燃費が良い",
+      "急加速による横転リスク",
+      "低速での安定",
+      "音が小さい"
+    ],
+    "answer": 1,
+    "explanation": "大型二輪の高出力は急加速・ウイリー・ホイールスピンのリスクが高い。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]
