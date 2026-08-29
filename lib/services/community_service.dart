@@ -8122,6 +8122,8 @@ class StubCommunityService implements CommunityService {
       difficulty: difficulty,
       questionIds: questions.map((q) => q.questionId).toList(),
       startTime: DateTime.now(),
+      answers: {},
+      timePerQuestion: {},
     );
     return testId;
   }
@@ -8137,6 +8139,11 @@ class StubCommunityService implements CommunityService {
     if (test != null) {
       test.answers[questionId] = selectedAnswer;
       test.timePerQuestion[questionId] = timeTaken;
+      return;
+    }
+    final exam = _mockExams[testId];
+    if (exam != null) {
+      exam.answers[questionId] = selectedAnswer;
     }
   }
 
@@ -8235,6 +8242,7 @@ class StubCommunityService implements CommunityService {
       totalQuestions: questions.length,
       questionIds: questions.map((q) => q.questionId).toList(),
       startTime: DateTime.now(),
+      answers: {},
     );
     return examId;
   }

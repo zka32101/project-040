@@ -3846,7 +3846,9 @@ void main() {
           timeTaken: 30,
         );
 
-        expect(true, true); // Answer recorded
+        final result = await service.completePracticeTest(testId);
+        expect(result['correctCount'], 1);
+        expect(result['passed'], true);
       });
 
       test('completePracticeTest calculates scores', () async {
@@ -3942,6 +3944,34 @@ void main() {
         final result = await service.completeMockExam(examId);
         expect(result['score'], isNotNull);
         expect(result['passed'], isBool);
+      });
+
+      test('submitAnswer records answers for a mock exam', () async {
+        final service = StubCommunityService();
+
+        final questionId = await service.createQuestion(
+          questionText: 'Exam Q',
+          questionType: QuestionType.multipleChoice,
+          topic: 'Traffic',
+          difficulty: QuestionDifficulty.intermediate,
+          options: ['A', 'B', 'C'],
+          correctAnswerIndex: 1,
+        );
+
+        final examId = await service.startMockExam(
+          userId: 'user123',
+          examType: ExamType.fullLength,
+        );
+
+        await service.submitAnswer(
+          testId: examId,
+          questionId: questionId,
+          selectedAnswer: 1,
+        );
+
+        final result = await service.completeMockExam(examId);
+        expect(result['score'], 1);
+        expect(result['passed'], true);
       });
     });
 
