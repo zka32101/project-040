@@ -1099,6 +1099,107 @@ abstract class CommunityService {
   });
 
   Future<Map<String, dynamic>> getVideoAnalytics(String videoId);
+
+  // ============ Progress Tracking Methods ============
+
+  /// ユーザーの分野別学習進捗を記録または更新
+  Future<void> updateProgressTracker({
+    required String userId,
+    required String category,
+    required bool isCorrect,
+    required int timeSpentSeconds,
+  });
+
+  /// 指定されたカテゴリの学習進捗を取得
+  Future<ProgressTracker?> getProgressTracker({
+    required String userId,
+    required String category,
+  });
+
+  /// ユーザーの全カテゴリの学習進捗を取得
+  Future<List<ProgressTracker>> getUserProgressTrackers(String userId);
+
+  /// 複数カテゴリの進捗を効率的に取得
+  Future<Map<String, ProgressTracker>> getProgressTrackersByCategories({
+    required String userId,
+    required List<String> categories,
+  });
+
+  // ============ Weak Area Detection Methods ============
+
+  /// 弱点分野を検出し、優先度付けして返す
+  Future<List<WeakArea>> detectWeakAreas({
+    required String userId,
+    double accuracyThreshold = 0.7,
+    int minAttempts = 5,
+  });
+
+  /// 指定されたカテゴリの弱点を取得
+  Future<WeakArea?> getWeakArea({
+    required String userId,
+    required String category,
+  });
+
+  /// ユーザーの全弱点分野を取得
+  Future<List<WeakArea>> getUserWeakAreas(String userId);
+
+  /// 弱点分野を優先度順にソート して返す
+  Future<List<WeakArea>> getWeakAreasByPriority({
+    required String userId,
+    int limit = 5,
+  });
+
+  /// 弱点分野を解決済みにマーク
+  Future<void> resolveWeakArea({
+    required String userId,
+    required String weakAreaId,
+  });
+
+  /// 弱点分野の推奨学習トピックを取得
+  Future<List<String>> getRecommendedTopicsForWeakArea(String weakAreaId);
+
+  // ============ Review Schedule Methods ============
+
+  /// 復習スケジュールを作成（スペーシング・リピティション）
+  Future<List<ReviewScheduleItem>> createReviewSchedule({
+    required String userId,
+    required List<String> questionIds,
+    required String baseTopic,
+  });
+
+  /// ユーザーの復習スケジュールを全て取得
+  Future<List<ReviewScheduleItem>> getUserReviewSchedules(String userId);
+
+  /// 指定された日付の復習スケジュールを取得
+  Future<List<ReviewScheduleItem>> getReviewScheduleForDate({
+    required String userId,
+    required DateTime date,
+  });
+
+  /// 今日の復習スケジュールを取得
+  Future<List<ReviewScheduleItem>> getTodayReviewSchedule(String userId);
+
+  /// 復習を実施済みにマーク
+  Future<void> completeReviewSchedule({
+    required String reviewId,
+  });
+
+  /// 期限切れの復習スケジュールを取得
+  Future<List<ReviewScheduleItem>> getOverdueReviewSchedules(String userId);
+
+  /// 復習スケジュール内の間違った問題を取得
+  Future<List<String>> getIncorrectQuestionsFromReview(String reviewId);
+
+  // ============ Adaptive Learning Methods ============
+
+  /// 学習準備度を予測（0.0～1.0）
+  Future<double> predictReadinessProbability(String userId);
+
+  /// 推奨学習時間を計算
+  Future<int> calculateRecommendedStudyMinutes(String userId);
+
+  /// パーソナライズされた学習計画を作成
+  Future<StudyPlan> generatePersonalizedStudyPlan(String userId);
 }
 
 /// Firebase implementation of community service
@@ -8548,6 +8649,443 @@ class StubCommunityService implements CommunityService {
     }
 
     return achievements;
+  }
+
+  // ============ Progress Tracking Implementation ============
+
+  final Map<String, ProgressTracker> _progressTrackers = {};
+
+  @override
+  Future<void> updateProgressTracker({
+    required String userId,
+    required String category,
+    required bool isCorrect,
+    required int timeSpentSeconds,
+  }) async {
+    final key = '$userId:$category';
+    final existing = _progressTrackers[key];
+
+    if (existing == null) {
+      _progressTrackers[key] = ProgressTracker(
+        trackerId: 'pt_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        category: category,
+        correctCount: isCorrect ? 1 : 0,
+        totalAttempts: 1,
+        minutesSpent: timeSpentSeconds ~/ 60,
+        lastStudiedAt: DateTime.now(),
+        lastFiveScores: isCorrect ? [100] : [0],
+        consecutiveCorrect: isCorrect ? 1 : 0,
+        longestStreak: isCorrect ? 1 : 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      final newCorrectCount = existing.correctCount + (isCorrect ? 1 : 0);
+      final newTotalAttempts = existing.totalAttempts + 1;
+      final newScore = isCorrect ? 100 : 0;
+      final newScores = existing.lastFiveScores.length >= 5
+          ? existing.lastFiveScores.sublist(1) + [newScore]
+          : existing.lastFiveScores + [newScore];
+
+      _progressTrackers[key] = ProgressTracker(
+        trackerId: existing.trackerId,
+        userId: userId,
+        category: category,
+        correctCount: newCorrectCount,
+        totalAttempts: newTotalAttempts,
+        minutesSpent: existing.minutesSpent + (timeSpentSeconds ~/ 60),
+        lastStudiedAt: DateTime.now(),
+        lastFiveScores: newScores,
+        consecutiveCorrect: isCorrect ? existing.consecutiveCorrect + 1 : 0,
+        longestStreak: isCorrect
+            ? (existing.longestStreak + 1).clamp(0, 999)
+            : existing.longestStreak,
+        createdAt: existing.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<ProgressTracker?> getProgressTracker({
+    required String userId,
+    required String category,
+  }) async {
+    return _progressTrackers['$userId:$category'];
+  }
+
+  @override
+  Future<List<ProgressTracker>> getUserProgressTrackers(String userId) async {
+    return _progressTrackers.values
+        .where((t) => t.userId == userId)
+        .toList();
+  }
+
+  @override
+  Future<Map<String, ProgressTracker>> getProgressTrackersByCategories({
+    required String userId,
+    required List<String> categories,
+  }) async {
+    final result = <String, ProgressTracker>{};
+    for (final category in categories) {
+      final tracker = _progressTrackers['$userId:$category'];
+      if (tracker != null) {
+        result[category] = tracker;
+      }
+    }
+    return result;
+  }
+
+  // ============ Weak Area Detection Implementation ============
+
+  final Map<String, WeakArea> _weakAreas = {};
+
+  @override
+  Future<List<WeakArea>> detectWeakAreas({
+    required String userId,
+    double accuracyThreshold = 0.7,
+    int minAttempts = 5,
+  }) async {
+    final trackers = await getUserProgressTrackers(userId);
+    final weakAreas = <WeakArea>[];
+
+    for (final tracker in trackers) {
+      if (tracker.totalAttempts >= minAttempts &&
+          tracker.accuracyRate < accuracyThreshold) {
+        final currentAccuracy = tracker.accuracyPercentage;
+        final targetAccuracy = 85;
+        final gap = targetAccuracy - currentAccuracy;
+        final priorityScore = (gap * 2).toInt().clamp(0, 100);
+
+        String priority;
+        if (currentAccuracy < 60) {
+          priority = '最優先';
+        } else if (currentAccuracy < 75) {
+          priority = '重要';
+        } else {
+          priority = '進捗中';
+        }
+
+        final estimatedMinutes = (gap * 3).toInt().clamp(15, 120);
+        final suggestedTopics =
+            _generateSuggestedTopics(tracker.category, tracker.lastFiveScores);
+
+        final weakArea = WeakArea(
+          weakAreaId: 'wa_${DateTime.now().millisecondsSinceEpoch}',
+          userId: userId,
+          category: tracker.category,
+          currentAccuracy: currentAccuracy,
+          targetAccuracy: targetAccuracy,
+          attemptCount: tracker.totalAttempts,
+          priorityScore: priorityScore,
+          priority: priority,
+          estimatedMinutesNeeded: estimatedMinutes,
+          suggestedTopics: suggestedTopics,
+          identifiedAt: DateTime.now(),
+          targetCompletionDate:
+              DateTime.now().add(Duration(days: (estimatedMinutes ~/ 30))),
+          isResolved: false,
+        );
+
+        _weakAreas[weakArea.weakAreaId] = weakArea;
+        weakAreas.add(weakArea);
+      }
+    }
+
+    return weakAreas;
+  }
+
+  List<String> _generateSuggestedTopics(
+    String category,
+    List<int> lastFiveScores,
+  ) {
+    // 最近のスコアに基づいて弱い分野を提案
+    if (lastFiveScores.isEmpty) {
+      return [category];
+    }
+
+    final recentAverage =
+        lastFiveScores.reduce((a, b) => a + b) ~/ lastFiveScores.length;
+    final suggestedTopics = <String>[];
+
+    if (category.contains('交通規則')) {
+      if (recentAverage < 70) {
+        suggestedTopics.addAll(['速度制限', '一時停止', '標識の意味']);
+      }
+    } else if (category.contains('危機回避')) {
+      if (recentAverage < 70) {
+        suggestedTopics.addAll(['急ブレーキ', 'スリップ対策', '雨天運転']);
+      }
+    } else if (category.contains('機械知識')) {
+      if (recentAverage < 70) {
+        suggestedTopics.addAll(['エンジン', 'ブレーキシステム', 'タイヤ管理']);
+      }
+    }
+
+    return suggestedTopics.isNotEmpty ? suggestedTopics : [category];
+  }
+
+  @override
+  Future<WeakArea?> getWeakArea({
+    required String userId,
+    required String category,
+  }) async {
+    try {
+      return _weakAreas.values.firstWhere(
+        (wa) => wa.userId == userId && wa.category == category && !wa.isResolved,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<WeakArea>> getUserWeakAreas(String userId) async {
+    return _weakAreas.values
+        .where((wa) => wa.userId == userId && !wa.isResolved)
+        .toList();
+  }
+
+  @override
+  Future<List<WeakArea>> getWeakAreasByPriority({
+    required String userId,
+    int limit = 5,
+  }) async {
+    final weakAreas = await getUserWeakAreas(userId);
+    weakAreas.sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
+    return weakAreas.take(limit).toList();
+  }
+
+  @override
+  Future<void> resolveWeakArea({
+    required String userId,
+    required String weakAreaId,
+  }) async {
+    final weakArea = _weakAreas[weakAreaId];
+    if (weakArea != null && weakArea.userId == userId) {
+      _weakAreas[weakAreaId] = WeakArea(
+        weakAreaId: weakArea.weakAreaId,
+        userId: weakArea.userId,
+        category: weakArea.category,
+        currentAccuracy: weakArea.currentAccuracy,
+        targetAccuracy: weakArea.targetAccuracy,
+        attemptCount: weakArea.attemptCount,
+        priorityScore: weakArea.priorityScore,
+        priority: weakArea.priority,
+        estimatedMinutesNeeded: weakArea.estimatedMinutesNeeded,
+        suggestedTopics: weakArea.suggestedTopics,
+        identifiedAt: weakArea.identifiedAt,
+        targetCompletionDate: weakArea.targetCompletionDate,
+        isResolved: true,
+      );
+    }
+  }
+
+  @override
+  Future<List<String>> getRecommendedTopicsForWeakArea(
+    String weakAreaId,
+  ) async {
+    return _weakAreas[weakAreaId]?.suggestedTopics ?? [];
+  }
+
+  // ============ Review Schedule Implementation ============
+
+  final Map<String, ReviewScheduleItem> _reviewSchedules = {};
+
+  @override
+  Future<List<ReviewScheduleItem>> createReviewSchedule({
+    required String userId,
+    required List<String> questionIds,
+    required String baseTopic,
+  }) async {
+    final schedules = <ReviewScheduleItem>[];
+    final now = DateTime.now();
+
+    // 明日（1日後）
+    final tomorrow = ReviewScheduleItem(
+      reviewId: 'rs_${DateTime.now().millisecondsSinceEpoch}_1',
+      userId: userId,
+      questionIds: questionIds,
+      scheduledFor: now.add(Duration(days: 1)),
+      interval: '明日',
+      questionCount: questionIds.length,
+      estimatedMinutes: (questionIds.length * 1.5).toInt(),
+    );
+    _reviewSchedules[tomorrow.reviewId] = tomorrow;
+    schedules.add(tomorrow);
+
+    // 3日後
+    final threeDays = ReviewScheduleItem(
+      reviewId: 'rs_${DateTime.now().millisecondsSinceEpoch}_3',
+      userId: userId,
+      questionIds: questionIds,
+      scheduledFor: now.add(Duration(days: 3)),
+      interval: '3日後',
+      questionCount: questionIds.length,
+      estimatedMinutes: (questionIds.length * 1.5).toInt(),
+    );
+    _reviewSchedules[threeDays.reviewId] = threeDays;
+    schedules.add(threeDays);
+
+    // 1週間後
+    final oneWeek = ReviewScheduleItem(
+      reviewId: 'rs_${DateTime.now().millisecondsSinceEpoch}_7',
+      userId: userId,
+      questionIds: questionIds,
+      scheduledFor: now.add(Duration(days: 7)),
+      interval: '1週間後',
+      questionCount: questionIds.length,
+      estimatedMinutes: (questionIds.length * 1.5).toInt(),
+    );
+    _reviewSchedules[oneWeek.reviewId] = oneWeek;
+    schedules.add(oneWeek);
+
+    return schedules;
+  }
+
+  @override
+  Future<List<ReviewScheduleItem>> getUserReviewSchedules(
+    String userId,
+  ) async {
+    return _reviewSchedules.values
+        .where((rs) => rs.userId == userId)
+        .toList();
+  }
+
+  @override
+  Future<List<ReviewScheduleItem>> getReviewScheduleForDate({
+    required String userId,
+    required DateTime date,
+  }) async {
+    return _reviewSchedules.values
+        .where((rs) =>
+            rs.userId == userId &&
+            rs.scheduledFor.year == date.year &&
+            rs.scheduledFor.month == date.month &&
+            rs.scheduledFor.day == date.day)
+        .toList();
+  }
+
+  @override
+  Future<List<ReviewScheduleItem>> getTodayReviewSchedule(
+    String userId,
+  ) async {
+    final today = DateTime.now();
+    return getReviewScheduleForDate(userId: userId, date: today);
+  }
+
+  @override
+  Future<void> completeReviewSchedule({
+    required String reviewId,
+  }) async {
+    final schedule = _reviewSchedules[reviewId];
+    if (schedule != null) {
+      _reviewSchedules[reviewId] = ReviewScheduleItem(
+        reviewId: schedule.reviewId,
+        userId: schedule.userId,
+        questionIds: schedule.questionIds,
+        scheduledFor: schedule.scheduledFor,
+        interval: schedule.interval,
+        questionCount: schedule.questionCount,
+        isCompleted: true,
+        completedAt: DateTime.now(),
+        estimatedMinutes: schedule.estimatedMinutes,
+      );
+    }
+  }
+
+  @override
+  Future<List<ReviewScheduleItem>> getOverdueReviewSchedules(
+    String userId,
+  ) async {
+    final now = DateTime.now();
+    return _reviewSchedules.values
+        .where((rs) => rs.userId == userId && rs.isOverdue)
+        .toList();
+  }
+
+  @override
+  Future<List<String>> getIncorrectQuestionsFromReview(
+    String reviewId,
+  ) async {
+    // スタブ実装：実際のテスト結果から間違った問題を取得
+    return [];
+  }
+
+  // ============ Adaptive Learning Implementation ============
+
+  @override
+  Future<double> predictReadinessProbability(String userId) async {
+    final trackers = await getUserProgressTrackers(userId);
+    if (trackers.isEmpty) return 0.0;
+
+    double totalAccuracy = 0;
+    for (final tracker in trackers) {
+      totalAccuracy += tracker.accuracyRate;
+    }
+    final avgAccuracy = totalAccuracy / trackers.length;
+
+    // 簡易的な準備度予測: 平均正答率 + トレンド
+    final trend = _calculateAccuracyTrend(trackers);
+    final readiness = (avgAccuracy * 0.7) + (trend * 0.3);
+
+    return readiness.clamp(0.0, 1.0);
+  }
+
+  double _calculateAccuracyTrend(List<ProgressTracker> trackers) {
+    // 最近のスコアが高いほど、トレンドはポジティブ
+    double totalTrend = 0;
+    int count = 0;
+
+    for (final tracker in trackers) {
+      if (tracker.lastFiveScores.isNotEmpty) {
+        final scores = tracker.lastFiveScores;
+        if (scores.length >= 2) {
+          final recent = scores.sublist(scores.length - 2);
+          final trend = recent.last > recent.first ? 0.1 : -0.05;
+          totalTrend += trend;
+          count++;
+        }
+      }
+    }
+
+    return count > 0 ? (totalTrend / count).clamp(-1.0, 1.0) : 0.0;
+  }
+
+  @override
+  Future<int> calculateRecommendedStudyMinutes(String userId) async {
+    final trackers = await getUserProgressTrackers(userId);
+    int totalMinutes = 0;
+
+    for (final tracker in trackers) {
+      totalMinutes += tracker.recommendedStudyMinutes;
+    }
+
+    return totalMinutes.clamp(0, 180);
+  }
+
+  @override
+  Future<StudyPlan> generatePersonalizedStudyPlan(String userId) async {
+    final weakAreas = await getWeakAreasByPriority(userId: userId, limit: 5);
+    final recommendedMinutes = await calculateRecommendedStudyMinutes(userId);
+
+    final topics = weakAreas.map((wa) => wa.category).toList();
+    final priority = {
+      for (final wa in weakAreas)
+        wa.category: wa.priorityScore
+    };
+
+    return StudyPlan(
+      planId: 'sp_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      createdAt: DateTime.now(),
+      topics: topics,
+      priority: priority,
+      recommendedTests: [],
+      estimatedHours: (recommendedMinutes / 60).toDouble(),
+      deadline: DateTime.now().add(Duration(days: 14)),
+    );
   }
 }
 

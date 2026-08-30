@@ -3785,3 +3785,296 @@ class StudyPlan {
     };
   }
 }
+
+/// Learning progress tracker for each category/分野
+class ProgressTracker {
+  final String trackerId;
+  final String userId;
+  final String category; // e.g., '交通規則', '危機回避', '機械知識'
+  final int correctCount;
+  final int totalAttempts;
+  final int minutesSpent;
+  final DateTime lastStudiedAt;
+  final List<int> lastFiveScores; // [70, 80, 75, 85, 90]
+  final int consecutiveCorrect;
+  final int longestStreak;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  ProgressTracker({
+    required this.trackerId,
+    required this.userId,
+    required this.category,
+    required this.correctCount,
+    required this.totalAttempts,
+    required this.minutesSpent,
+    required this.lastStudiedAt,
+    this.lastFiveScores = const [],
+    this.consecutiveCorrect = 0,
+    this.longestStreak = 0,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  /// 正答率を計算（0.0～1.0）
+  double get accuracyRate =>
+      totalAttempts > 0 ? correctCount / totalAttempts : 0.0;
+
+  /// 正答率をパーセンテージで取得
+  int get accuracyPercentage => (accuracyRate * 100).toInt();
+
+  /// 平均回答時間（秒）
+  double get averageTimePerQuestion =>
+      totalAttempts > 0 ? (minutesSpent * 60) / totalAttempts : 0.0;
+
+  /// 推奨学習時間（分）
+  int get recommendedStudyMinutes {
+    if (accuracyPercentage >= 85) return 0;
+    final gap = 85 - accuracyPercentage;
+    return (gap * 0.5).toInt().clamp(15, 120);
+  }
+
+  factory ProgressTracker.empty({
+    required String trackerId,
+    required String userId,
+    required String category,
+  }) {
+    return ProgressTracker(
+      trackerId: trackerId,
+      userId: userId,
+      category: category,
+      correctCount: 0,
+      totalAttempts: 0,
+      minutesSpent: 0,
+      lastStudiedAt: DateTime.now(),
+      lastFiveScores: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory ProgressTracker.fromMap(Map<String, dynamic> map) {
+    return ProgressTracker(
+      trackerId: map['trackerId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      category: map['category'] as String? ?? '',
+      correctCount: map['correctCount'] as int? ?? 0,
+      totalAttempts: map['totalAttempts'] as int? ?? 0,
+      minutesSpent: map['minutesSpent'] as int? ?? 0,
+      lastStudiedAt: (map['lastStudiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastFiveScores: List<int>.from(map['lastFiveScores'] as List? ?? []),
+      consecutiveCorrect: map['consecutiveCorrect'] as int? ?? 0,
+      longestStreak: map['longestStreak'] as int? ?? 0,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'trackerId': trackerId,
+      'userId': userId,
+      'category': category,
+      'correctCount': correctCount,
+      'totalAttempts': totalAttempts,
+      'minutesSpent': minutesSpent,
+      'lastStudiedAt': Timestamp.fromDate(lastStudiedAt),
+      'lastFiveScores': lastFiveScores,
+      'consecutiveCorrect': consecutiveCorrect,
+      'longestStreak': longestStreak,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+}
+
+/// Weak area detection for prioritized learning
+class WeakArea {
+  final String weakAreaId;
+  final String userId;
+  final String category; // e.g., '危機回避'
+  final int currentAccuracy; // 58%
+  final int targetAccuracy; // 85%
+  final int attemptCount; // how many times attempted
+  final int priorityScore; // 0-100, higher = more urgent
+  final String priority; // '最優先', '重要', '進捗中'
+  final int estimatedMinutesNeeded; // to reach target
+  final List<String> suggestedTopics; // specific topics to focus on
+  final DateTime identifiedAt;
+  final DateTime? targetCompletionDate;
+  final bool isResolved; // whether this weak area has been addressed
+
+  WeakArea({
+    required this.weakAreaId,
+    required this.userId,
+    required this.category,
+    required this.currentAccuracy,
+    required this.targetAccuracy,
+    required this.attemptCount,
+    required this.priorityScore,
+    required this.priority,
+    required this.estimatedMinutesNeeded,
+    required this.suggestedTopics,
+    required this.identifiedAt,
+    this.targetCompletionDate,
+    this.isResolved = false,
+  });
+
+  /// 目標までの差分
+  int get accuracyGap => targetAccuracy - currentAccuracy;
+
+  /// 改善率（何パーセント改善が必要か）
+  double get improvementPercentage {
+    if (currentAccuracy >= targetAccuracy) return 0.0;
+    return ((targetAccuracy - currentAccuracy) / 100.0) * 100;
+  }
+
+  /// 優先度バッジ用の色
+  String get priorityBadgeColor {
+    switch (priority) {
+      case '最優先':
+        return '#FF6A00'; // burnt orange
+      case '重要':
+        return '#FFA726'; // light orange
+      case '進捗中':
+        return '#4CAF50'; // green
+      default:
+        return '#1B2A4A'; // navy
+    }
+  }
+
+  factory WeakArea.empty({
+    required String weakAreaId,
+    required String userId,
+    required String category,
+  }) {
+    return WeakArea(
+      weakAreaId: weakAreaId,
+      userId: userId,
+      category: category,
+      currentAccuracy: 0,
+      targetAccuracy: 85,
+      attemptCount: 0,
+      priorityScore: 0,
+      priority: '進捗中',
+      estimatedMinutesNeeded: 0,
+      suggestedTopics: [],
+      identifiedAt: DateTime.now(),
+    );
+  }
+
+  factory WeakArea.fromMap(Map<String, dynamic> map) {
+    return WeakArea(
+      weakAreaId: map['weakAreaId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      category: map['category'] as String? ?? '',
+      currentAccuracy: map['currentAccuracy'] as int? ?? 0,
+      targetAccuracy: map['targetAccuracy'] as int? ?? 85,
+      attemptCount: map['attemptCount'] as int? ?? 0,
+      priorityScore: map['priorityScore'] as int? ?? 0,
+      priority: map['priority'] as String? ?? '進捗中',
+      estimatedMinutesNeeded: map['estimatedMinutesNeeded'] as int? ?? 0,
+      suggestedTopics: List<String>.from(map['suggestedTopics'] as List? ?? []),
+      identifiedAt: (map['identifiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      targetCompletionDate: (map['targetCompletionDate'] as Timestamp?)?.toDate(),
+      isResolved: map['isResolved'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'weakAreaId': weakAreaId,
+      'userId': userId,
+      'category': category,
+      'currentAccuracy': currentAccuracy,
+      'targetAccuracy': targetAccuracy,
+      'attemptCount': attemptCount,
+      'priorityScore': priorityScore,
+      'priority': priority,
+      'estimatedMinutesNeeded': estimatedMinutesNeeded,
+      'suggestedTopics': suggestedTopics,
+      'identifiedAt': Timestamp.fromDate(identifiedAt),
+      'targetCompletionDate': targetCompletionDate != null
+          ? Timestamp.fromDate(targetCompletionDate!)
+          : null,
+      'isResolved': isResolved,
+    };
+  }
+}
+
+/// Review schedule for spaced repetition learning
+class ReviewScheduleItem {
+  final String reviewId;
+  final String userId;
+  final List<String> questionIds;
+  final DateTime scheduledFor; // tomorrow, 3 days, 1 week
+  final String interval; // '明日', '3日後', '1週間後'
+  final int questionCount;
+  final bool isCompleted;
+  final DateTime? completedAt;
+  final int estimatedMinutes; // 予想学習時間
+
+  ReviewScheduleItem({
+    required this.reviewId,
+    required this.userId,
+    required this.questionIds,
+    required this.scheduledFor,
+    required this.interval,
+    required this.questionCount,
+    this.isCompleted = false,
+    this.completedAt,
+    required this.estimatedMinutes,
+  });
+
+  /// 次の復習までの日数
+  int get daysUntilReview {
+    final now = DateTime.now();
+    return scheduledFor.difference(now).inDays;
+  }
+
+  /// 復習を実施したかどうか
+  bool get isOverdue => !isCompleted && DateTime.now().isAfter(scheduledFor);
+
+  factory ReviewScheduleItem.empty({
+    required String reviewId,
+    required String userId,
+  }) {
+    return ReviewScheduleItem(
+      reviewId: reviewId,
+      userId: userId,
+      questionIds: [],
+      scheduledFor: DateTime.now(),
+      interval: '明日',
+      questionCount: 0,
+      estimatedMinutes: 0,
+    );
+  }
+
+  factory ReviewScheduleItem.fromMap(Map<String, dynamic> map) {
+    return ReviewScheduleItem(
+      reviewId: map['reviewId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      questionIds: List<String>.from(map['questionIds'] as List? ?? []),
+      scheduledFor: (map['scheduledFor'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      interval: map['interval'] as String? ?? '明日',
+      questionCount: map['questionCount'] as int? ?? 0,
+      isCompleted: map['isCompleted'] as bool? ?? false,
+      completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
+      estimatedMinutes: map['estimatedMinutes'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reviewId': reviewId,
+      'userId': userId,
+      'questionIds': questionIds,
+      'scheduledFor': Timestamp.fromDate(scheduledFor),
+      'interval': interval,
+      'questionCount': questionCount,
+      'isCompleted': isCompleted,
+      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'estimatedMinutes': estimatedMinutes,
+    };
+  }
+}
