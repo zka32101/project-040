@@ -1520,6 +1520,173 @@ abstract class CommunityService {
 
   /// インスティテューショナルアナリティクスをリアルタイム更新
   Future<void> refreshInstitutionalMetrics(String partnershipId);
+
+  // ============ Content Management ============
+
+  /// 機関向け問題を作成
+  Future<String> createInstitutionalQuestion({
+    required String partnershipId,
+    required String createdByUserId,
+    required String questionText,
+    required QuestionType type,
+    required QuestionDifficulty difficulty,
+    required String category,
+    String? subcategory,
+    required List<String> answerOptions,
+    required String correctAnswer,
+    String? explanation,
+    List<String>? keywords,
+    required ContentAccessLevel accessLevel,
+  });
+
+  /// 機関向け問題を取得
+  Future<InstitutionalQuestion?> getInstitutionalQuestion(String questionId);
+
+  /// パートナーシップの問題を取得
+  Future<List<InstitutionalQuestion>> getPartnershipQuestions({
+    required String partnershipId,
+    String? category,
+    QuestionDifficulty? difficulty,
+    int limit = 50,
+  });
+
+  /// 問題を公開
+  Future<void> publishQuestion(String questionId);
+
+  /// 問題を承認
+  Future<void> approveQuestion({
+    required String questionId,
+    required String reviewedByUserId,
+    String? reviewNotes,
+  });
+
+  /// 問題バンクを作成
+  Future<String> createQuestionBank({
+    required String partnershipId,
+    required String bankName,
+    required String description,
+  });
+
+  /// 問題バンクを取得
+  Future<InstitutionalQuestionBank?> getQuestionBank(String bankId);
+
+  /// パートナーシップの問題バンクを取得
+  Future<List<InstitutionalQuestionBank>> getPartnershipQuestionBanks(
+    String partnershipId,
+  );
+
+  /// コースを作成
+  Future<String> createCourse({
+    required String partnershipId,
+    required String courseName,
+    required String description,
+    required List<String> topicIds,
+    required int totalLessons,
+    required int estimatedHours,
+    required String instructorId,
+    required ContentAccessLevel accessLevel,
+  });
+
+  /// コースを取得
+  Future<Course?> getCourse(String courseId);
+
+  /// パートナーシップのコースを取得
+  Future<List<Course>> getPartnershipCourses(String partnershipId);
+
+  /// コースを公開
+  Future<void> publishCourse(String courseId);
+
+  /// コースに問題を追加
+  Future<void> addQuestionToCourse({
+    required String courseId,
+    required String questionId,
+  });
+
+  /// カリキュラムを作成
+  Future<String> createCurriculum({
+    required String partnershipId,
+    required String curriculumName,
+    required String description,
+    required CurriculumType type,
+    required List<String> courseIds,
+    required int totalHours,
+    required int targetLevel,
+    String? targetExamType,
+  });
+
+  /// カリキュラムを取得
+  Future<Curriculum?> getCurriculum(String curriculumId);
+
+  /// パートナーシップのカリキュラムを取得
+  Future<List<Curriculum>> getPartnershipCurricula(String partnershipId);
+
+  /// カリキュラムを公開
+  Future<void> publishCurriculum(String curriculumId);
+
+  /// コースにエンロール
+  Future<String> enrollInCourse({
+    required String courseId,
+    required String studentId,
+    required String partnershipId,
+  });
+
+  /// コースエンロールメントを取得
+  Future<CourseEnrollment?> getCourseEnrollment(String enrollmentId);
+
+  /// 学生のコースエンロールメントを取得
+  Future<List<CourseEnrollment>> getStudentCourseEnrollments(String studentId);
+
+  /// コースエンロールメントを更新
+  Future<void> updateCourseProgress({
+    required String enrollmentId,
+    required double completionPercentage,
+    required double currentScore,
+    required int lessonsCompleted,
+  });
+
+  /// カリキュラムプログレスを追跡開始
+  Future<String> startCurriculumProgress({
+    required String curriculumId,
+    required String studentId,
+    required String partnershipId,
+  });
+
+  /// カリキュラムプログレスを取得
+  Future<CurriculumProgress?> getCurriculumProgress(String progressId);
+
+  /// 学生のカリキュラムプログレスを取得
+  Future<CurriculumProgress?> getStudentCurriculumProgress({
+    required String studentId,
+    required String curriculumId,
+  });
+
+  /// カリキュラムプログレスを更新
+  Future<void> updateCurriculumProgress({
+    required String progressId,
+    required int currentCourseIndex,
+    required double overallProgress,
+    required double currentScore,
+    required int hoursSpent,
+  });
+
+  /// 問題の使用統計を更新
+  Future<void> updateQuestionUsageStats({
+    required String questionId,
+    required double timeSpent,
+    required bool wasCorrect,
+  });
+
+  /// カテゴリ別問題統計を取得
+  Future<Map<String, int>> getQuestionStatsByCategory(String partnershipId);
+
+  /// 難易度別問題統計を取得
+  Future<Map<String, int>> getQuestionStatsByDifficulty(String partnershipId);
+
+  /// コース完了率を取得
+  Future<double> getCourseCompletionRate(String courseId);
+
+  /// カリキュラム完了率を取得
+  Future<double> getCurriculumCompletionRate(String curriculumId);
 }
 
 /// Firebase implementation of community service
@@ -5463,6 +5630,15 @@ class StubCommunityService implements CommunityService {
   final Map<String, StudentEngagementMetrics> _studentEngagement = {};
   final Map<String, CustomReport> _reports = {};
   final Map<String, List<String>> _instructorStudentAssignments = {}; // instructorId -> [studentIds]
+
+  // Phase 12 - Content Management
+  final Map<String, InstitutionalQuestion> _institutionalQuestions = {};
+  final Map<String, InstitutionalQuestionBank> _questionBanks = {};
+  final Map<String, Course> _courses = {};
+  final Map<String, Curriculum> _curricula = {};
+  final Map<String, CourseEnrollment> _enrollments = {};
+  final Map<String, CurriculumProgress> _curriculumProgress = {};
+  final Map<String, Map<String, dynamic>> _questionUsageStats = {}; // questionId -> stats
 
   @override
   Future<String> createChannel({
@@ -10995,6 +11171,549 @@ class StubCommunityService implements CommunityService {
   @override
   Future<void> refreshInstitutionalMetrics(String partnershipId) async {
     // In stub implementation, metrics are calculated on demand
+  }
+
+  // ============ Content Management Methods ============
+
+  @override
+  Future<String> createInstitutionalQuestion({
+    required String partnershipId,
+    required String createdByUserId,
+    required String questionText,
+    required QuestionType type,
+    required QuestionDifficulty difficulty,
+    required String category,
+    String? subcategory,
+    required List<String> answerOptions,
+    required String correctAnswer,
+    String? explanation,
+    List<String>? keywords,
+    required ContentAccessLevel accessLevel,
+  }) async {
+    final questionId = 'iq_${_institutionalQuestions.length}_${DateTime.now().millisecondsSinceEpoch}';
+    _institutionalQuestions[questionId] = InstitutionalQuestion(
+      questionId: questionId,
+      partnershipId: partnershipId,
+      createdByUserId: createdByUserId,
+      questionText: questionText,
+      type: type,
+      difficulty: difficulty,
+      category: category,
+      subcategory: subcategory,
+      answerOptions: answerOptions,
+      correctAnswer: correctAnswer,
+      explanation: explanation,
+      keywords: keywords,
+      status: ContentStatus.draft,
+      accessLevel: accessLevel,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return questionId;
+  }
+
+  @override
+  Future<InstitutionalQuestion?> getInstitutionalQuestion(String questionId) async {
+    return _institutionalQuestions[questionId];
+  }
+
+  @override
+  Future<List<InstitutionalQuestion>> getPartnershipQuestions({
+    required String partnershipId,
+    String? category,
+    QuestionDifficulty? difficulty,
+    int limit = 50,
+  }) async {
+    var questions = _institutionalQuestions.values
+      .where((q) => q.partnershipId == partnershipId);
+
+    if (category != null) {
+      questions = questions.where((q) => q.category == category);
+    }
+    if (difficulty != null) {
+      questions = questions.where((q) => q.difficulty == difficulty);
+    }
+
+    return questions.take(limit).toList();
+  }
+
+  @override
+  Future<void> publishQuestion(String questionId) async {
+    final question = _institutionalQuestions[questionId];
+    if (question != null) {
+      _institutionalQuestions[questionId] = InstitutionalQuestion(
+        questionId: question.questionId,
+        partnershipId: question.partnershipId,
+        createdByUserId: question.createdByUserId,
+        questionText: question.questionText,
+        type: question.type,
+        difficulty: question.difficulty,
+        category: question.category,
+        subcategory: question.subcategory,
+        answerOptions: question.answerOptions,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+        keywords: question.keywords,
+        status: ContentStatus.published,
+        accessLevel: question.accessLevel,
+        usageCount: question.usageCount,
+        averageTimeSpent: question.averageTimeSpent,
+        averageAccuracy: question.averageAccuracy,
+        reviewedAt: question.reviewedAt,
+        reviewedByUserId: question.reviewedByUserId,
+        reviewNotes: question.reviewNotes,
+        createdAt: question.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> approveQuestion({
+    required String questionId,
+    required String reviewedByUserId,
+    String? reviewNotes,
+  }) async {
+    final question = _institutionalQuestions[questionId];
+    if (question != null) {
+      _institutionalQuestions[questionId] = InstitutionalQuestion(
+        questionId: question.questionId,
+        partnershipId: question.partnershipId,
+        createdByUserId: question.createdByUserId,
+        questionText: question.questionText,
+        type: question.type,
+        difficulty: question.difficulty,
+        category: question.category,
+        subcategory: question.subcategory,
+        answerOptions: question.answerOptions,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+        keywords: question.keywords,
+        status: ContentStatus.published,
+        accessLevel: question.accessLevel,
+        usageCount: question.usageCount,
+        averageTimeSpent: question.averageTimeSpent,
+        averageAccuracy: question.averageAccuracy,
+        reviewedAt: DateTime.now(),
+        reviewedByUserId: reviewedByUserId,
+        reviewNotes: reviewNotes,
+        createdAt: question.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> createQuestionBank({
+    required String partnershipId,
+    required String bankName,
+    required String description,
+  }) async {
+    final bankId = 'qb_${_questionBanks.length}';
+    _questionBanks[bankId] = InstitutionalQuestionBank(
+      bankId: bankId,
+      partnershipId: partnershipId,
+      bankName: bankName,
+      description: description,
+      totalQuestions: 0,
+      questionsByDifficulty: {},
+      questionsByCategory: {},
+      creatorIds: [],
+      status: ContentStatus.active,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return bankId;
+  }
+
+  @override
+  Future<InstitutionalQuestionBank?> getQuestionBank(String bankId) async {
+    return _questionBanks[bankId];
+  }
+
+  @override
+  Future<List<InstitutionalQuestionBank>> getPartnershipQuestionBanks(
+    String partnershipId,
+  ) async {
+    return _questionBanks.values
+      .where((b) => b.partnershipId == partnershipId)
+      .toList();
+  }
+
+  @override
+  Future<String> createCourse({
+    required String partnershipId,
+    required String courseName,
+    required String description,
+    required List<String> topicIds,
+    required int totalLessons,
+    required int estimatedHours,
+    required String instructorId,
+    required ContentAccessLevel accessLevel,
+  }) async {
+    final courseId = 'course_${_courses.length}';
+    _courses[courseId] = Course(
+      courseId: courseId,
+      partnershipId: partnershipId,
+      courseName: courseName,
+      description: description,
+      topicIds: topicIds,
+      questionIds: [],
+      totalLessons: totalLessons,
+      estimatedHours: estimatedHours,
+      status: CourseStatus.draft,
+      instructorId: instructorId,
+      accessLevel: accessLevel,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return courseId;
+  }
+
+  @override
+  Future<Course?> getCourse(String courseId) async {
+    return _courses[courseId];
+  }
+
+  @override
+  Future<List<Course>> getPartnershipCourses(String partnershipId) async {
+    return _courses.values
+      .where((c) => c.partnershipId == partnershipId)
+      .toList();
+  }
+
+  @override
+  Future<void> publishCourse(String courseId) async {
+    final course = _courses[courseId];
+    if (course != null) {
+      _courses[courseId] = Course(
+        courseId: course.courseId,
+        partnershipId: course.partnershipId,
+        courseName: course.courseName,
+        description: course.description,
+        topicIds: course.topicIds,
+        questionIds: course.questionIds,
+        totalLessons: course.totalLessons,
+        estimatedHours: course.estimatedHours,
+        status: CourseStatus.active,
+        instructorId: course.instructorId,
+        accessLevel: course.accessLevel,
+        enrolledStudents: course.enrolledStudents,
+        averageCompletion: course.averageCompletion,
+        averageScore: course.averageScore,
+        createdAt: course.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> addQuestionToCourse({
+    required String courseId,
+    required String questionId,
+  }) async {
+    final course = _courses[courseId];
+    if (course != null && !course.questionIds.contains(questionId)) {
+      final updatedQuestions = [...course.questionIds, questionId];
+      _courses[courseId] = Course(
+        courseId: course.courseId,
+        partnershipId: course.partnershipId,
+        courseName: course.courseName,
+        description: course.description,
+        topicIds: course.topicIds,
+        questionIds: updatedQuestions,
+        totalLessons: course.totalLessons,
+        estimatedHours: course.estimatedHours,
+        status: course.status,
+        instructorId: course.instructorId,
+        accessLevel: course.accessLevel,
+        enrolledStudents: course.enrolledStudents,
+        averageCompletion: course.averageCompletion,
+        averageScore: course.averageScore,
+        createdAt: course.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> createCurriculum({
+    required String partnershipId,
+    required String curriculumName,
+    required String description,
+    required CurriculumType type,
+    required List<String> courseIds,
+    required int totalHours,
+    required int targetLevel,
+    String? targetExamType,
+  }) async {
+    final curriculumId = 'curr_${_curricula.length}';
+    _curricula[curriculumId] = Curriculum(
+      curriculumId: curriculumId,
+      partnershipId: partnershipId,
+      curriculumName: curriculumName,
+      description: description,
+      type: type,
+      courseIds: courseIds,
+      totalHours: totalHours,
+      targetLevel: targetLevel,
+      targetExamType: targetExamType,
+      status: ContentStatus.draft,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return curriculumId;
+  }
+
+  @override
+  Future<Curriculum?> getCurriculum(String curriculumId) async {
+    return _curricula[curriculumId];
+  }
+
+  @override
+  Future<List<Curriculum>> getPartnershipCurricula(String partnershipId) async {
+    return _curricula.values
+      .where((c) => c.partnershipId == partnershipId)
+      .toList();
+  }
+
+  @override
+  Future<void> publishCurriculum(String curriculumId) async {
+    final curriculum = _curricula[curriculumId];
+    if (curriculum != null) {
+      _curricula[curriculumId] = Curriculum(
+        curriculumId: curriculum.curriculumId,
+        partnershipId: curriculum.partnershipId,
+        curriculumName: curriculum.curriculumName,
+        description: curriculum.description,
+        type: curriculum.type,
+        courseIds: curriculum.courseIds,
+        totalHours: curriculum.totalHours,
+        targetLevel: curriculum.targetLevel,
+        targetExamType: curriculum.targetExamType,
+        status: ContentStatus.published,
+        enrolledStudents: curriculum.enrolledStudents,
+        completionRate: curriculum.completionRate,
+        passProbability: curriculum.passProbability,
+        createdAt: curriculum.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> enrollInCourse({
+    required String courseId,
+    required String studentId,
+    required String partnershipId,
+  }) async {
+    final enrollmentId = 'enr_${_enrollments.length}';
+    _enrollments[enrollmentId] = CourseEnrollment(
+      enrollmentId: enrollmentId,
+      courseId: courseId,
+      studentId: studentId,
+      partnershipId: partnershipId,
+      enrolledAt: DateTime.now(),
+      completionPercentage: 0.0,
+      currentScore: 0.0,
+      lessonsCompleted: 0,
+    );
+    return enrollmentId;
+  }
+
+  @override
+  Future<CourseEnrollment?> getCourseEnrollment(String enrollmentId) async {
+    return _enrollments[enrollmentId];
+  }
+
+  @override
+  Future<List<CourseEnrollment>> getStudentCourseEnrollments(String studentId) async {
+    return _enrollments.values
+      .where((e) => e.studentId == studentId)
+      .toList();
+  }
+
+  @override
+  Future<void> updateCourseProgress({
+    required String enrollmentId,
+    required double completionPercentage,
+    required double currentScore,
+    required int lessonsCompleted,
+  }) async {
+    final enrollment = _enrollments[enrollmentId];
+    if (enrollment != null) {
+      final isCompleted = completionPercentage >= 100.0;
+      _enrollments[enrollmentId] = CourseEnrollment(
+        enrollmentId: enrollment.enrollmentId,
+        courseId: enrollment.courseId,
+        studentId: enrollment.studentId,
+        partnershipId: enrollment.partnershipId,
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: isCompleted ? DateTime.now() : null,
+        completionPercentage: completionPercentage,
+        currentScore: currentScore,
+        lessonsCompleted: lessonsCompleted,
+        lastAccessedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> startCurriculumProgress({
+    required String curriculumId,
+    required String studentId,
+    required String partnershipId,
+  }) async {
+    final progressId = 'cp_${_curriculumProgress.length}';
+    _curriculumProgress[progressId] = CurriculumProgress(
+      progressId: progressId,
+      curriculumId: curriculumId,
+      studentId: studentId,
+      partnershipId: partnershipId,
+      currentCourseIndex: 0,
+      completedCourseIds: [],
+      overallProgress: 0.0,
+      currentScore: 0.0,
+      hoursSpent: 0,
+      startedAt: DateTime.now(),
+    );
+    return progressId;
+  }
+
+  @override
+  Future<CurriculumProgress?> getCurriculumProgress(String progressId) async {
+    return _curriculumProgress[progressId];
+  }
+
+  @override
+  Future<CurriculumProgress?> getStudentCurriculumProgress({
+    required String studentId,
+    required String curriculumId,
+  }) async {
+    return _curriculumProgress.values.firstWhere(
+      (p) => p.studentId == studentId && p.curriculumId == curriculumId,
+      orElse: () => CurriculumProgress(
+        progressId: '',
+        curriculumId: '',
+        studentId: '',
+        partnershipId: '',
+        currentCourseIndex: 0,
+        completedCourseIds: [],
+        overallProgress: 0.0,
+        currentScore: 0.0,
+        hoursSpent: 0,
+        startedAt: DateTime.now(),
+      ),
+    ) as CurriculumProgress?;
+  }
+
+  @override
+  Future<void> updateCurriculumProgress({
+    required String progressId,
+    required int currentCourseIndex,
+    required double overallProgress,
+    required double currentScore,
+    required int hoursSpent,
+  }) async {
+    final progress = _curriculumProgress[progressId];
+    if (progress != null) {
+      final isCompleted = overallProgress >= 100.0;
+      _curriculumProgress[progressId] = CurriculumProgress(
+        progressId: progress.progressId,
+        curriculumId: progress.curriculumId,
+        studentId: progress.studentId,
+        partnershipId: progress.partnershipId,
+        currentCourseIndex: currentCourseIndex,
+        completedCourseIds: progress.completedCourseIds,
+        overallProgress: overallProgress,
+        currentScore: currentScore,
+        hoursSpent: hoursSpent,
+        startedAt: progress.startedAt,
+        completedAt: isCompleted ? DateTime.now() : null,
+      );
+    }
+  }
+
+  @override
+  Future<void> updateQuestionUsageStats({
+    required String questionId,
+    required double timeSpent,
+    required bool wasCorrect,
+  }) async {
+    final question = _institutionalQuestions[questionId];
+    if (question != null) {
+      _institutionalQuestions[questionId] = InstitutionalQuestion(
+        questionId: question.questionId,
+        partnershipId: question.partnershipId,
+        createdByUserId: question.createdByUserId,
+        questionText: question.questionText,
+        type: question.type,
+        difficulty: question.difficulty,
+        category: question.category,
+        subcategory: question.subcategory,
+        answerOptions: question.answerOptions,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+        keywords: question.keywords,
+        status: question.status,
+        accessLevel: question.accessLevel,
+        usageCount: question.usageCount + 1,
+        averageTimeSpent: (question.averageTimeSpent + timeSpent) / 2,
+        averageAccuracy: wasCorrect ? question.averageAccuracy + 0.1 : question.averageAccuracy - 0.05,
+        reviewedAt: question.reviewedAt,
+        reviewedByUserId: question.reviewedByUserId,
+        reviewNotes: question.reviewNotes,
+        createdAt: question.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<Map<String, int>> getQuestionStatsByCategory(String partnershipId) async {
+    final stats = <String, int>{};
+    for (final question in _institutionalQuestions.values) {
+      if (question.partnershipId == partnershipId) {
+        stats[question.category] = (stats[question.category] ?? 0) + 1;
+      }
+    }
+    return stats;
+  }
+
+  @override
+  Future<Map<String, int>> getQuestionStatsByDifficulty(String partnershipId) async {
+    final stats = <String, int>{};
+    for (final question in _institutionalQuestions.values) {
+      if (question.partnershipId == partnershipId) {
+        final diffStr = question.difficulty.toString().split('.').last;
+        stats[diffStr] = (stats[diffStr] ?? 0) + 1;
+      }
+    }
+    return stats;
+  }
+
+  @override
+  Future<double> getCourseCompletionRate(String courseId) async {
+    final enrollments = _enrollments.values
+      .where((e) => e.courseId == courseId)
+      .toList();
+
+    if (enrollments.isEmpty) return 0.0;
+
+    final completed = enrollments.where((e) => e.isCompleted).length;
+    return (completed / enrollments.length) * 100;
+  }
+
+  @override
+  Future<double> getCurriculumCompletionRate(String curriculumId) async {
+    final progress = _curriculumProgress.values
+      .where((p) => p.curriculumId == curriculumId)
+      .toList();
+
+    if (progress.isEmpty) return 0.0;
+
+    final totalProgress = progress.fold<double>(0, (sum, p) => sum + p.overallProgress);
+    return totalProgress / progress.length;
   }
 }
 

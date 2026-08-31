@@ -75,6 +75,14 @@ enum StudentPerformanceStatus { excellent, good, average, atRisk, critical }
 
 enum ReportType { performance, engagement, attendance, completion, readiness, custom }
 
+enum ContentStatus { draft, published, archived, inactive }
+
+enum ContentAccessLevel { public, institutional, restrictedInstitutional }
+
+enum CourseStatus { draft, active, archived, completed }
+
+enum CurriculumType { standardCurriculum, customCurriculum, accelerated }
+
 enum BadgeType {
   // Milestone badges
   firstQuestion,
@@ -5107,6 +5115,437 @@ class PartnershipBilling {
   }
 }
 
+// ============ Content Management Models ============
+
+class InstitutionalQuestion {
+  final String questionId;
+  final String partnershipId;
+  final String createdByUserId;
+  final String questionText;
+  final QuestionType type;
+  final QuestionDifficulty difficulty;
+  final String category;
+  final String? subcategory;
+  final List<String> answerOptions;
+  final String correctAnswer;
+  final String? explanation;
+  final List<String>? keywords;
+  final ContentStatus status;
+  final ContentAccessLevel accessLevel;
+  final int usageCount;
+  final double averageTimeSpent; // in seconds
+  final double averageAccuracy;
+  final DateTime? reviewedAt;
+  final String? reviewedByUserId;
+  final String? reviewNotes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  InstitutionalQuestion({
+    required this.questionId,
+    required this.partnershipId,
+    required this.createdByUserId,
+    required this.questionText,
+    required this.type,
+    required this.difficulty,
+    required this.category,
+    this.subcategory,
+    required this.answerOptions,
+    required this.correctAnswer,
+    this.explanation,
+    this.keywords,
+    required this.status,
+    required this.accessLevel,
+    this.usageCount = 0,
+    this.averageTimeSpent = 0.0,
+    this.averageAccuracy = 0.0,
+    this.reviewedAt,
+    this.reviewedByUserId,
+    this.reviewNotes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isApproved => status == ContentStatus.published && reviewedAt != null;
+
+  Map<String, dynamic> toMap() => {
+    'questionId': questionId,
+    'partnershipId': partnershipId,
+    'createdByUserId': createdByUserId,
+    'questionText': questionText,
+    'type': type.toString().split('.').last,
+    'difficulty': difficulty.toString().split('.').last,
+    'category': category,
+    'subcategory': subcategory,
+    'answerOptions': answerOptions,
+    'correctAnswer': correctAnswer,
+    'explanation': explanation,
+    'keywords': keywords,
+    'status': status.toString().split('.').last,
+    'accessLevel': accessLevel.toString().split('.').last,
+    'usageCount': usageCount,
+    'averageTimeSpent': averageTimeSpent,
+    'averageAccuracy': averageAccuracy,
+    'reviewedAt': reviewedAt?.toIso8601String(),
+    'reviewedByUserId': reviewedByUserId,
+    'reviewNotes': reviewNotes,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory InstitutionalQuestion.fromMap(Map<String, dynamic> map) =>
+    InstitutionalQuestion(
+      questionId: map['questionId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      createdByUserId: map['createdByUserId'] ?? '',
+      questionText: map['questionText'] ?? '',
+      type: _parseQuestionType(map['type'] ?? ''),
+      difficulty: _parseQuestionDifficulty(map['difficulty'] ?? ''),
+      category: map['category'] ?? '',
+      subcategory: map['subcategory'],
+      answerOptions: List<String>.from(map['answerOptions'] ?? []),
+      correctAnswer: map['correctAnswer'] ?? '',
+      explanation: map['explanation'],
+      keywords: map['keywords'] != null ? List<String>.from(map['keywords']) : null,
+      status: _parseContentStatus(map['status'] ?? ''),
+      accessLevel: _parseContentAccessLevel(map['accessLevel'] ?? ''),
+      usageCount: map['usageCount'] ?? 0,
+      averageTimeSpent: (map['averageTimeSpent'] ?? 0.0).toDouble(),
+      averageAccuracy: (map['averageAccuracy'] ?? 0.0).toDouble(),
+      reviewedAt: map['reviewedAt'] != null ? DateTime.parse(map['reviewedAt']) : null,
+      reviewedByUserId: map['reviewedByUserId'],
+      reviewNotes: map['reviewNotes'],
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+    );
+}
+
+class InstitutionalQuestionBank {
+  final String bankId;
+  final String partnershipId;
+  final String bankName;
+  final String description;
+  final int totalQuestions;
+  final Map<String, int> questionsByDifficulty; // difficulty -> count
+  final Map<String, int> questionsByCategory; // category -> count
+  final List<String> creatorIds;
+  final ContentStatus status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  InstitutionalQuestionBank({
+    required this.bankId,
+    required this.partnershipId,
+    required this.bankName,
+    required this.description,
+    required this.totalQuestions,
+    required this.questionsByDifficulty,
+    required this.questionsByCategory,
+    required this.creatorIds,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'bankId': bankId,
+    'partnershipId': partnershipId,
+    'bankName': bankName,
+    'description': description,
+    'totalQuestions': totalQuestions,
+    'questionsByDifficulty': questionsByDifficulty,
+    'questionsByCategory': questionsByCategory,
+    'creatorIds': creatorIds,
+    'status': status.toString().split('.').last,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory InstitutionalQuestionBank.fromMap(Map<String, dynamic> map) =>
+    InstitutionalQuestionBank(
+      bankId: map['bankId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      bankName: map['bankName'] ?? '',
+      description: map['description'] ?? '',
+      totalQuestions: map['totalQuestions'] ?? 0,
+      questionsByDifficulty: Map<String, int>.from(map['questionsByDifficulty'] ?? {}),
+      questionsByCategory: Map<String, int>.from(map['questionsByCategory'] ?? {}),
+      creatorIds: List<String>.from(map['creatorIds'] ?? []),
+      status: _parseContentStatus(map['status'] ?? ''),
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+    );
+}
+
+class Course {
+  final String courseId;
+  final String partnershipId;
+  final String courseName;
+  final String description;
+  final List<String> topicIds;
+  final List<String> questionIds;
+  final int totalLessons;
+  final int estimatedHours;
+  final CourseStatus status;
+  final String instructorId;
+  final ContentAccessLevel accessLevel;
+  final int enrolledStudents;
+  final double averageCompletion;
+  final double averageScore;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Course({
+    required this.courseId,
+    required this.partnershipId,
+    required this.courseName,
+    required this.description,
+    required this.topicIds,
+    required this.questionIds,
+    required this.totalLessons,
+    required this.estimatedHours,
+    required this.status,
+    required this.instructorId,
+    required this.accessLevel,
+    this.enrolledStudents = 0,
+    this.averageCompletion = 0.0,
+    this.averageScore = 0.0,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isActive => status == CourseStatus.active;
+
+  Map<String, dynamic> toMap() => {
+    'courseId': courseId,
+    'partnershipId': partnershipId,
+    'courseName': courseName,
+    'description': description,
+    'topicIds': topicIds,
+    'questionIds': questionIds,
+    'totalLessons': totalLessons,
+    'estimatedHours': estimatedHours,
+    'status': status.toString().split('.').last,
+    'instructorId': instructorId,
+    'accessLevel': accessLevel.toString().split('.').last,
+    'enrolledStudents': enrolledStudents,
+    'averageCompletion': averageCompletion,
+    'averageScore': averageScore,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory Course.fromMap(Map<String, dynamic> map) =>
+    Course(
+      courseId: map['courseId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      courseName: map['courseName'] ?? '',
+      description: map['description'] ?? '',
+      topicIds: List<String>.from(map['topicIds'] ?? []),
+      questionIds: List<String>.from(map['questionIds'] ?? []),
+      totalLessons: map['totalLessons'] ?? 0,
+      estimatedHours: map['estimatedHours'] ?? 0,
+      status: _parseCourseStatus(map['status'] ?? ''),
+      instructorId: map['instructorId'] ?? '',
+      accessLevel: _parseContentAccessLevel(map['accessLevel'] ?? ''),
+      enrolledStudents: map['enrolledStudents'] ?? 0,
+      averageCompletion: (map['averageCompletion'] ?? 0.0).toDouble(),
+      averageScore: (map['averageScore'] ?? 0.0).toDouble(),
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+    );
+}
+
+class Curriculum {
+  final String curriculumId;
+  final String partnershipId;
+  final String curriculumName;
+  final String description;
+  final CurriculumType type;
+  final List<String> courseIds;
+  final int totalHours;
+  final int targetLevel;
+  final String? targetExamType;
+  final ContentStatus status;
+  final int enrolledStudents;
+  final double completionRate;
+  final double passProbability;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Curriculum({
+    required this.curriculumId,
+    required this.partnershipId,
+    required this.curriculumName,
+    required this.description,
+    required this.type,
+    required this.courseIds,
+    required this.totalHours,
+    required this.targetLevel,
+    this.targetExamType,
+    required this.status,
+    this.enrolledStudents = 0,
+    this.completionRate = 0.0,
+    this.passProbability = 0.0,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isPublished => status == ContentStatus.published;
+
+  Map<String, dynamic> toMap() => {
+    'curriculumId': curriculumId,
+    'partnershipId': partnershipId,
+    'curriculumName': curriculumName,
+    'description': description,
+    'type': type.toString().split('.').last,
+    'courseIds': courseIds,
+    'totalHours': totalHours,
+    'targetLevel': targetLevel,
+    'targetExamType': targetExamType,
+    'status': status.toString().split('.').last,
+    'enrolledStudents': enrolledStudents,
+    'completionRate': completionRate,
+    'passProbability': passProbability,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory Curriculum.fromMap(Map<String, dynamic> map) =>
+    Curriculum(
+      curriculumId: map['curriculumId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      curriculumName: map['curriculumName'] ?? '',
+      description: map['description'] ?? '',
+      type: _parseCurriculumType(map['type'] ?? ''),
+      courseIds: List<String>.from(map['courseIds'] ?? []),
+      totalHours: map['totalHours'] ?? 0,
+      targetLevel: map['targetLevel'] ?? 1,
+      targetExamType: map['targetExamType'],
+      status: _parseContentStatus(map['status'] ?? ''),
+      enrolledStudents: map['enrolledStudents'] ?? 0,
+      completionRate: (map['completionRate'] ?? 0.0).toDouble(),
+      passProbability: (map['passProbability'] ?? 0.0).toDouble(),
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+    );
+}
+
+class CourseEnrollment {
+  final String enrollmentId;
+  final String courseId;
+  final String studentId;
+  final String partnershipId;
+  final DateTime enrolledAt;
+  final DateTime? completedAt;
+  final double completionPercentage;
+  final double currentScore;
+  final int lessonsCompleted;
+  final DateTime? lastAccessedAt;
+
+  CourseEnrollment({
+    required this.enrollmentId,
+    required this.courseId,
+    required this.studentId,
+    required this.partnershipId,
+    required this.enrolledAt,
+    this.completedAt,
+    required this.completionPercentage,
+    required this.currentScore,
+    required this.lessonsCompleted,
+    this.lastAccessedAt,
+  });
+
+  bool get isCompleted => completedAt != null;
+  bool get isInProgress => !isCompleted && completionPercentage > 0;
+
+  Map<String, dynamic> toMap() => {
+    'enrollmentId': enrollmentId,
+    'courseId': courseId,
+    'studentId': studentId,
+    'partnershipId': partnershipId,
+    'enrolledAt': enrolledAt.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+    'completionPercentage': completionPercentage,
+    'currentScore': currentScore,
+    'lessonsCompleted': lessonsCompleted,
+    'lastAccessedAt': lastAccessedAt?.toIso8601String(),
+  };
+
+  factory CourseEnrollment.fromMap(Map<String, dynamic> map) =>
+    CourseEnrollment(
+      enrollmentId: map['enrollmentId'] ?? '',
+      courseId: map['courseId'] ?? '',
+      studentId: map['studentId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      enrolledAt: DateTime.parse(map['enrolledAt'] ?? DateTime.now().toIso8601String()),
+      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt']) : null,
+      completionPercentage: (map['completionPercentage'] ?? 0.0).toDouble(),
+      currentScore: (map['currentScore'] ?? 0.0).toDouble(),
+      lessonsCompleted: map['lessonsCompleted'] ?? 0,
+      lastAccessedAt: map['lastAccessedAt'] != null ? DateTime.parse(map['lastAccessedAt']) : null,
+    );
+}
+
+class CurriculumProgress {
+  final String progressId;
+  final String curriculumId;
+  final String studentId;
+  final String partnershipId;
+  final int currentCourseIndex;
+  final List<String> completedCourseIds;
+  final double overallProgress;
+  final double currentScore;
+  final int hoursSpent;
+  final DateTime startedAt;
+  final DateTime? completedAt;
+
+  CurriculumProgress({
+    required this.progressId,
+    required this.curriculumId,
+    required this.studentId,
+    required this.partnershipId,
+    required this.currentCourseIndex,
+    required this.completedCourseIds,
+    required this.overallProgress,
+    required this.currentScore,
+    required this.hoursSpent,
+    required this.startedAt,
+    this.completedAt,
+  });
+
+  bool get isCompleted => completedAt != null;
+
+  Map<String, dynamic> toMap() => {
+    'progressId': progressId,
+    'curriculumId': curriculumId,
+    'studentId': studentId,
+    'partnershipId': partnershipId,
+    'currentCourseIndex': currentCourseIndex,
+    'completedCourseIds': completedCourseIds,
+    'overallProgress': overallProgress,
+    'currentScore': currentScore,
+    'hoursSpent': hoursSpent,
+    'startedAt': startedAt.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+  };
+
+  factory CurriculumProgress.fromMap(Map<String, dynamic> map) =>
+    CurriculumProgress(
+      progressId: map['progressId'] ?? '',
+      curriculumId: map['curriculumId'] ?? '',
+      studentId: map['studentId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      currentCourseIndex: map['currentCourseIndex'] ?? 0,
+      completedCourseIds: List<String>.from(map['completedCourseIds'] ?? []),
+      overallProgress: (map['overallProgress'] ?? 0.0).toDouble(),
+      currentScore: (map['currentScore'] ?? 0.0).toDouble(),
+      hoursSpent: map['hoursSpent'] ?? 0,
+      startedAt: DateTime.parse(map['startedAt'] ?? DateTime.now().toIso8601String()),
+      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt']) : null,
+    );
+}
+
 // ============ Admin Dashboard Models ============
 
 class CategoryPerformanceChart {
@@ -5680,5 +6119,65 @@ ReportType _parseReportType(String value) {
     );
   } catch (e) {
     return ReportType.performance;
+  }
+}
+
+ContentStatus _parseContentStatus(String value) {
+  try {
+    return ContentStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ContentStatus.draft;
+  }
+}
+
+ContentAccessLevel _parseContentAccessLevel(String value) {
+  try {
+    return ContentAccessLevel.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ContentAccessLevel.public;
+  }
+}
+
+CourseStatus _parseCourseStatus(String value) {
+  try {
+    return CourseStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return CourseStatus.draft;
+  }
+}
+
+CurriculumType _parseCurriculumType(String value) {
+  try {
+    return CurriculumType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return CurriculumType.standardCurriculum;
+  }
+}
+
+QuestionType _parseQuestionType(String value) {
+  try {
+    return QuestionType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return QuestionType.multipleChoice;
+  }
+}
+
+QuestionDifficulty _parseQuestionDifficulty(String value) {
+  try {
+    return QuestionDifficulty.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return QuestionDifficulty.intermediate;
   }
 }
