@@ -83,6 +83,27 @@ enum CourseStatus { draft, active, archived, completed }
 
 enum CurriculumType { standardCurriculum, customCurriculum, accelerated }
 
+// Phase 13: Student Performance Notifications and Alerts
+enum NotificationChannelType { inApp, email, sms, push }
+
+enum NotificationTriggerType {
+  milestoneReached,
+  performanceAlert,
+  streakAchieved,
+  readinessUpdate,
+  badgeEarned,
+  atRiskAlert,
+  completionMilestone,
+  categoryMastery,
+  topPerformerStatus,
+  streakEndedWarning,
+  customAlert
+}
+
+enum AlertSeverity { info, warning, urgent, critical }
+
+enum NotificationStatus { pending, sent, delivered, read, failed, archived }
+
 enum BadgeType {
   // Milestone badges
   firstQuestion,
@@ -6040,6 +6061,444 @@ class CustomReport {
     );
 }
 
+// ============ Phase 13: Student Performance Notifications ============
+
+class NotificationPreferences {
+  final String userId;
+  final Map<NotificationChannelType, bool> enabledChannels;
+  final Map<NotificationTriggerType, bool> enabledTriggers;
+  final Map<NotificationChannelType, List<String>> channelAddresses;
+  final bool quietHoursEnabled;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
+  final bool digestNotifications;
+  final String digestFrequency;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  NotificationPreferences({
+    required this.userId,
+    Map<NotificationChannelType, bool>? enabledChannels,
+    Map<NotificationTriggerType, bool>? enabledTriggers,
+    Map<NotificationChannelType, List<String>>? channelAddresses,
+    this.quietHoursEnabled = false,
+    this.quietHoursStart,
+    this.quietHoursEnd,
+    this.digestNotifications = false,
+    this.digestFrequency = 'daily',
+    required this.createdAt,
+    required this.updatedAt,
+  })
+      : enabledChannels = enabledChannels ?? {
+          NotificationChannelType.inApp: true,
+          NotificationChannelType.email: true,
+          NotificationChannelType.sms: false,
+          NotificationChannelType.push: true,
+        },
+        enabledTriggers = enabledTriggers ?? {
+          NotificationTriggerType.milestoneReached: true,
+          NotificationTriggerType.performanceAlert: true,
+          NotificationTriggerType.streakAchieved: true,
+          NotificationTriggerType.badgeEarned: true,
+          NotificationTriggerType.atRiskAlert: true,
+          NotificationTriggerType.readinessUpdate: true,
+          NotificationTriggerType.completionMilestone: true,
+          NotificationTriggerType.categoryMastery: true,
+          NotificationTriggerType.topPerformerStatus: true,
+          NotificationTriggerType.streakEndedWarning: true,
+          NotificationTriggerType.customAlert: true,
+        },
+        channelAddresses = channelAddresses ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'userId': userId,
+    'enabledChannels': enabledChannels.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'enabledTriggers': enabledTriggers.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'channelAddresses': channelAddresses.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'quietHoursEnabled': quietHoursEnabled,
+    'quietHoursStart': quietHoursStart,
+    'quietHoursEnd': quietHoursEnd,
+    'digestNotifications': digestNotifications,
+    'digestFrequency': digestFrequency,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory NotificationPreferences.fromMap(Map<String, dynamic> map) {
+    final enabledChannelsMap = (map['enabledChannels'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(_parseNotificationChannelType(k), v as bool),
+    ) ?? {};
+
+    final enabledTriggersMap = (map['enabledTriggers'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(_parseNotificationTriggerType(k), v as bool),
+    ) ?? {};
+
+    final channelAddressesMap = (map['channelAddresses'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(
+        _parseNotificationChannelType(k),
+        List<String>.from(v as List<dynamic>? ?? []),
+      ),
+    ) ?? {};
+
+    return NotificationPreferences(
+      userId: map['userId'] ?? '',
+      enabledChannels: enabledChannelsMap,
+      enabledTriggers: enabledTriggersMap,
+      channelAddresses: channelAddressesMap,
+      quietHoursEnabled: map['quietHoursEnabled'] ?? false,
+      quietHoursStart: map['quietHoursStart'],
+      quietHoursEnd: map['quietHoursEnd'],
+      digestNotifications: map['digestNotifications'] ?? false,
+      digestFrequency: map['digestFrequency'] ?? 'daily',
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+}
+
+class StudentNotification {
+  final String notificationId;
+  final String userId;
+  final String title;
+  final String message;
+  final NotificationTriggerType triggerType;
+  final List<NotificationChannelType> channels;
+  final AlertSeverity severity;
+  final Map<String, dynamic> metadata;
+  final DateTime createdAt;
+  final DateTime? sentAt;
+  final DateTime? readAt;
+  final NotificationStatus status;
+  final String? actionUrl;
+  final bool archived;
+
+  StudentNotification({
+    required this.notificationId,
+    required this.userId,
+    required this.title,
+    required this.message,
+    required this.triggerType,
+    required this.channels,
+    this.severity = AlertSeverity.info,
+    Map<String, dynamic>? metadata,
+    required this.createdAt,
+    this.sentAt,
+    this.readAt,
+    this.status = NotificationStatus.pending,
+    this.actionUrl,
+    this.archived = false,
+  }) : metadata = metadata ?? {};
+
+  bool get isRead => readAt != null;
+
+  Duration? get timeSinceSent => sentAt != null ? DateTime.now().difference(sentAt!) : null;
+
+  Map<String, dynamic> toMap() => {
+    'notificationId': notificationId,
+    'userId': userId,
+    'title': title,
+    'message': message,
+    'triggerType': triggerType.toString().split('.').last,
+    'channels': channels.map((c) => c.toString().split('.').last).toList(),
+    'severity': severity.toString().split('.').last,
+    'metadata': metadata,
+    'createdAt': createdAt.toIso8601String(),
+    'sentAt': sentAt?.toIso8601String(),
+    'readAt': readAt?.toIso8601String(),
+    'status': status.toString().split('.').last,
+    'actionUrl': actionUrl,
+    'archived': archived,
+  };
+
+  factory StudentNotification.fromMap(Map<String, dynamic> map) => StudentNotification(
+    notificationId: map['notificationId'] ?? '',
+    userId: map['userId'] ?? '',
+    title: map['title'] ?? '',
+    message: map['message'] ?? '',
+    triggerType: _parseNotificationTriggerType(map['triggerType'] ?? ''),
+    channels: (map['channels'] as List<dynamic>? ?? [])
+        .map((c) => _parseNotificationChannelType(c as String))
+        .toList(),
+    severity: _parseAlertSeverity(map['severity'] ?? ''),
+    metadata: map['metadata'] ?? {},
+    createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+    sentAt: map['sentAt'] != null ? DateTime.parse(map['sentAt']) : null,
+    readAt: map['readAt'] != null ? DateTime.parse(map['readAt']) : null,
+    status: _parseNotificationStatus(map['status'] ?? ''),
+    actionUrl: map['actionUrl'],
+    archived: map['archived'] ?? false,
+  );
+}
+
+class PerformanceAlert {
+  final String alertId;
+  final String userId;
+  final String studentName;
+  final AlertSeverity severity;
+  final String category;
+  final double previousScore;
+  final double currentScore;
+  final double changePercent;
+  final String alertReason;
+  final List<String> suggestedActions;
+  final DateTime detectedAt;
+  final DateTime? resolvedAt;
+  final bool isActive;
+  final Map<String, dynamic> contextData;
+
+  PerformanceAlert({
+    required this.alertId,
+    required this.userId,
+    required this.studentName,
+    required this.severity,
+    required this.category,
+    required this.previousScore,
+    required this.currentScore,
+    required this.changePercent,
+    required this.alertReason,
+    required this.suggestedActions,
+    required this.detectedAt,
+    this.resolvedAt,
+    this.isActive = true,
+    Map<String, dynamic>? contextData,
+  }) : contextData = contextData ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'alertId': alertId,
+    'userId': userId,
+    'studentName': studentName,
+    'severity': severity.toString().split('.').last,
+    'category': category,
+    'previousScore': previousScore,
+    'currentScore': currentScore,
+    'changePercent': changePercent,
+    'alertReason': alertReason,
+    'suggestedActions': suggestedActions,
+    'detectedAt': detectedAt.toIso8601String(),
+    'resolvedAt': resolvedAt?.toIso8601String(),
+    'isActive': isActive,
+    'contextData': contextData,
+  };
+
+  factory PerformanceAlert.fromMap(Map<String, dynamic> map) => PerformanceAlert(
+    alertId: map['alertId'] ?? '',
+    userId: map['userId'] ?? '',
+    studentName: map['studentName'] ?? '',
+    severity: _parseAlertSeverity(map['severity'] ?? ''),
+    category: map['category'] ?? '',
+    previousScore: (map['previousScore'] ?? 0.0).toDouble(),
+    currentScore: (map['currentScore'] ?? 0.0).toDouble(),
+    changePercent: (map['changePercent'] ?? 0.0).toDouble(),
+    alertReason: map['alertReason'] ?? '',
+    suggestedActions: List<String>.from(map['suggestedActions'] ?? []),
+    detectedAt: DateTime.parse(map['detectedAt'] ?? DateTime.now().toIso8601String()),
+    resolvedAt: map['resolvedAt'] != null ? DateTime.parse(map['resolvedAt']) : null,
+    isActive: map['isActive'] ?? true,
+    contextData: map['contextData'] ?? {},
+  );
+}
+
+class MilestoneNotification {
+  final String milestoneId;
+  final String userId;
+  final String milestoneName;
+  final String description;
+  final String milestoneType;
+  final int questionsCompleted;
+  final double accuracyRate;
+  final int streakDays;
+  final DateTime achievedAt;
+  final String rewardType;
+  final int rewardValue;
+  final Map<String, dynamic> badgeInfo;
+
+  MilestoneNotification({
+    required this.milestoneId,
+    required this.userId,
+    required this.milestoneName,
+    required this.description,
+    required this.milestoneType,
+    required this.questionsCompleted,
+    required this.accuracyRate,
+    required this.streakDays,
+    required this.achievedAt,
+    required this.rewardType,
+    required this.rewardValue,
+    Map<String, dynamic>? badgeInfo,
+  }) : badgeInfo = badgeInfo ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'milestoneId': milestoneId,
+    'userId': userId,
+    'milestoneName': milestoneName,
+    'description': description,
+    'milestoneType': milestoneType,
+    'questionsCompleted': questionsCompleted,
+    'accuracyRate': accuracyRate,
+    'streakDays': streakDays,
+    'achievedAt': achievedAt.toIso8601String(),
+    'rewardType': rewardType,
+    'rewardValue': rewardValue,
+    'badgeInfo': badgeInfo,
+  };
+
+  factory MilestoneNotification.fromMap(Map<String, dynamic> map) =>
+    MilestoneNotification(
+      milestoneId: map['milestoneId'] ?? '',
+      userId: map['userId'] ?? '',
+      milestoneName: map['milestoneName'] ?? '',
+      description: map['description'] ?? '',
+      milestoneType: map['milestoneType'] ?? '',
+      questionsCompleted: map['questionsCompleted'] ?? 0,
+      accuracyRate: (map['accuracyRate'] ?? 0.0).toDouble(),
+      streakDays: map['streakDays'] ?? 0,
+      achievedAt: DateTime.parse(map['achievedAt'] ?? DateTime.now().toIso8601String()),
+      rewardType: map['rewardType'] ?? '',
+      rewardValue: map['rewardValue'] ?? 0,
+      badgeInfo: map['badgeInfo'] ?? {},
+    );
+}
+
+class NotificationTemplate {
+  final String templateId;
+  final String templateName;
+  final NotificationTriggerType triggerType;
+  final String titleTemplate;
+  final String messageTemplate;
+  final AlertSeverity defaultSeverity;
+  final List<NotificationChannelType> defaultChannels;
+  final Map<String, String> variables;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  NotificationTemplate({
+    required this.templateId,
+    required this.templateName,
+    required this.triggerType,
+    required this.titleTemplate,
+    required this.messageTemplate,
+    this.defaultSeverity = AlertSeverity.info,
+    List<NotificationChannelType>? defaultChannels,
+    Map<String, String>? variables,
+    this.isActive = true,
+    required this.createdAt,
+    this.updatedAt,
+  })
+      : defaultChannels = defaultChannels ?? [NotificationChannelType.inApp, NotificationChannelType.push],
+        variables = variables ?? {};
+
+  String renderTitle(Map<String, String> values) {
+    String rendered = titleTemplate;
+    values.forEach((key, value) {
+      rendered = rendered.replaceAll('{{$key}}', value);
+    });
+    return rendered;
+  }
+
+  String renderMessage(Map<String, String> values) {
+    String rendered = messageTemplate;
+    values.forEach((key, value) {
+      rendered = rendered.replaceAll('{{$key}}', value);
+    });
+    return rendered;
+  }
+
+  Map<String, dynamic> toMap() => {
+    'templateId': templateId,
+    'templateName': templateName,
+    'triggerType': triggerType.toString().split('.').last,
+    'titleTemplate': titleTemplate,
+    'messageTemplate': messageTemplate,
+    'defaultSeverity': defaultSeverity.toString().split('.').last,
+    'defaultChannels': defaultChannels.map((c) => c.toString().split('.').last).toList(),
+    'variables': variables,
+    'isActive': isActive,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+  };
+
+  factory NotificationTemplate.fromMap(Map<String, dynamic> map) => NotificationTemplate(
+    templateId: map['templateId'] ?? '',
+    templateName: map['templateName'] ?? '',
+    triggerType: _parseNotificationTriggerType(map['triggerType'] ?? ''),
+    titleTemplate: map['titleTemplate'] ?? '',
+    messageTemplate: map['messageTemplate'] ?? '',
+    defaultSeverity: _parseAlertSeverity(map['defaultSeverity'] ?? ''),
+    defaultChannels: (map['defaultChannels'] as List<dynamic>? ?? [])
+        .map((c) => _parseNotificationChannelType(c as String))
+        .toList(),
+    variables: Map<String, String>.from(map['variables'] ?? {}),
+    isActive: map['isActive'] ?? true,
+    createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+    updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
+  );
+}
+
+class StudentAlertHistory {
+  final String historyId;
+  final String userId;
+  final List<PerformanceAlert> alerts;
+  final int totalAlertsGenerated;
+  final int unresolvedCount;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final Map<AlertSeverity, int> alertCounts;
+  final Map<String, int> alertByCategory;
+
+  StudentAlertHistory({
+    required this.historyId,
+    required this.userId,
+    List<PerformanceAlert>? alerts,
+    this.totalAlertsGenerated = 0,
+    this.unresolvedCount = 0,
+    required this.periodStart,
+    required this.periodEnd,
+    Map<AlertSeverity, int>? alertCounts,
+    Map<String, int>? alertByCategory,
+  })
+      : alerts = alerts ?? [],
+        alertCounts = alertCounts ?? {},
+        alertByCategory = alertByCategory ?? {};
+
+  double get resolutionRate =>
+      totalAlertsGenerated > 0
+          ? ((totalAlertsGenerated - unresolvedCount) / totalAlertsGenerated) * 100
+          : 0.0;
+
+  Map<String, dynamic> toMap() => {
+    'historyId': historyId,
+    'userId': userId,
+    'alerts': alerts.map((a) => a.toMap()).toList(),
+    'totalAlertsGenerated': totalAlertsGenerated,
+    'unresolvedCount': unresolvedCount,
+    'periodStart': periodStart.toIso8601String(),
+    'periodEnd': periodEnd.toIso8601String(),
+    'alertCounts': alertCounts.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'alertByCategory': alertByCategory,
+  };
+
+  factory StudentAlertHistory.fromMap(Map<String, dynamic> map) {
+    final alertCountsMap = (map['alertCounts'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(_parseAlertSeverity(k), v as int),
+    ) ?? {};
+
+    return StudentAlertHistory(
+      historyId: map['historyId'] ?? '',
+      userId: map['userId'] ?? '',
+      alerts: (map['alerts'] as List<dynamic>? ?? [])
+          .map((a) => PerformanceAlert.fromMap(a as Map<String, dynamic>))
+          .toList(),
+      totalAlertsGenerated: map['totalAlertsGenerated'] ?? 0,
+      unresolvedCount: map['unresolvedCount'] ?? 0,
+      periodStart: DateTime.parse(map['periodStart'] ?? DateTime.now().toIso8601String()),
+      periodEnd: DateTime.parse(map['periodEnd'] ?? DateTime.now().toIso8601String()),
+      alertCounts: alertCountsMap,
+      alertByCategory: Map<String, int>.from(map['alertByCategory'] ?? {}),
+    );
+  }
+}
+
 // ============ Helper functions ============
 
 BadgeType _parseBadgeType(String value) {
@@ -6179,5 +6638,45 @@ QuestionDifficulty _parseQuestionDifficulty(String value) {
     );
   } catch (e) {
     return QuestionDifficulty.intermediate;
+  }
+}
+
+NotificationChannelType _parseNotificationChannelType(String value) {
+  try {
+    return NotificationChannelType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return NotificationChannelType.inApp;
+  }
+}
+
+NotificationTriggerType _parseNotificationTriggerType(String value) {
+  try {
+    return NotificationTriggerType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return NotificationTriggerType.customAlert;
+  }
+}
+
+AlertSeverity _parseAlertSeverity(String value) {
+  try {
+    return AlertSeverity.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return AlertSeverity.info;
+  }
+}
+
+NotificationStatus _parseNotificationStatus(String value) {
+  try {
+    return NotificationStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return NotificationStatus.pending;
   }
 }

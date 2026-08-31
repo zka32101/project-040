@@ -1687,6 +1687,153 @@ abstract class CommunityService {
 
   /// カリキュラム完了率を取得
   Future<double> getCurriculumCompletionRate(String curriculumId);
+
+  // ============ Phase 13: Student Performance Notifications ============
+
+  /// ユーザーの通知設定を作成
+  Future<void> createNotificationPreferences({
+    required String userId,
+    required Map<NotificationChannelType, bool> enabledChannels,
+    required Map<NotificationChannelType, List<String>> channelAddresses,
+  });
+
+  /// ユーザーの通知設定を更新
+  Future<void> updateNotificationPreferences({
+    required String userId,
+    Map<NotificationChannelType, bool>? enabledChannels,
+    Map<NotificationChannelType, List<String>>? channelAddresses,
+    bool? quietHoursEnabled,
+    String? quietHoursStart,
+    String? quietHoursEnd,
+    bool? digestNotifications,
+    String? digestFrequency,
+  });
+
+  /// ユーザーの通知設定を取得
+  Future<NotificationPreferences?> getNotificationPreferences(String userId);
+
+  /// 学生に通知を送信
+  Future<String> sendStudentNotification({
+    required String userId,
+    required String title,
+    required String message,
+    required NotificationTriggerType triggerType,
+    required List<NotificationChannelType> channels,
+    AlertSeverity severity,
+    String? actionUrl,
+    Map<String, dynamic>? metadata,
+  });
+
+  /// 学生の通知を取得
+  Future<List<StudentNotification>> getStudentNotifications({
+    required String userId,
+    int limit,
+    bool unreadOnly,
+  });
+
+  /// 通知を既読にマーク
+  Future<void> markNotificationAsRead(String notificationId);
+
+  /// 通知をアーカイブ
+  Future<void> archiveNotification(String notificationId);
+
+  /// パフォーマンスアラートを作成
+  Future<String> createPerformanceAlert({
+    required String userId,
+    required String studentName,
+    required String category,
+    required double previousScore,
+    required double currentScore,
+    required String alertReason,
+    required List<String> suggestedActions,
+    AlertSeverity severity,
+    Map<String, dynamic>? contextData,
+  });
+
+  /// 学生のパフォーマンスアラートを取得
+  Future<List<PerformanceAlert>> getStudentPerformanceAlerts({
+    required String userId,
+    bool activeOnly,
+  });
+
+  /// パフォーマンスアラートを解決
+  Future<void> resolvePerformanceAlert(String alertId);
+
+  /// マイルストーン通知を作成
+  Future<String> createMilestoneNotification({
+    required String userId,
+    required String milestoneName,
+    required String description,
+    required String milestoneType,
+    required int questionsCompleted,
+    required double accuracyRate,
+    required int streakDays,
+    required String rewardType,
+    required int rewardValue,
+    Map<String, dynamic>? badgeInfo,
+  });
+
+  /// ユーザーのマイルストーン通知を取得
+  Future<List<MilestoneNotification>> getUserMilestones(String userId);
+
+  /// 通知テンプレートを作成
+  Future<String> createNotificationTemplate({
+    required String templateName,
+    required NotificationTriggerType triggerType,
+    required String titleTemplate,
+    required String messageTemplate,
+    AlertSeverity defaultSeverity,
+    List<NotificationChannelType>? defaultChannels,
+    Map<String, String>? variables,
+  });
+
+  /// 通知テンプレートを取得
+  Future<NotificationTemplate?> getNotificationTemplate(String templateId);
+
+  /// 通知テンプレートを更新
+  Future<void> updateNotificationTemplate({
+    required String templateId,
+    String? titleTemplate,
+    String? messageTemplate,
+    AlertSeverity? defaultSeverity,
+    bool? isActive,
+  });
+
+  /// トリガータイプのテンプレートを取得
+  Future<NotificationTemplate?> getTemplateByTrigger(NotificationTriggerType triggerType);
+
+  /// 学生のアラート履歴を取得
+  Future<StudentAlertHistory?> getStudentAlertHistory({
+    required String userId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  });
+
+  /// カテゴリ別のアラート統計を取得
+  Future<Map<String, int>> getAlertStatsByCategory(String userId);
+
+  /// 重大度別のアラート統計を取得
+  Future<Map<String, int>> getAlertStatsBySeverity(String userId);
+
+  /// 未読通知の数を取得
+  Future<int> getUnreadNotificationCount(String userId);
+
+  /// 通知エンゲージメントを追跡
+  Future<void> trackNotificationEngagement({
+    required String notificationId,
+    required bool wasRead,
+    required bool wasActioned,
+    String? actionType,
+  });
+
+  /// バッチ通知送信
+  Future<List<String>> sendBatchNotifications({
+    required List<String> userIds,
+    required String title,
+    required String message,
+    required NotificationTriggerType triggerType,
+    required AlertSeverity severity,
+  });
 }
 
 /// Firebase implementation of community service
@@ -11714,6 +11861,449 @@ class StubCommunityService implements CommunityService {
 
     final totalProgress = progress.fold<double>(0, (sum, p) => sum + p.overallProgress);
     return totalProgress / progress.length;
+  }
+
+  // ============ Phase 13: Student Performance Notifications ============
+
+  final Map<String, NotificationPreferences> _notificationPreferences = {};
+  final Map<String, StudentNotification> _studentNotifications = {};
+  final Map<String, PerformanceAlert> _performanceAlerts = {};
+  final Map<String, MilestoneNotification> _milestoneNotifications = {};
+  final Map<String, NotificationTemplate> _notificationTemplates = {};
+  final Map<String, StudentAlertHistory> _alertHistories = {};
+  final Map<String, Map<String, bool>> _notificationEngagement = {};
+
+  @override
+  Future<void> createNotificationPreferences({
+    required String userId,
+    required Map<NotificationChannelType, bool> enabledChannels,
+    required Map<NotificationChannelType, List<String>> channelAddresses,
+  }) async {
+    final prefs = NotificationPreferences(
+      userId: userId,
+      enabledChannels: enabledChannels,
+      channelAddresses: channelAddresses,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    _notificationPreferences[userId] = prefs;
+  }
+
+  @override
+  Future<void> updateNotificationPreferences({
+    required String userId,
+    Map<NotificationChannelType, bool>? enabledChannels,
+    Map<NotificationChannelType, List<String>>? channelAddresses,
+    bool? quietHoursEnabled,
+    String? quietHoursStart,
+    String? quietHoursEnd,
+    bool? digestNotifications,
+    String? digestFrequency,
+  }) async {
+    final existing = _notificationPreferences[userId];
+    if (existing == null) return;
+
+    final updated = NotificationPreferences(
+      userId: userId,
+      enabledChannels: enabledChannels ?? existing.enabledChannels,
+      channelAddresses: channelAddresses ?? existing.channelAddresses,
+      quietHoursEnabled: quietHoursEnabled ?? existing.quietHoursEnabled,
+      quietHoursStart: quietHoursStart ?? existing.quietHoursStart,
+      quietHoursEnd: quietHoursEnd ?? existing.quietHoursEnd,
+      digestNotifications: digestNotifications ?? existing.digestNotifications,
+      digestFrequency: digestFrequency ?? existing.digestFrequency,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    _notificationPreferences[userId] = updated;
+  }
+
+  @override
+  Future<NotificationPreferences?> getNotificationPreferences(String userId) async {
+    return _notificationPreferences[userId];
+  }
+
+  @override
+  Future<String> sendStudentNotification({
+    required String userId,
+    required String title,
+    required String message,
+    required NotificationTriggerType triggerType,
+    required List<NotificationChannelType> channels,
+    AlertSeverity severity = AlertSeverity.info,
+    String? actionUrl,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final id = 'notif_${DateTime.now().millisecondsSinceEpoch}';
+    final notification = StudentNotification(
+      notificationId: id,
+      userId: userId,
+      title: title,
+      message: message,
+      triggerType: triggerType,
+      channels: channels,
+      severity: severity,
+      metadata: metadata,
+      createdAt: DateTime.now(),
+      sentAt: DateTime.now(),
+      status: NotificationStatus.sent,
+      actionUrl: actionUrl,
+    );
+    _studentNotifications[id] = notification;
+    return id;
+  }
+
+  @override
+  Future<List<StudentNotification>> getStudentNotifications({
+    required String userId,
+    int limit = 50,
+    bool unreadOnly = false,
+  }) async {
+    var notifications = _studentNotifications.values
+        .where((n) => n.userId == userId && !n.archived)
+        .toList();
+
+    if (unreadOnly) {
+      notifications = notifications.where((n) => !n.isRead).toList();
+    }
+
+    notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return notifications.take(limit).toList();
+  }
+
+  @override
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final notif = _studentNotifications[notificationId];
+    if (notif != null) {
+      _studentNotifications[notificationId] = StudentNotification(
+        notificationId: notif.notificationId,
+        userId: notif.userId,
+        title: notif.title,
+        message: notif.message,
+        triggerType: notif.triggerType,
+        channels: notif.channels,
+        severity: notif.severity,
+        metadata: notif.metadata,
+        createdAt: notif.createdAt,
+        sentAt: notif.sentAt,
+        readAt: DateTime.now(),
+        status: NotificationStatus.read,
+        actionUrl: notif.actionUrl,
+        archived: notif.archived,
+      );
+    }
+  }
+
+  @override
+  Future<void> archiveNotification(String notificationId) async {
+    final notif = _studentNotifications[notificationId];
+    if (notif != null) {
+      _studentNotifications[notificationId] = StudentNotification(
+        notificationId: notif.notificationId,
+        userId: notif.userId,
+        title: notif.title,
+        message: notif.message,
+        triggerType: notif.triggerType,
+        channels: notif.channels,
+        severity: notif.severity,
+        metadata: notif.metadata,
+        createdAt: notif.createdAt,
+        sentAt: notif.sentAt,
+        readAt: notif.readAt,
+        status: notif.status,
+        actionUrl: notif.actionUrl,
+        archived: true,
+      );
+    }
+  }
+
+  @override
+  Future<String> createPerformanceAlert({
+    required String userId,
+    required String studentName,
+    required String category,
+    required double previousScore,
+    required double currentScore,
+    required String alertReason,
+    required List<String> suggestedActions,
+    AlertSeverity severity = AlertSeverity.warning,
+    Map<String, dynamic>? contextData,
+  }) async {
+    final id = 'alert_${DateTime.now().millisecondsSinceEpoch}';
+    final changePercent = previousScore > 0 ? ((currentScore - previousScore) / previousScore) * 100 : 0;
+
+    final alert = PerformanceAlert(
+      alertId: id,
+      userId: userId,
+      studentName: studentName,
+      severity: severity,
+      category: category,
+      previousScore: previousScore,
+      currentScore: currentScore,
+      changePercent: changePercent,
+      alertReason: alertReason,
+      suggestedActions: suggestedActions,
+      detectedAt: DateTime.now(),
+      contextData: contextData,
+    );
+    _performanceAlerts[id] = alert;
+    return id;
+  }
+
+  @override
+  Future<List<PerformanceAlert>> getStudentPerformanceAlerts({
+    required String userId,
+    bool activeOnly = true,
+  }) async {
+    var alerts = _performanceAlerts.values
+        .where((a) => a.userId == userId)
+        .toList();
+
+    if (activeOnly) {
+      alerts = alerts.where((a) => a.isActive).toList();
+    }
+
+    alerts.sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+    return alerts;
+  }
+
+  @override
+  Future<void> resolvePerformanceAlert(String alertId) async {
+    final alert = _performanceAlerts[alertId];
+    if (alert != null) {
+      _performanceAlerts[alertId] = PerformanceAlert(
+        alertId: alert.alertId,
+        userId: alert.userId,
+        studentName: alert.studentName,
+        severity: alert.severity,
+        category: alert.category,
+        previousScore: alert.previousScore,
+        currentScore: alert.currentScore,
+        changePercent: alert.changePercent,
+        alertReason: alert.alertReason,
+        suggestedActions: alert.suggestedActions,
+        detectedAt: alert.detectedAt,
+        resolvedAt: DateTime.now(),
+        isActive: false,
+        contextData: alert.contextData,
+      );
+    }
+  }
+
+  @override
+  Future<String> createMilestoneNotification({
+    required String userId,
+    required String milestoneName,
+    required String description,
+    required String milestoneType,
+    required int questionsCompleted,
+    required double accuracyRate,
+    required int streakDays,
+    required String rewardType,
+    required int rewardValue,
+    Map<String, dynamic>? badgeInfo,
+  }) async {
+    final id = 'milestone_${DateTime.now().millisecondsSinceEpoch}';
+    final notification = MilestoneNotification(
+      milestoneId: id,
+      userId: userId,
+      milestoneName: milestoneName,
+      description: description,
+      milestoneType: milestoneType,
+      questionsCompleted: questionsCompleted,
+      accuracyRate: accuracyRate,
+      streakDays: streakDays,
+      achievedAt: DateTime.now(),
+      rewardType: rewardType,
+      rewardValue: rewardValue,
+      badgeInfo: badgeInfo,
+    );
+    _milestoneNotifications[id] = notification;
+    return id;
+  }
+
+  @override
+  Future<List<MilestoneNotification>> getUserMilestones(String userId) async {
+    final milestones = _milestoneNotifications.values
+        .where((m) => m.userId == userId)
+        .toList();
+    milestones.sort((a, b) => b.achievedAt.compareTo(a.achievedAt));
+    return milestones;
+  }
+
+  @override
+  Future<String> createNotificationTemplate({
+    required String templateName,
+    required NotificationTriggerType triggerType,
+    required String titleTemplate,
+    required String messageTemplate,
+    AlertSeverity defaultSeverity = AlertSeverity.info,
+    List<NotificationChannelType>? defaultChannels,
+    Map<String, String>? variables,
+  }) async {
+    final id = 'template_${DateTime.now().millisecondsSinceEpoch}';
+    final template = NotificationTemplate(
+      templateId: id,
+      templateName: templateName,
+      triggerType: triggerType,
+      titleTemplate: titleTemplate,
+      messageTemplate: messageTemplate,
+      defaultSeverity: defaultSeverity,
+      defaultChannels: defaultChannels,
+      variables: variables,
+      createdAt: DateTime.now(),
+    );
+    _notificationTemplates[id] = template;
+    return id;
+  }
+
+  @override
+  Future<NotificationTemplate?> getNotificationTemplate(String templateId) async {
+    return _notificationTemplates[templateId];
+  }
+
+  @override
+  Future<void> updateNotificationTemplate({
+    required String templateId,
+    String? titleTemplate,
+    String? messageTemplate,
+    AlertSeverity? defaultSeverity,
+    bool? isActive,
+  }) async {
+    final existing = _notificationTemplates[templateId];
+    if (existing == null) return;
+
+    final updated = NotificationTemplate(
+      templateId: templateId,
+      templateName: existing.templateName,
+      triggerType: existing.triggerType,
+      titleTemplate: titleTemplate ?? existing.titleTemplate,
+      messageTemplate: messageTemplate ?? existing.messageTemplate,
+      defaultSeverity: defaultSeverity ?? existing.defaultSeverity,
+      defaultChannels: existing.defaultChannels,
+      variables: existing.variables,
+      isActive: isActive ?? existing.isActive,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    _notificationTemplates[templateId] = updated;
+  }
+
+  @override
+  Future<NotificationTemplate?> getTemplateByTrigger(NotificationTriggerType triggerType) async {
+    try {
+      return _notificationTemplates.values.firstWhere(
+        (t) => t.triggerType == triggerType,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<StudentAlertHistory?> getStudentAlertHistory({
+    required String userId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) async {
+    final historyId = '${userId}_${periodStart.toIso8601String()}_${periodEnd.toIso8601String()}';
+    final alerts = _performanceAlerts.values
+        .where((a) => a.userId == userId && a.detectedAt.isAfter(periodStart) && a.detectedAt.isBefore(periodEnd))
+        .toList();
+
+    final alertCounts = <AlertSeverity, int>{};
+    final alertByCategory = <String, int>{};
+
+    for (final alert in alerts) {
+      alertCounts[alert.severity] = (alertCounts[alert.severity] ?? 0) + 1;
+      alertByCategory[alert.category] = (alertByCategory[alert.category] ?? 0) + 1;
+    }
+
+    return StudentAlertHistory(
+      historyId: historyId,
+      userId: userId,
+      alerts: alerts,
+      totalAlertsGenerated: alerts.length,
+      unresolvedCount: alerts.where((a) => a.isActive).length,
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+      alertCounts: alertCounts,
+      alertByCategory: alertByCategory,
+    );
+  }
+
+  @override
+  Future<Map<String, int>> getAlertStatsByCategory(String userId) async {
+    final alerts = _performanceAlerts.values
+        .where((a) => a.userId == userId)
+        .toList();
+
+    final stats = <String, int>{};
+    for (final alert in alerts) {
+      stats[alert.category] = (stats[alert.category] ?? 0) + 1;
+    }
+    return stats;
+  }
+
+  @override
+  Future<Map<String, int>> getAlertStatsBySeverity(String userId) async {
+    final alerts = _performanceAlerts.values
+        .where((a) => a.userId == userId)
+        .toList();
+
+    final stats = <String, int>{};
+    for (final alert in alerts) {
+      final severityStr = alert.severity.toString().split('.').last;
+      stats[severityStr] = (stats[severityStr] ?? 0) + 1;
+    }
+    return stats;
+  }
+
+  @override
+  Future<int> getUnreadNotificationCount(String userId) async {
+    return _studentNotifications.values
+        .where((n) => n.userId == userId && !n.isRead && !n.archived)
+        .length;
+  }
+
+  @override
+  Future<void> trackNotificationEngagement({
+    required String notificationId,
+    required bool wasRead,
+    required bool wasActioned,
+    String? actionType,
+  }) async {
+    if (!_notificationEngagement.containsKey(notificationId)) {
+      _notificationEngagement[notificationId] = {};
+    }
+    _notificationEngagement[notificationId]!['wasRead'] = wasRead;
+    _notificationEngagement[notificationId]!['wasActioned'] = wasActioned;
+    if (actionType != null) {
+      _notificationEngagement[notificationId]!['actionType'] = actionType;
+    }
+  }
+
+  @override
+  Future<List<String>> sendBatchNotifications({
+    required List<String> userIds,
+    required String title,
+    required String message,
+    required NotificationTriggerType triggerType,
+    required AlertSeverity severity,
+  }) async {
+    final sentIds = <String>[];
+    for (final userId in userIds) {
+      final id = await sendStudentNotification(
+        userId: userId,
+        title: title,
+        message: message,
+        triggerType: triggerType,
+        channels: [NotificationChannelType.inApp, NotificationChannelType.push],
+        severity: severity,
+      );
+      sentIds.add(id);
+    }
+    return sentIds;
   }
 }
 
