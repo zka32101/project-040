@@ -1324,6 +1324,118 @@ abstract class CommunityService {
 
   /// ユーザーの総XPを取得
   Future<int> getUserTotalXP(String userId);
+
+  // ============ B2B Partnership Methods ============
+
+  /// パートナーシップを作成
+  Future<String> createPartnership({
+    required String schoolName,
+    required String contactEmail,
+    required PartnershipTier tier,
+    required int maxStudents,
+  });
+
+  /// パートナーシップを取得
+  Future<PartnershipAgreement?> getPartnership(String partnershipId);
+
+  /// パートナーシップを更新
+  Future<void> updatePartnership({
+    required String partnershipId,
+    required PartnershipAgreement agreement,
+  });
+
+  /// 全パートナーシップを取得
+  Future<List<PartnershipAgreement>> getAllPartnerships();
+
+  /// アクティブなパートナーシップを取得
+  Future<List<PartnershipAgreement>> getActivePartnerships();
+
+  /// パートナーシップを一時停止
+  Future<void> suspendPartnership(String partnershipId);
+
+  /// パートナーシップを再開
+  Future<void> resumePartnership(String partnershipId);
+
+  // ============ Institutional License Methods ============
+
+  /// ライセンスを発行
+  Future<String> issueLicense({
+    required String partnershipId,
+    required String userId,
+    required String userName,
+    required LicenseType type,
+  });
+
+  /// ライセンスを取得
+  Future<InstitutionalLicense?> getLicense(String licenseId);
+
+  /// パートナーシップの全ライセンスを取得
+  Future<List<InstitutionalLicense>> getPartnershipLicenses(String partnershipId);
+
+  /// ライセンスを無効化
+  Future<void> revokeLicense(String licenseId);
+
+  /// ライセンスを更新（ログイン記録など）
+  Future<void> updateLicense({
+    required String licenseId,
+    required InstitutionalLicense license,
+  });
+
+  // ============ Analytics Methods ============
+
+  /// 機関別分析を生成
+  Future<InstitutionalAnalytics> generateInstitutionalAnalytics({
+    required String partnershipId,
+    required DateTime startDate,
+    required DateTime endDate,
+  });
+
+  /// 機関別分析を取得
+  Future<InstitutionalAnalytics?> getInstitutionalAnalytics(String analyticsId);
+
+  /// 学生パフォーマンスサマリーを取得
+  Future<Map<String, dynamic>> getStudentPerformanceSummary({
+    required String partnershipId,
+    required String userId,
+  });
+
+  // ============ Billing Methods ============
+
+  /// 請求書を生成
+  Future<PartnershipBilling> generateBilling({
+    required String partnershipId,
+    required DateTime billingPeriodStart,
+    required DateTime billingPeriodEnd,
+  });
+
+  /// 請求情報を取得
+  Future<PartnershipBilling?> getBilling(String billingId);
+
+  /// パートナーシップの請求履歴を取得
+  Future<List<PartnershipBilling>> getPartnershipBillingHistory(String partnershipId);
+
+  /// 支払いを確認
+  Future<void> confirmPayment({
+    required String billingId,
+    required DateTime paidAt,
+  });
+
+  // ============ Seat Management ============
+
+  /// ライセンスを消費（学生を追加）
+  Future<void> consumeSeat(String partnershipId);
+
+  /// ライセンスを返却（学生を削除）
+  Future<void> releaseSeat(String partnershipId);
+
+  /// シート利用状況を取得
+  Future<Map<String, int>> getSeatUsage(String partnershipId);
+
+  /// シート追加購入
+  Future<void> purchaseAdditionalSeats({
+    required String partnershipId,
+    required int numSeats,
+  });
 }
 
 /// Firebase implementation of community service
@@ -9998,6 +10110,485 @@ class StubCommunityService implements CommunityService {
   Future<int> getUserTotalXP(String userId) async {
     final stats = await getAchievementStats(userId);
     return stats?.totalPoints ?? 0;
+  }
+
+  // ============ B2B Partnership Implementation ============
+
+  final Map<String, PartnershipAgreement> _partnerships = {};
+  final Map<String, InstitutionalLicense> _licenses = {};
+  final Map<String, InstitutionalAnalytics> _analytics = {};
+  final Map<String, PartnershipBilling> _billingRecords = {};
+
+  @override
+  Future<String> createPartnership({
+    required String schoolName,
+    required String contactEmail,
+    required PartnershipTier tier,
+    required int maxStudents,
+  }) async {
+    final partnerId = 'partner_${DateTime.now().millisecondsSinceEpoch}';
+
+    int annualCost = 0;
+    int maxSeats = 0;
+
+    switch (tier) {
+      case PartnershipTier.starter:
+        annualCost = 300000; // 30万円
+        maxSeats = 50;
+        break;
+      case PartnershipTier.professional:
+        annualCost = 800000; // 80万円
+        maxSeats = 200;
+        break;
+      case PartnershipTier.enterprise:
+        annualCost = 2000000; // 200万円
+        maxSeats = 1000;
+        break;
+    }
+
+    final partnership = PartnershipAgreement(
+      partnershipId: partnerId,
+      schoolId: 'school_${DateTime.now().millisecondsSinceEpoch}',
+      schoolName: schoolName,
+      contactEmail: contactEmail,
+      status: PartnershipStatus.pending,
+      tier: tier,
+      maxStudents: maxSeats,
+      currentStudents: 0,
+      startDate: DateTime.now(),
+      expiryDate: DateTime.now().add(Duration(days: 365)),
+      annualCostJPY: annualCost,
+      isCustomBrandingAllowed: tier != PartnershipTier.starter,
+      isPrivateContentAllowed: tier == PartnershipTier.enterprise,
+      authorizedInstructors: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    _partnerships[partnerId] = partnership;
+    return partnerId;
+  }
+
+  @override
+  Future<PartnershipAgreement?> getPartnership(String partnershipId) async {
+    return _partnerships[partnershipId];
+  }
+
+  @override
+  Future<void> updatePartnership({
+    required String partnershipId,
+    required PartnershipAgreement agreement,
+  }) async {
+    _partnerships[partnershipId] = agreement;
+  }
+
+  @override
+  Future<List<PartnershipAgreement>> getAllPartnerships() async {
+    return _partnerships.values.toList();
+  }
+
+  @override
+  Future<List<PartnershipAgreement>> getActivePartnerships() async {
+    return _partnerships.values
+        .where((p) => p.isActive)
+        .toList();
+  }
+
+  @override
+  Future<void> suspendPartnership(String partnershipId) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership != null) {
+      _partnerships[partnershipId] = PartnershipAgreement(
+        partnershipId: partnership.partnershipId,
+        schoolId: partnership.schoolId,
+        schoolName: partnership.schoolName,
+        contactEmail: partnership.contactEmail,
+        status: PartnershipStatus.suspended,
+        tier: partnership.tier,
+        maxStudents: partnership.maxStudents,
+        currentStudents: partnership.currentStudents,
+        startDate: partnership.startDate,
+        expiryDate: partnership.expiryDate,
+        annualCostJPY: partnership.annualCostJPY,
+        isCustomBrandingAllowed: partnership.isCustomBrandingAllowed,
+        isPrivateContentAllowed: partnership.isPrivateContentAllowed,
+        authorizedInstructors: partnership.authorizedInstructors,
+        createdAt: partnership.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> resumePartnership(String partnershipId) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership != null) {
+      _partnerships[partnershipId] = PartnershipAgreement(
+        partnershipId: partnership.partnershipId,
+        schoolId: partnership.schoolId,
+        schoolName: partnership.schoolName,
+        contactEmail: partnership.contactEmail,
+        status: PartnershipStatus.active,
+        tier: partnership.tier,
+        maxStudents: partnership.maxStudents,
+        currentStudents: partnership.currentStudents,
+        startDate: partnership.startDate,
+        expiryDate: partnership.expiryDate,
+        annualCostJPY: partnership.annualCostJPY,
+        isCustomBrandingAllowed: partnership.isCustomBrandingAllowed,
+        isPrivateContentAllowed: partnership.isPrivateContentAllowed,
+        authorizedInstructors: partnership.authorizedInstructors,
+        createdAt: partnership.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> issueLicense({
+    required String partnershipId,
+    required String userId,
+    required String userName,
+    required LicenseType type,
+  }) async {
+    final licenseId = 'lic_${DateTime.now().millisecondsSinceEpoch}';
+
+    final license = InstitutionalLicense(
+      licenseId: licenseId,
+      partnershipId: partnershipId,
+      userId: userId,
+      userName: userName,
+      type: type,
+      issuedAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 365)),
+      isActive: true,
+      loginCount: 0,
+      permissions: _getDefaultPermissions(type),
+    );
+
+    _licenses[licenseId] = license;
+
+    // Consume seat if student
+    if (type == LicenseType.studentAccess) {
+      await consumeSeat(partnershipId);
+    }
+
+    return licenseId;
+  }
+
+  Map<String, dynamic> _getDefaultPermissions(LicenseType type) {
+    switch (type) {
+      case LicenseType.studentAccess:
+        return {
+          'canTakePracticeTests': true,
+          'canViewAnalytics': false,
+          'canManageUsers': false,
+        };
+      case LicenseType.instructorAccess:
+        return {
+          'canTakePracticeTests': true,
+          'canViewAnalytics': true,
+          'canManageUsers': false,
+          'canCreateCustomContent': true,
+        };
+      case LicenseType.administratorAccess:
+        return {
+          'canTakePracticeTests': true,
+          'canViewAnalytics': true,
+          'canManageUsers': true,
+          'canCreateCustomContent': true,
+          'canManageBilling': true,
+        };
+    }
+  }
+
+  @override
+  Future<InstitutionalLicense?> getLicense(String licenseId) async {
+    return _licenses[licenseId];
+  }
+
+  @override
+  Future<List<InstitutionalLicense>> getPartnershipLicenses(String partnershipId) async {
+    return _licenses.values
+        .where((l) => l.partnershipId == partnershipId)
+        .toList();
+  }
+
+  @override
+  Future<void> revokeLicense(String licenseId) async {
+    final license = _licenses[licenseId];
+    if (license != null) {
+      _licenses[licenseId] = InstitutionalLicense(
+        licenseId: license.licenseId,
+        partnershipId: license.partnershipId,
+        userId: license.userId,
+        userName: license.userName,
+        type: license.type,
+        issuedAt: license.issuedAt,
+        expiresAt: license.expiresAt,
+        isActive: false,
+        loginCount: license.loginCount,
+        lastLoginAt: license.lastLoginAt,
+        permissions: license.permissions,
+      );
+
+      // Release seat if student
+      if (license.type == LicenseType.studentAccess) {
+        await releaseSeat(license.partnershipId);
+      }
+    }
+  }
+
+  @override
+  Future<void> updateLicense({
+    required String licenseId,
+    required InstitutionalLicense license,
+  }) async {
+    _licenses[licenseId] = license;
+  }
+
+  @override
+  Future<InstitutionalAnalytics> generateInstitutionalAnalytics({
+    required String partnershipId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership == null) {
+      return InstitutionalAnalytics.empty(
+        analyticsId: 'ia_${DateTime.now().millisecondsSinceEpoch}',
+        partnershipId: partnershipId,
+      );
+    }
+
+    final licenses = _licenses.values
+        .where((l) => l.partnershipId == partnershipId && l.type == LicenseType.studentAccess)
+        .toList();
+
+    int activeStudents = 0;
+    double totalAccuracy = 0;
+    int totalAttempts = 0;
+
+    for (final license in licenses) {
+      final trackers = await getUserProgressTrackers(license.userId);
+      if (trackers.isNotEmpty) {
+        activeStudents++;
+        for (final tracker in trackers) {
+          totalAttempts += tracker.totalAttempts;
+          totalAccuracy += tracker.accuracyRate;
+        }
+      }
+    }
+
+    final avgAccuracy = licenses.isNotEmpty && totalAttempts > 0
+        ? totalAccuracy / trackers.length
+        : 0.0;
+
+    final analytics = InstitutionalAnalytics(
+      analyticsId: 'ia_${DateTime.now().millisecondsSinceEpoch}',
+      partnershipId: partnershipId,
+      totalStudentsEnrolled: partnership.currentStudents,
+      activeStudents: activeStudents,
+      averageCompletionRate: avgAccuracy,
+      averageExamReadiness: avgAccuracy,
+      totalQuestionsAnswered: totalAttempts,
+      averageHoursPerStudent: activeStudents > 0 ? (totalAttempts ~/ activeStudents) : 0,
+      topPerformingStudents: [],
+      categoryPerformance: {},
+      startDate: startDate,
+      endDate: endDate,
+      generatedAt: DateTime.now(),
+    );
+
+    _analytics[analytics.analyticsId] = analytics;
+    return analytics;
+  }
+
+  @override
+  Future<InstitutionalAnalytics?> getInstitutionalAnalytics(String analyticsId) async {
+    return _analytics[analyticsId];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStudentPerformanceSummary({
+    required String partnershipId,
+    required String userId,
+  }) async {
+    final trackers = await getUserProgressTrackers(userId);
+    final prediction = await predictExamReadiness(userId);
+
+    return {
+      'userId': userId,
+      'categoriesStudied': trackers.map((t) => t.category).toList(),
+      'overallAccuracy': trackers.isNotEmpty
+          ? (trackers.fold(0, (sum, t) => sum + t.correctCount) /
+                  trackers.fold(0, (sum, t) => sum + t.totalAttempts))
+              .toString()
+          : '0',
+      'passProbability': prediction.passProbability,
+      'readyForExam': prediction.isPassReady,
+      'estimatedHoursNeeded': prediction.estimatedHoursNeeded,
+    };
+  }
+
+  @override
+  Future<PartnershipBilling> generateBilling({
+    required String partnershipId,
+    required DateTime billingPeriodStart,
+    required DateTime billingPeriodEnd,
+  }) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership == null) {
+      return PartnershipBilling.empty(
+        billingId: 'bill_${DateTime.now().millisecondsSinceEpoch}',
+        partnershipId: partnershipId,
+      );
+    }
+
+    final billing = PartnershipBilling(
+      billingId: 'bill_${DateTime.now().millisecondsSinceEpoch}',
+      partnershipId: partnershipId,
+      basePlanCostJPY: partnership.annualCostJPY,
+      additionalSeatsJPY: partnership.currentStudents > partnership.maxStudents
+          ? (partnership.currentStudents - partnership.maxStudents) * 1000
+          : 0,
+      totalStudentsInBillingPeriod: partnership.currentStudents,
+      totalCostJPY: partnership.annualCostJPY,
+      billingPeriodStart: billingPeriodStart,
+      billingPeriodEnd: billingPeriodEnd,
+      isPaid: false,
+      invoiceUrl: 'https://example.com/invoices/bill_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+
+    _billingRecords[billing.billingId] = billing;
+    return billing;
+  }
+
+  @override
+  Future<PartnershipBilling?> getBilling(String billingId) async {
+    return _billingRecords[billingId];
+  }
+
+  @override
+  Future<List<PartnershipBilling>> getPartnershipBillingHistory(String partnershipId) async {
+    return _billingRecords.values
+        .where((b) => b.partnershipId == partnershipId)
+        .toList();
+  }
+
+  @override
+  Future<void> confirmPayment({
+    required String billingId,
+    required DateTime paidAt,
+  }) async {
+    final billing = _billingRecords[billingId];
+    if (billing != null) {
+      _billingRecords[billingId] = PartnershipBilling(
+        billingId: billing.billingId,
+        partnershipId: billing.partnershipId,
+        basePlanCostJPY: billing.basePlanCostJPY,
+        additionalSeatsJPY: billing.additionalSeatsJPY,
+        totalStudentsInBillingPeriod: billing.totalStudentsInBillingPeriod,
+        totalCostJPY: billing.totalCostJPY,
+        billingPeriodStart: billing.billingPeriodStart,
+        billingPeriodEnd: billing.billingPeriodEnd,
+        isPaid: true,
+        paidAt: paidAt,
+        invoiceUrl: billing.invoiceUrl,
+      );
+    }
+  }
+
+  @override
+  Future<void> consumeSeat(String partnershipId) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership != null) {
+      _partnerships[partnershipId] = PartnershipAgreement(
+        partnershipId: partnership.partnershipId,
+        schoolId: partnership.schoolId,
+        schoolName: partnership.schoolName,
+        contactEmail: partnership.contactEmail,
+        status: partnership.status,
+        tier: partnership.tier,
+        maxStudents: partnership.maxStudents,
+        currentStudents: partnership.currentStudents + 1,
+        startDate: partnership.startDate,
+        expiryDate: partnership.expiryDate,
+        annualCostJPY: partnership.annualCostJPY,
+        isCustomBrandingAllowed: partnership.isCustomBrandingAllowed,
+        isPrivateContentAllowed: partnership.isPrivateContentAllowed,
+        authorizedInstructors: partnership.authorizedInstructors,
+        createdAt: partnership.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> releaseSeat(String partnershipId) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership != null && partnership.currentStudents > 0) {
+      _partnerships[partnershipId] = PartnershipAgreement(
+        partnershipId: partnership.partnershipId,
+        schoolId: partnership.schoolId,
+        schoolName: partnership.schoolName,
+        contactEmail: partnership.contactEmail,
+        status: partnership.status,
+        tier: partnership.tier,
+        maxStudents: partnership.maxStudents,
+        currentStudents: partnership.currentStudents - 1,
+        startDate: partnership.startDate,
+        expiryDate: partnership.expiryDate,
+        annualCostJPY: partnership.annualCostJPY,
+        isCustomBrandingAllowed: partnership.isCustomBrandingAllowed,
+        isPrivateContentAllowed: partnership.isPrivateContentAllowed,
+        authorizedInstructors: partnership.authorizedInstructors,
+        createdAt: partnership.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<Map<String, int>> getSeatUsage(String partnershipId) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership == null) {
+      return {'used': 0, 'available': 0, 'total': 0};
+    }
+
+    return {
+      'used': partnership.currentStudents,
+      'available': partnership.remainingSeats,
+      'total': partnership.maxStudents,
+    };
+  }
+
+  @override
+  Future<void> purchaseAdditionalSeats({
+    required String partnershipId,
+    required int numSeats,
+  }) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership != null) {
+      _partnerships[partnershipId] = PartnershipAgreement(
+        partnershipId: partnership.partnershipId,
+        schoolId: partnership.schoolId,
+        schoolName: partnership.schoolName,
+        contactEmail: partnership.contactEmail,
+        status: partnership.status,
+        tier: partnership.tier,
+        maxStudents: partnership.maxStudents + numSeats,
+        currentStudents: partnership.currentStudents,
+        startDate: partnership.startDate,
+        expiryDate: partnership.expiryDate,
+        annualCostJPY: partnership.annualCostJPY + (numSeats * 60000),
+        isCustomBrandingAllowed: partnership.isCustomBrandingAllowed,
+        isPrivateContentAllowed: partnership.isPrivateContentAllowed,
+        authorizedInstructors: partnership.authorizedInstructors,
+        createdAt: partnership.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
   }
 }
 

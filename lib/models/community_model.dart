@@ -61,6 +61,14 @@ enum VideoStatus { draft, published, archived, processing }
 
 enum VideoLanguage { japanese, english, mixed }
 
+enum PartnershipStatus { pending, active, suspended, expired, terminated }
+
+enum PartnershipTier { starter, professional, enterprise }
+
+enum LicenseType { studentAccess, instructorAccess, administratorAccess }
+
+enum SchoolCategory { driving_school, motorcycle_training, driving_academy, government_agency }
+
 enum BadgeType {
   // Milestone badges
   firstQuestion,
@@ -4711,6 +4719,388 @@ class RewardMultiplier {
   }
 }
 
+/// B2B Partnership with driving school
+class PartnershipAgreement {
+  final String partnershipId;
+  final String schoolId;
+  final String schoolName;
+  final String contactEmail;
+  final PartnershipStatus status; // pending, active, suspended
+  final PartnershipTier tier; // starter, professional, enterprise
+  final int maxStudents; // license limit
+  final int currentStudents; // enrolled count
+  final DateTime startDate;
+  final DateTime expiryDate;
+  final int annualCostJPY; // 年間費用
+  final bool isCustomBrandingAllowed;
+  final bool isPrivateContentAllowed;
+  final List<String> authorizedInstructors;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  PartnershipAgreement({
+    required this.partnershipId,
+    required this.schoolId,
+    required this.schoolName,
+    required this.contactEmail,
+    required this.status,
+    required this.tier,
+    required this.maxStudents,
+    required this.currentStudents,
+    required this.startDate,
+    required this.expiryDate,
+    required this.annualCostJPY,
+    required this.isCustomBrandingAllowed,
+    required this.isPrivateContentAllowed,
+    required this.authorizedInstructors,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  /// パートナーシップが有効か
+  bool get isActive => status == PartnershipStatus.active && DateTime.now().isBefore(expiryDate);
+
+  /// ライセンス余裕度
+  int get remainingSeats => maxStudents - currentStudents;
+
+  /// ライセンス利用率
+  int get utilizationPercent => (currentStudents / maxStudents * 100).toInt();
+
+  /// 更新予定日
+  int get daysUntilExpiry => expiryDate.difference(DateTime.now()).inDays;
+
+  factory PartnershipAgreement.empty({
+    required String partnershipId,
+    required String schoolId,
+  }) {
+    return PartnershipAgreement(
+      partnershipId: partnershipId,
+      schoolId: schoolId,
+      schoolName: '',
+      contactEmail: '',
+      status: PartnershipStatus.pending,
+      tier: PartnershipTier.starter,
+      maxStudents: 0,
+      currentStudents: 0,
+      startDate: DateTime.now(),
+      expiryDate: DateTime.now().add(Duration(days: 365)),
+      annualCostJPY: 0,
+      isCustomBrandingAllowed: false,
+      isPrivateContentAllowed: false,
+      authorizedInstructors: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory PartnershipAgreement.fromMap(Map<String, dynamic> map) {
+    return PartnershipAgreement(
+      partnershipId: map['partnershipId'] as String? ?? '',
+      schoolId: map['schoolId'] as String? ?? '',
+      schoolName: map['schoolName'] as String? ?? '',
+      contactEmail: map['contactEmail'] as String? ?? '',
+      status: _parsePartnershipStatus(map['status'] as String? ?? 'pending'),
+      tier: _parsePartnershipTier(map['tier'] as String? ?? 'starter'),
+      maxStudents: map['maxStudents'] as int? ?? 0,
+      currentStudents: map['currentStudents'] as int? ?? 0,
+      startDate: (map['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      expiryDate: (map['expiryDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      annualCostJPY: map['annualCostJPY'] as int? ?? 0,
+      isCustomBrandingAllowed: map['isCustomBrandingAllowed'] as bool? ?? false,
+      isPrivateContentAllowed: map['isPrivateContentAllowed'] as bool? ?? false,
+      authorizedInstructors: List<String>.from(map['authorizedInstructors'] as List? ?? []),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'partnershipId': partnershipId,
+      'schoolId': schoolId,
+      'schoolName': schoolName,
+      'contactEmail': contactEmail,
+      'status': status.toString(),
+      'tier': tier.toString(),
+      'maxStudents': maxStudents,
+      'currentStudents': currentStudents,
+      'startDate': Timestamp.fromDate(startDate),
+      'expiryDate': Timestamp.fromDate(expiryDate),
+      'annualCostJPY': annualCostJPY,
+      'isCustomBrandingAllowed': isCustomBrandingAllowed,
+      'isPrivateContentAllowed': isPrivateContentAllowed,
+      'authorizedInstructors': authorizedInstructors,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+}
+
+/// Institutional user license
+class InstitutionalLicense {
+  final String licenseId;
+  final String partnershipId;
+  final String userId;
+  final String userName;
+  final LicenseType type; // student, instructor, admin
+  final DateTime issuedAt;
+  final DateTime expiresAt;
+  final bool isActive;
+  final int loginCount;
+  final DateTime? lastLoginAt;
+  final Map<String, dynamic> permissions; // custom permissions
+
+  InstitutionalLicense({
+    required this.licenseId,
+    required this.partnershipId,
+    required this.userId,
+    required this.userName,
+    required this.type,
+    required this.issuedAt,
+    required this.expiresAt,
+    required this.isActive,
+    required this.loginCount,
+    this.lastLoginAt,
+    required this.permissions,
+  });
+
+  /// ライセンスが有効か
+  bool get isLicenseValid => isActive && DateTime.now().isBefore(expiresAt);
+
+  /// ライセンス有効期間（日数）
+  int get daysUntilExpiry => expiresAt.difference(DateTime.now()).inDays;
+
+  factory InstitutionalLicense.empty({
+    required String licenseId,
+    required String partnershipId,
+    required String userId,
+  }) {
+    return InstitutionalLicense(
+      licenseId: licenseId,
+      partnershipId: partnershipId,
+      userId: userId,
+      userName: '',
+      type: LicenseType.studentAccess,
+      issuedAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 365)),
+      isActive: true,
+      loginCount: 0,
+      permissions: {},
+    );
+  }
+
+  factory InstitutionalLicense.fromMap(Map<String, dynamic> map) {
+    return InstitutionalLicense(
+      licenseId: map['licenseId'] as String? ?? '',
+      partnershipId: map['partnershipId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String? ?? '',
+      type: _parseLicenseType(map['type'] as String? ?? 'studentAccess'),
+      issuedAt: (map['issuedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      expiresAt: (map['expiresAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isActive: map['isActive'] as bool? ?? true,
+      loginCount: map['loginCount'] as int? ?? 0,
+      lastLoginAt: (map['lastLoginAt'] as Timestamp?)?.toDate(),
+      permissions: map['permissions'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'licenseId': licenseId,
+      'partnershipId': partnershipId,
+      'userId': userId,
+      'userName': userName,
+      'type': type.toString(),
+      'issuedAt': Timestamp.fromDate(issuedAt),
+      'expiresAt': Timestamp.fromDate(expiresAt),
+      'isActive': isActive,
+      'loginCount': loginCount,
+      'lastLoginAt': lastLoginAt != null ? Timestamp.fromDate(lastLoginAt!) : null,
+      'permissions': permissions,
+    };
+  }
+}
+
+/// B2B Analytics dashboard
+class InstitutionalAnalytics {
+  final String analyticsId;
+  final String partnershipId;
+  final int totalStudentsEnrolled;
+  final int activeStudents; // studied in last 7 days
+  final double averageCompletionRate; // 0.0～1.0
+  final double averageExamReadiness; // 0.0～1.0
+  final int totalQuestionsAnswered;
+  final int averageHoursPerStudent;
+  final List<String> topPerformingStudents; // user IDs
+  final Map<String, int> categoryPerformance; // category → avg accuracy
+  final DateTime startDate;
+  final DateTime endDate;
+  final DateTime generatedAt;
+
+  InstitutionalAnalytics({
+    required this.analyticsId,
+    required this.partnershipId,
+    required this.totalStudentsEnrolled,
+    required this.activeStudents,
+    required this.averageCompletionRate,
+    required this.averageExamReadiness,
+    required this.totalQuestionsAnswered,
+    required this.averageHoursPerStudent,
+    required this.topPerformingStudents,
+    required this.categoryPerformance,
+    required this.startDate,
+    required this.endDate,
+    required this.generatedAt,
+  });
+
+  /// 学生の活動率（%）
+  int get studentActivityPercentage {
+    return totalStudentsEnrolled > 0
+        ? ((activeStudents / totalStudentsEnrolled) * 100).toInt()
+        : 0;
+  }
+
+  /// 平均合格可能性（%）
+  int get averagePassProbability => (averageExamReadiness * 100).toInt();
+
+  factory InstitutionalAnalytics.empty({
+    required String analyticsId,
+    required String partnershipId,
+  }) {
+    return InstitutionalAnalytics(
+      analyticsId: analyticsId,
+      partnershipId: partnershipId,
+      totalStudentsEnrolled: 0,
+      activeStudents: 0,
+      averageCompletionRate: 0.0,
+      averageExamReadiness: 0.0,
+      totalQuestionsAnswered: 0,
+      averageHoursPerStudent: 0,
+      topPerformingStudents: [],
+      categoryPerformance: {},
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      generatedAt: DateTime.now(),
+    );
+  }
+
+  factory InstitutionalAnalytics.fromMap(Map<String, dynamic> map) {
+    return InstitutionalAnalytics(
+      analyticsId: map['analyticsId'] as String? ?? '',
+      partnershipId: map['partnershipId'] as String? ?? '',
+      totalStudentsEnrolled: map['totalStudentsEnrolled'] as int? ?? 0,
+      activeStudents: map['activeStudents'] as int? ?? 0,
+      averageCompletionRate: (map['averageCompletionRate'] as num?)?.toDouble() ?? 0.0,
+      averageExamReadiness: (map['averageExamReadiness'] as num?)?.toDouble() ?? 0.0,
+      totalQuestionsAnswered: map['totalQuestionsAnswered'] as int? ?? 0,
+      averageHoursPerStudent: map['averageHoursPerStudent'] as int? ?? 0,
+      topPerformingStudents: List<String>.from(map['topPerformingStudents'] as List? ?? []),
+      categoryPerformance: Map<String, int>.from((map['categoryPerformance'] as Map? ?? {}).cast<String, int>()),
+      startDate: (map['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      endDate: (map['endDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      generatedAt: (map['generatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'analyticsId': analyticsId,
+      'partnershipId': partnershipId,
+      'totalStudentsEnrolled': totalStudentsEnrolled,
+      'activeStudents': activeStudents,
+      'averageCompletionRate': averageCompletionRate,
+      'averageExamReadiness': averageExamReadiness,
+      'totalQuestionsAnswered': totalQuestionsAnswered,
+      'averageHoursPerStudent': averageHoursPerStudent,
+      'topPerformingStudents': topPerformingStudents,
+      'categoryPerformance': categoryPerformance,
+      'startDate': Timestamp.fromDate(startDate),
+      'endDate': Timestamp.fromDate(endDate),
+      'generatedAt': Timestamp.fromDate(generatedAt),
+    };
+  }
+}
+
+/// Billing and usage tracking
+class PartnershipBilling {
+  final String billingId;
+  final String partnershipId;
+  final int basePlanCostJPY;
+  final int additionalSeatsJPY; // per student
+  final int totalStudentsInBillingPeriod;
+  final int totalCostJPY;
+  final DateTime billingPeriodStart;
+  final DateTime billingPeriodEnd;
+  final bool isPaid;
+  final DateTime? paidAt;
+  final String invoiceUrl;
+
+  PartnershipBilling({
+    required this.billingId,
+    required this.partnershipId,
+    required this.basePlanCostJPY,
+    required this.additionalSeatsJPY,
+    required this.totalStudentsInBillingPeriod,
+    required this.totalCostJPY,
+    required this.billingPeriodStart,
+    required this.billingPeriodEnd,
+    required this.isPaid,
+    this.paidAt,
+    required this.invoiceUrl,
+  });
+
+  factory PartnershipBilling.empty({
+    required String billingId,
+    required String partnershipId,
+  }) {
+    return PartnershipBilling(
+      billingId: billingId,
+      partnershipId: partnershipId,
+      basePlanCostJPY: 0,
+      additionalSeatsJPY: 0,
+      totalStudentsInBillingPeriod: 0,
+      totalCostJPY: 0,
+      billingPeriodStart: DateTime.now(),
+      billingPeriodEnd: DateTime.now().add(Duration(days: 30)),
+      isPaid: false,
+      invoiceUrl: '',
+    );
+  }
+
+  factory PartnershipBilling.fromMap(Map<String, dynamic> map) {
+    return PartnershipBilling(
+      billingId: map['billingId'] as String? ?? '',
+      partnershipId: map['partnershipId'] as String? ?? '',
+      basePlanCostJPY: map['basePlanCostJPY'] as int? ?? 0,
+      additionalSeatsJPY: map['additionalSeatsJPY'] as int? ?? 0,
+      totalStudentsInBillingPeriod: map['totalStudentsInBillingPeriod'] as int? ?? 0,
+      totalCostJPY: map['totalCostJPY'] as int? ?? 0,
+      billingPeriodStart: (map['billingPeriodStart'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      billingPeriodEnd: (map['billingPeriodEnd'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isPaid: map['isPaid'] as bool? ?? false,
+      paidAt: (map['paidAt'] as Timestamp?)?.toDate(),
+      invoiceUrl: map['invoiceUrl'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'billingId': billingId,
+      'partnershipId': partnershipId,
+      'basePlanCostJPY': basePlanCostJPY,
+      'additionalSeatsJPY': additionalSeatsJPY,
+      'totalStudentsInBillingPeriod': totalStudentsInBillingPeriod,
+      'totalCostJPY': totalCostJPY,
+      'billingPeriodStart': Timestamp.fromDate(billingPeriodStart),
+      'billingPeriodEnd': Timestamp.fromDate(billingPeriodEnd),
+      'isPaid': isPaid,
+      'paidAt': paidAt != null ? Timestamp.fromDate(paidAt!) : null,
+      'invoiceUrl': invoiceUrl,
+    };
+  }
+}
+
 // ============ Helper functions ============
 
 BadgeType _parseBadgeType(String value) {
@@ -4730,5 +5120,35 @@ BadgeRarityLevel _parseBadgeRarity(String value) {
     );
   } catch (e) {
     return BadgeRarityLevel.common;
+  }
+}
+
+PartnershipStatus _parsePartnershipStatus(String value) {
+  try {
+    return PartnershipStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return PartnershipStatus.pending;
+  }
+}
+
+PartnershipTier _parsePartnershipTier(String value) {
+  try {
+    return PartnershipTier.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return PartnershipTier.starter;
+  }
+}
+
+LicenseType _parseLicenseType(String value) {
+  try {
+    return LicenseType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return LicenseType.studentAccess;
   }
 }
