@@ -1436,6 +1436,90 @@ abstract class CommunityService {
     required String partnershipId,
     required int numSeats,
   });
+
+  // ============ Admin Dashboard ============
+
+  /// Instructor dashboard を生成
+  Future<InstructorDashboard?> generateInstructorDashboard({
+    required String instructorId,
+    required String partnershipId,
+  });
+
+  /// Instructor dashboard を取得
+  Future<InstructorDashboard?> getInstructorDashboard(String instructorId);
+
+  /// Admin dashboard を生成
+  Future<AdminDashboard?> generateAdminDashboard({
+    required String partnershipId,
+  });
+
+  /// Admin dashboard を取得
+  Future<AdminDashboard?> getAdminDashboard(String partnershipId);
+
+  /// 学生の進度ウィジェットを取得
+  Future<StudentProgressWidget?> getStudentProgressWidget({
+    required String studentId,
+    required String partnershipId,
+  });
+
+  /// クラスの学生進度一覧を取得
+  Future<List<StudentProgressWidget>> getClassStudentProgress({
+    required String instructorId,
+    required String partnershipId,
+  });
+
+  /// 学生のエンゲージメント指標を取得
+  Future<StudentEngagementMetrics?> getStudentEngagementMetrics(String studentId);
+
+  /// 危機的な学生を取得
+  Future<List<StudentProgressWidget>> getAtRiskStudents({
+    required String partnershipId,
+  });
+
+  /// トップパフォーマーを取得
+  Future<List<StudentProgressWidget>> getTopPerformers({
+    required String partnershipId,
+    int limit = 10,
+  });
+
+  /// カテゴリー別パフォーマンスを取得
+  Future<Map<String, CategoryPerformanceChart>> getCategoryPerformance({
+    required String partnershipId,
+  });
+
+  /// カスタムレポートを生成
+  Future<String> generateCustomReport({
+    required String partnershipId,
+    required String reportName,
+    required ReportType reportType,
+    required Map<String, dynamic> filters,
+  });
+
+  /// レポートを取得
+  Future<CustomReport?> getCustomReport(String reportId);
+
+  /// パートナーシップのレポート履歴を取得
+  Future<List<CustomReport>> getPartnershipReports({
+    required String partnershipId,
+  });
+
+  /// レポートをエクスポート (PDF, CSV, XLSX)
+  Future<String?> exportReport({
+    required String reportId,
+    required String format, // 'pdf', 'csv', 'xlsx'
+  });
+
+  /// 教員にアサインされた学生を取得
+  Future<List<String>> getAssignedStudents(String instructorId);
+
+  /// ダッシュボードウィジェットを更新
+  Future<void> updateDashboardWidget({
+    required String dashboardId,
+    required DashboardWidget widget,
+  });
+
+  /// インスティテューショナルアナリティクスをリアルタイム更新
+  Future<void> refreshInstitutionalMetrics(String partnershipId);
 }
 
 /// Firebase implementation of community service
@@ -5371,6 +5455,14 @@ class StubCommunityService implements CommunityService {
   final Map<String, ContentReport> _reports = {}; // Phase 11 Step 3
   final Map<String, PostEngagementAnalytics> _analytics = {}; // Phase 11 Step 3
   final Map<String, VideoExplanation> _videos = {}; // Phase 11 Step 9 - Video Explanations
+
+  // Phase 11 Step 14 - Admin Dashboard
+  final Map<String, InstructorDashboard> _instructorDashboards = {};
+  final Map<String, AdminDashboard> _adminDashboards = {};
+  final Map<String, StudentProgressWidget> _studentProgressWidgets = {};
+  final Map<String, StudentEngagementMetrics> _studentEngagement = {};
+  final Map<String, CustomReport> _reports = {};
+  final Map<String, List<String>> _instructorStudentAssignments = {}; // instructorId -> [studentIds]
 
   @override
   Future<String> createChannel({
@@ -10589,6 +10681,320 @@ class StubCommunityService implements CommunityService {
         updatedAt: DateTime.now(),
       );
     }
+  }
+
+  // ============ Admin Dashboard Methods ============
+
+  @override
+  Future<InstructorDashboard?> generateInstructorDashboard({
+    required String instructorId,
+    required String partnershipId,
+  }) async {
+    final assignedStudents = _instructorStudentAssignments[instructorId] ?? [];
+    final studentSnapshots = <StudentProgressWidget>[];
+    final categoryBreakdown = <String, CategoryPerformanceChart>{};
+
+    double totalAccuracy = 0.0;
+    double totalReadiness = 0.0;
+
+    for (final studentId in assignedStudents) {
+      final progress = _studentProgressWidgets[studentId];
+      if (progress != null) {
+        studentSnapshots.add(progress);
+        totalAccuracy += progress.overallAccuracy;
+        totalReadiness += progress.readinessProbability;
+      }
+    }
+
+    final classSize = assignedStudents.length;
+    final classAverageAccuracy = classSize > 0 ? totalAccuracy / classSize : 0.0;
+    final classAverageReadiness = classSize > 0 ? totalReadiness / classSize : 0.0;
+
+    final widgets = [
+      DashboardWidget(
+        widgetId: 'w_accuracy_${instructorId}',
+        title: 'Class Average Accuracy',
+        description: 'Current class average accuracy rate',
+        metricType: DashboardMetricType.performance,
+        currentValue: (classAverageAccuracy * 100).toStringAsFixed(1) + '%',
+        trend: 'up',
+      ),
+      DashboardWidget(
+        widgetId: 'w_readiness_${instructorId}',
+        title: 'Average Readiness',
+        description: 'Predicted pass probability',
+        metricType: DashboardMetricType.performance,
+        currentValue: (classAverageReadiness * 100).toStringAsFixed(1) + '%',
+        trend: 'up',
+      ),
+      DashboardWidget(
+        widgetId: 'w_active_${instructorId}',
+        title: 'Active This Week',
+        description: 'Students who studied this week',
+        metricType: DashboardMetricType.engagement,
+        currentValue: studentSnapshots.where((s) => s.isActive).length.toString(),
+      ),
+    ];
+
+    final dashboard = InstructorDashboard(
+      dashboardId: 'dashboard_${instructorId}',
+      instructorId: instructorId,
+      partnershipId: partnershipId,
+      instructorName: 'Instructor $instructorId',
+      assignedStudentIds: assignedStudents,
+      widgets: widgets,
+      studentSnapshots: studentSnapshots,
+      categoryBreakdown: categoryBreakdown,
+      totalStudentsAssigned: classSize,
+      activeStudentsThisWeek: studentSnapshots.where((s) => s.isActive).length,
+      classAverageAccuracy: classAverageAccuracy,
+      classAverageReadiness: classAverageReadiness,
+      generatedAt: DateTime.now(),
+    );
+
+    _instructorDashboards[instructorId] = dashboard;
+    return dashboard;
+  }
+
+  @override
+  Future<InstructorDashboard?> getInstructorDashboard(String instructorId) async {
+    return _instructorDashboards[instructorId];
+  }
+
+  @override
+  Future<AdminDashboard?> generateAdminDashboard({
+    required String partnershipId,
+  }) async {
+    final partnership = _partnerships[partnershipId];
+    if (partnership == null) return null;
+
+    final allStudents = <String>[];
+    for (final assignment in _instructorStudentAssignments.values) {
+      allStudents.addAll(assignment);
+    }
+
+    final studentSnapshots = <StudentProgressWidget>[];
+    double totalAccuracy = 0.0;
+    double totalReadiness = 0.0;
+    int activeStudents = 0;
+
+    for (final studentId in allStudents) {
+      final progress = _studentProgressWidgets[studentId];
+      if (progress != null) {
+        studentSnapshots.add(progress);
+        totalAccuracy += progress.overallAccuracy;
+        totalReadiness += progress.readinessProbability;
+        if (progress.isActive) activeStudents++;
+      }
+    }
+
+    final studentCount = allStudents.length;
+    final avgAccuracy = studentCount > 0 ? totalAccuracy / studentCount : 0.0;
+    final avgReadiness = studentCount > 0 ? totalReadiness / studentCount : 0.0;
+
+    final topPerformers = studentSnapshots
+      .where((s) => s.status == StudentPerformanceStatus.excellent ||
+                   s.status == StudentPerformanceStatus.good)
+      .take(10)
+      .toList();
+
+    final atRiskStudents = studentSnapshots
+      .where((s) => s.status == StudentPerformanceStatus.atRisk ||
+                   s.status == StudentPerformanceStatus.critical)
+      .toList();
+
+    final widgets = [
+      DashboardWidget(
+        widgetId: 'w_revenue',
+        title: 'Monthly Revenue',
+        description: 'Projected revenue from this partnership',
+        metricType: DashboardMetricType.revenue,
+        currentValue: '¥${(partnership.annualCostJPY / 12).toStringAsFixed(0)}',
+      ),
+      DashboardWidget(
+        widgetId: 'w_utilization',
+        title: 'Seat Utilization',
+        description: 'Percentage of available seats used',
+        metricType: DashboardMetricType.engagement,
+        currentValue: partnership.utilizationPercent.toStringAsFixed(1) + '%',
+      ),
+      DashboardWidget(
+        widgetId: 'w_completion',
+        title: 'Completion Rate',
+        description: 'Students completing exams',
+        metricType: DashboardMetricType.completion,
+        currentValue: (avgAccuracy * 100).toStringAsFixed(1) + '%',
+      ),
+    ];
+
+    final dashboard = AdminDashboard(
+      dashboardId: 'admin_dashboard_$partnershipId',
+      partnershipId: partnershipId,
+      schoolName: partnership.schoolName,
+      widgets: widgets,
+      financialMetrics: {
+        'annualCostJPY': partnership.annualCostJPY,
+        'monthlyCost': partnership.annualCostJPY / 12,
+        'costPerSeat': partnership.annualCostJPY / partnership.maxStudents,
+      },
+      topPerformers: topPerformers,
+      atRiskStudents: atRiskStudents,
+      schoolWideCategoryPerformance: {},
+      totalEnrolledStudents: studentCount,
+      activeStudentsThisMonth: activeStudents,
+      overallCompletionRate: avgAccuracy,
+      overallReadinessProbability: avgReadiness,
+      monthlyRevenueJPY: partnership.annualCostJPY / 12,
+      seatUtilizationPercent: partnership.utilizationPercent,
+      recentInstructorActivity: [],
+      generatedAt: DateTime.now(),
+    );
+
+    _adminDashboards[partnershipId] = dashboard;
+    return dashboard;
+  }
+
+  @override
+  Future<AdminDashboard?> getAdminDashboard(String partnershipId) async {
+    return _adminDashboards[partnershipId];
+  }
+
+  @override
+  Future<StudentProgressWidget?> getStudentProgressWidget({
+    required String studentId,
+    required String partnershipId,
+  }) async {
+    return _studentProgressWidgets[studentId];
+  }
+
+  @override
+  Future<List<StudentProgressWidget>> getClassStudentProgress({
+    required String instructorId,
+    required String partnershipId,
+  }) async {
+    final studentIds = _instructorStudentAssignments[instructorId] ?? [];
+    return studentIds
+      .map((id) => _studentProgressWidgets[id])
+      .whereType<StudentProgressWidget>()
+      .toList();
+  }
+
+  @override
+  Future<StudentEngagementMetrics?> getStudentEngagementMetrics(String studentId) async {
+    return _studentEngagement[studentId];
+  }
+
+  @override
+  Future<List<StudentProgressWidget>> getAtRiskStudents({
+    required String partnershipId,
+  }) async {
+    return _studentProgressWidgets.values
+      .where((s) => s.status == StudentPerformanceStatus.atRisk ||
+                   s.status == StudentPerformanceStatus.critical)
+      .toList();
+  }
+
+  @override
+  Future<List<StudentProgressWidget>> getTopPerformers({
+    required String partnershipId,
+    int limit = 10,
+  }) async {
+    return _studentProgressWidgets.values
+      .where((s) => s.status == StudentPerformanceStatus.excellent ||
+                   s.status == StudentPerformanceStatus.good)
+      .take(limit)
+      .toList();
+  }
+
+  @override
+  Future<Map<String, CategoryPerformanceChart>> getCategoryPerformance({
+    required String partnershipId,
+  }) async {
+    return {
+      '交通規則': CategoryPerformanceChart(
+        category: '交通規則',
+        accuracy: 0.82,
+        questionsAnswered: 1200,
+        trend: 0.05,
+        averageTimePerQuestion: 45.0,
+      ),
+      '危機回避': CategoryPerformanceChart(
+        category: '危機回避',
+        accuracy: 0.75,
+        questionsAnswered: 800,
+        trend: 0.08,
+        averageTimePerQuestion: 60.0,
+      ),
+      '機械知識': CategoryPerformanceChart(
+        category: '機械知識',
+        accuracy: 0.79,
+        questionsAnswered: 900,
+        trend: 0.03,
+        averageTimePerQuestion: 50.0,
+      ),
+    };
+  }
+
+  @override
+  Future<String> generateCustomReport({
+    required String partnershipId,
+    required String reportName,
+    required ReportType reportType,
+    required Map<String, dynamic> filters,
+  }) async {
+    final reportId = 'report_${DateTime.now().millisecondsSinceEpoch}';
+    _reports[reportId] = CustomReport(
+      reportId: reportId,
+      partnershipId: partnershipId,
+      reportName: reportName,
+      reportType: reportType,
+      generatedAt: DateTime.now(),
+      reportData: filters,
+      fileFormat: 'pdf',
+    );
+    return reportId;
+  }
+
+  @override
+  Future<CustomReport?> getCustomReport(String reportId) async {
+    return _reports[reportId];
+  }
+
+  @override
+  Future<List<CustomReport>> getPartnershipReports({
+    required String partnershipId,
+  }) async {
+    return _reports.values
+      .where((r) => r.partnershipId == partnershipId)
+      .toList();
+  }
+
+  @override
+  Future<String?> exportReport({
+    required String reportId,
+    required String format,
+  }) async {
+    final report = _reports[reportId];
+    if (report == null) return null;
+    return 'https://storage.example.com/reports/$reportId.$format';
+  }
+
+  @override
+  Future<List<String>> getAssignedStudents(String instructorId) async {
+    return _instructorStudentAssignments[instructorId] ?? [];
+  }
+
+  @override
+  Future<void> updateDashboardWidget({
+    required String dashboardId,
+    required DashboardWidget widget,
+  }) async {
+    // In stub implementation, dashboard widgets are rebuilt on demand
+  }
+
+  @override
+  Future<void> refreshInstitutionalMetrics(String partnershipId) async {
+    // In stub implementation, metrics are calculated on demand
   }
 }
 

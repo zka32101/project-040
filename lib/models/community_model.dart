@@ -69,6 +69,12 @@ enum LicenseType { studentAccess, instructorAccess, administratorAccess }
 
 enum SchoolCategory { driving_school, motorcycle_training, driving_academy, government_agency }
 
+enum DashboardMetricType { revenue, engagement, completion, performance, activity, retention }
+
+enum StudentPerformanceStatus { excellent, good, average, atRisk, critical }
+
+enum ReportType { performance, engagement, attendance, completion, readiness, custom }
+
 enum BadgeType {
   // Milestone badges
   firstQuestion,
@@ -5101,6 +5107,500 @@ class PartnershipBilling {
   }
 }
 
+// ============ Admin Dashboard Models ============
+
+class CategoryPerformanceChart {
+  final String category;
+  final double accuracy;
+  final int questionsAnswered;
+  final double trend; // positive = improving
+  final double averageTimePerQuestion;
+  final String? weakestTopic;
+
+  CategoryPerformanceChart({
+    required this.category,
+    required this.accuracy,
+    required this.questionsAnswered,
+    required this.trend,
+    required this.averageTimePerQuestion,
+    this.weakestTopic,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'category': category,
+    'accuracy': accuracy,
+    'questionsAnswered': questionsAnswered,
+    'trend': trend,
+    'averageTimePerQuestion': averageTimePerQuestion,
+    'weakestTopic': weakestTopic,
+  };
+
+  factory CategoryPerformanceChart.fromMap(Map<String, dynamic> map) =>
+    CategoryPerformanceChart(
+      category: map['category'] ?? '',
+      accuracy: (map['accuracy'] ?? 0.0).toDouble(),
+      questionsAnswered: map['questionsAnswered'] ?? 0,
+      trend: (map['trend'] ?? 0.0).toDouble(),
+      averageTimePerQuestion: (map['averageTimePerQuestion'] ?? 0.0).toDouble(),
+      weakestTopic: map['weakestTopic'],
+    );
+}
+
+class StudentProgressWidget {
+  final String studentId;
+  final String studentName;
+  final double overallAccuracy;
+  final StudentPerformanceStatus status;
+  final int currentStreak;
+  final int longestStreak;
+  final double readinessProbability;
+  final int questionsAnsweredThisWeek;
+  final double averageTimePerQuestion;
+  final DateTime? lastActivityAt;
+
+  StudentProgressWidget({
+    required this.studentId,
+    required this.studentName,
+    required this.overallAccuracy,
+    required this.status,
+    required this.currentStreak,
+    required this.longestStreak,
+    required this.readinessProbability,
+    required this.questionsAnsweredThisWeek,
+    required this.averageTimePerQuestion,
+    this.lastActivityAt,
+  });
+
+  bool get isActive => lastActivityAt != null &&
+    DateTime.now().difference(lastActivityAt!).inDays <= 3;
+
+  Map<String, dynamic> toMap() => {
+    'studentId': studentId,
+    'studentName': studentName,
+    'overallAccuracy': overallAccuracy,
+    'status': status.toString().split('.').last,
+    'currentStreak': currentStreak,
+    'longestStreak': longestStreak,
+    'readinessProbability': readinessProbability,
+    'questionsAnsweredThisWeek': questionsAnsweredThisWeek,
+    'averageTimePerQuestion': averageTimePerQuestion,
+    'lastActivityAt': lastActivityAt?.toIso8601String(),
+  };
+
+  factory StudentProgressWidget.fromMap(Map<String, dynamic> map) =>
+    StudentProgressWidget(
+      studentId: map['studentId'] ?? '',
+      studentName: map['studentName'] ?? '',
+      overallAccuracy: (map['overallAccuracy'] ?? 0.0).toDouble(),
+      status: _parseStudentPerformanceStatus(map['status'] ?? ''),
+      currentStreak: map['currentStreak'] ?? 0,
+      longestStreak: map['longestStreak'] ?? 0,
+      readinessProbability: (map['readinessProbability'] ?? 0.0).toDouble(),
+      questionsAnsweredThisWeek: map['questionsAnsweredThisWeek'] ?? 0,
+      averageTimePerQuestion: (map['averageTimePerQuestion'] ?? 0.0).toDouble(),
+      lastActivityAt: map['lastActivityAt'] != null ?
+        DateTime.parse(map['lastActivityAt']) : null,
+    );
+}
+
+class StudentEngagementMetrics {
+  final String studentId;
+  final int minutesStudiedThisWeek;
+  final int minutesStudiedThisMonth;
+  final int sessionsThisWeek;
+  final int currentConsecutiveDays;
+  final double weeklyConsistencyScore; // 0-100%
+  final int averageSessionDuration; // in minutes
+  final List<String> recentBadgesEarned;
+  final int totalXPEarnedThisMonth;
+
+  StudentEngagementMetrics({
+    required this.studentId,
+    required this.minutesStudiedThisWeek,
+    required this.minutesStudiedThisMonth,
+    required this.sessionsThisWeek,
+    required this.currentConsecutiveDays,
+    required this.weeklyConsistencyScore,
+    required this.averageSessionDuration,
+    required this.recentBadgesEarned,
+    required this.totalXPEarnedThisMonth,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'studentId': studentId,
+    'minutesStudiedThisWeek': minutesStudiedThisWeek,
+    'minutesStudiedThisMonth': minutesStudiedThisMonth,
+    'sessionsThisWeek': sessionsThisWeek,
+    'currentConsecutiveDays': currentConsecutiveDays,
+    'weeklyConsistencyScore': weeklyConsistencyScore,
+    'averageSessionDuration': averageSessionDuration,
+    'recentBadgesEarned': recentBadgesEarned,
+    'totalXPEarnedThisMonth': totalXPEarnedThisMonth,
+  };
+
+  factory StudentEngagementMetrics.fromMap(Map<String, dynamic> map) =>
+    StudentEngagementMetrics(
+      studentId: map['studentId'] ?? '',
+      minutesStudiedThisWeek: map['minutesStudiedThisWeek'] ?? 0,
+      minutesStudiedThisMonth: map['minutesStudiedThisMonth'] ?? 0,
+      sessionsThisWeek: map['sessionsThisWeek'] ?? 0,
+      currentConsecutiveDays: map['currentConsecutiveDays'] ?? 0,
+      weeklyConsistencyScore: (map['weeklyConsistencyScore'] ?? 0.0).toDouble(),
+      averageSessionDuration: map['averageSessionDuration'] ?? 0,
+      recentBadgesEarned: List<String>.from(map['recentBadgesEarned'] ?? []),
+      totalXPEarnedThisMonth: map['totalXPEarnedThisMonth'] ?? 0,
+    );
+}
+
+class DashboardWidget {
+  final String widgetId;
+  final String title;
+  final String description;
+  final DashboardMetricType metricType;
+  final dynamic currentValue;
+  final dynamic previousValue;
+  final double? percentChange;
+  final String? trend; // 'up', 'down', 'stable'
+  final Map<String, dynamic>? chartData;
+  final DateTime? lastUpdatedAt;
+
+  DashboardWidget({
+    required this.widgetId,
+    required this.title,
+    required this.description,
+    required this.metricType,
+    required this.currentValue,
+    this.previousValue,
+    this.percentChange,
+    this.trend,
+    this.chartData,
+    this.lastUpdatedAt,
+  });
+
+  bool get isPositiveChange {
+    if (percentChange == null) return false;
+    return percentChange! > 0;
+  }
+
+  Map<String, dynamic> toMap() => {
+    'widgetId': widgetId,
+    'title': title,
+    'description': description,
+    'metricType': metricType.toString().split('.').last,
+    'currentValue': currentValue,
+    'previousValue': previousValue,
+    'percentChange': percentChange,
+    'trend': trend,
+    'chartData': chartData,
+    'lastUpdatedAt': lastUpdatedAt?.toIso8601String(),
+  };
+
+  factory DashboardWidget.fromMap(Map<String, dynamic> map) =>
+    DashboardWidget(
+      widgetId: map['widgetId'] ?? '',
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      metricType: _parseDashboardMetricType(map['metricType'] ?? ''),
+      currentValue: map['currentValue'],
+      previousValue: map['previousValue'],
+      percentChange: map['percentChange'] != null ?
+        (map['percentChange']).toDouble() : null,
+      trend: map['trend'],
+      chartData: map['chartData'],
+      lastUpdatedAt: map['lastUpdatedAt'] != null ?
+        DateTime.parse(map['lastUpdatedAt']) : null,
+    );
+}
+
+class InstructorDashboard {
+  final String dashboardId;
+  final String instructorId;
+  final String partnershipId;
+  final String instructorName;
+  final List<String> assignedStudentIds;
+  final List<DashboardWidget> widgets;
+  final List<StudentProgressWidget> studentSnapshots;
+  final Map<String, CategoryPerformanceChart> categoryBreakdown;
+  final int totalStudentsAssigned;
+  final int activeStudentsThisWeek;
+  final double classAverageAccuracy;
+  final double classAverageReadiness;
+  final DateTime? generatedAt;
+  final DateTime? lastAccessedAt;
+
+  InstructorDashboard({
+    required this.dashboardId,
+    required this.instructorId,
+    required this.partnershipId,
+    required this.instructorName,
+    required this.assignedStudentIds,
+    required this.widgets,
+    required this.studentSnapshots,
+    required this.categoryBreakdown,
+    required this.totalStudentsAssigned,
+    required this.activeStudentsThisWeek,
+    required this.classAverageAccuracy,
+    required this.classAverageReadiness,
+    this.generatedAt,
+    this.lastAccessedAt,
+  });
+
+  int get atRiskStudentCount =>
+    studentSnapshots
+      .where((s) => s.status == StudentPerformanceStatus.atRisk ||
+                   s.status == StudentPerformanceStatus.critical)
+      .length;
+
+  double get engagementRate =>
+    totalStudentsAssigned == 0 ? 0.0 :
+    (activeStudentsThisWeek / totalStudentsAssigned) * 100;
+
+  Map<String, dynamic> toMap() => {
+    'dashboardId': dashboardId,
+    'instructorId': instructorId,
+    'partnershipId': partnershipId,
+    'instructorName': instructorName,
+    'assignedStudentIds': assignedStudentIds,
+    'widgets': widgets.map((w) => w.toMap()).toList(),
+    'studentSnapshots': studentSnapshots.map((s) => s.toMap()).toList(),
+    'categoryBreakdown': categoryBreakdown.map((k, v) =>
+      MapEntry(k, v.toMap())),
+    'totalStudentsAssigned': totalStudentsAssigned,
+    'activeStudentsThisWeek': activeStudentsThisWeek,
+    'classAverageAccuracy': classAverageAccuracy,
+    'classAverageReadiness': classAverageReadiness,
+    'generatedAt': generatedAt?.toIso8601String(),
+    'lastAccessedAt': lastAccessedAt?.toIso8601String(),
+  };
+
+  factory InstructorDashboard.fromMap(Map<String, dynamic> map) =>
+    InstructorDashboard(
+      dashboardId: map['dashboardId'] ?? '',
+      instructorId: map['instructorId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      instructorName: map['instructorName'] ?? '',
+      assignedStudentIds: List<String>.from(map['assignedStudentIds'] ?? []),
+      widgets: (map['widgets'] as List<dynamic>?)?.map((w) =>
+        DashboardWidget.fromMap(w as Map<String, dynamic>)).toList() ?? [],
+      studentSnapshots: (map['studentSnapshots'] as List<dynamic>?)?.map((s) =>
+        StudentProgressWidget.fromMap(s as Map<String, dynamic>)).toList() ?? [],
+      categoryBreakdown: (map['categoryBreakdown'] as Map<String, dynamic>?)
+        ?.map((k, v) => MapEntry(k,
+          CategoryPerformanceChart.fromMap(v as Map<String, dynamic>))) ?? {},
+      totalStudentsAssigned: map['totalStudentsAssigned'] ?? 0,
+      activeStudentsThisWeek: map['activeStudentsThisWeek'] ?? 0,
+      classAverageAccuracy: (map['classAverageAccuracy'] ?? 0.0).toDouble(),
+      classAverageReadiness: (map['classAverageReadiness'] ?? 0.0).toDouble(),
+      generatedAt: map['generatedAt'] != null ?
+        DateTime.parse(map['generatedAt']) : null,
+      lastAccessedAt: map['lastAccessedAt'] != null ?
+        DateTime.parse(map['lastAccessedAt']) : null,
+    );
+
+  factory InstructorDashboard.empty({
+    required String dashboardId,
+    required String instructorId,
+    required String partnershipId,
+    required String instructorName,
+  }) =>
+    InstructorDashboard(
+      dashboardId: dashboardId,
+      instructorId: instructorId,
+      partnershipId: partnershipId,
+      instructorName: instructorName,
+      assignedStudentIds: [],
+      widgets: [],
+      studentSnapshots: [],
+      categoryBreakdown: {},
+      totalStudentsAssigned: 0,
+      activeStudentsThisWeek: 0,
+      classAverageAccuracy: 0.0,
+      classAverageReadiness: 0.0,
+    );
+}
+
+class AdminDashboard {
+  final String dashboardId;
+  final String partnershipId;
+  final String schoolName;
+  final List<DashboardWidget> widgets;
+  final Map<String, dynamic> financialMetrics;
+  final List<StudentProgressWidget> topPerformers;
+  final List<StudentProgressWidget> atRiskStudents;
+  final Map<String, CategoryPerformanceChart> schoolWideCategoryPerformance;
+  final int totalEnrolledStudents;
+  final int activeStudentsThisMonth;
+  final double overallCompletionRate;
+  final double overallReadinessProbability;
+  final double monthlyRevenueJPY;
+  final double seatUtilizationPercent;
+  final List<String> recentInstructorActivity;
+  final DateTime? generatedAt;
+  final DateTime? lastAccessedAt;
+
+  AdminDashboard({
+    required this.dashboardId,
+    required this.partnershipId,
+    required this.schoolName,
+    required this.widgets,
+    required this.financialMetrics,
+    required this.topPerformers,
+    required this.atRiskStudents,
+    required this.schoolWideCategoryPerformance,
+    required this.totalEnrolledStudents,
+    required this.activeStudentsThisMonth,
+    required this.overallCompletionRate,
+    required this.overallReadinessProbability,
+    required this.monthlyRevenueJPY,
+    required this.seatUtilizationPercent,
+    required this.recentInstructorActivity,
+    this.generatedAt,
+    this.lastAccessedAt,
+  });
+
+  int get criticalAtRiskCount =>
+    atRiskStudents.where((s) => s.status == StudentPerformanceStatus.critical).length;
+
+  double get studentRetentionRate {
+    if (totalEnrolledStudents == 0) return 0.0;
+    return (activeStudentsThisMonth / totalEnrolledStudents) * 100;
+  }
+
+  Map<String, dynamic> toMap() => {
+    'dashboardId': dashboardId,
+    'partnershipId': partnershipId,
+    'schoolName': schoolName,
+    'widgets': widgets.map((w) => w.toMap()).toList(),
+    'financialMetrics': financialMetrics,
+    'topPerformers': topPerformers.map((p) => p.toMap()).toList(),
+    'atRiskStudents': atRiskStudents.map((s) => s.toMap()).toList(),
+    'schoolWideCategoryPerformance': schoolWideCategoryPerformance.map((k, v) =>
+      MapEntry(k, v.toMap())),
+    'totalEnrolledStudents': totalEnrolledStudents,
+    'activeStudentsThisMonth': activeStudentsThisMonth,
+    'overallCompletionRate': overallCompletionRate,
+    'overallReadinessProbability': overallReadinessProbability,
+    'monthlyRevenueJPY': monthlyRevenueJPY,
+    'seatUtilizationPercent': seatUtilizationPercent,
+    'recentInstructorActivity': recentInstructorActivity,
+    'generatedAt': generatedAt?.toIso8601String(),
+    'lastAccessedAt': lastAccessedAt?.toIso8601String(),
+  };
+
+  factory AdminDashboard.fromMap(Map<String, dynamic> map) =>
+    AdminDashboard(
+      dashboardId: map['dashboardId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      schoolName: map['schoolName'] ?? '',
+      widgets: (map['widgets'] as List<dynamic>?)?.map((w) =>
+        DashboardWidget.fromMap(w as Map<String, dynamic>)).toList() ?? [],
+      financialMetrics: map['financialMetrics'] ?? {},
+      topPerformers: (map['topPerformers'] as List<dynamic>?)?.map((p) =>
+        StudentProgressWidget.fromMap(p as Map<String, dynamic>)).toList() ?? [],
+      atRiskStudents: (map['atRiskStudents'] as List<dynamic>?)?.map((s) =>
+        StudentProgressWidget.fromMap(s as Map<String, dynamic>)).toList() ?? [],
+      schoolWideCategoryPerformance: (map['schoolWideCategoryPerformance']
+        as Map<String, dynamic>?)?.map((k, v) => MapEntry(k,
+          CategoryPerformanceChart.fromMap(v as Map<String, dynamic>))) ?? {},
+      totalEnrolledStudents: map['totalEnrolledStudents'] ?? 0,
+      activeStudentsThisMonth: map['activeStudentsThisMonth'] ?? 0,
+      overallCompletionRate: (map['overallCompletionRate'] ?? 0.0).toDouble(),
+      overallReadinessProbability: (map['overallReadinessProbability'] ?? 0.0).toDouble(),
+      monthlyRevenueJPY: (map['monthlyRevenueJPY'] ?? 0.0).toDouble(),
+      seatUtilizationPercent: (map['seatUtilizationPercent'] ?? 0.0).toDouble(),
+      recentInstructorActivity: List<String>.from(map['recentInstructorActivity'] ?? []),
+      generatedAt: map['generatedAt'] != null ?
+        DateTime.parse(map['generatedAt']) : null,
+      lastAccessedAt: map['lastAccessedAt'] != null ?
+        DateTime.parse(map['lastAccessedAt']) : null,
+    );
+
+  factory AdminDashboard.empty({
+    required String dashboardId,
+    required String partnershipId,
+    required String schoolName,
+  }) =>
+    AdminDashboard(
+      dashboardId: dashboardId,
+      partnershipId: partnershipId,
+      schoolName: schoolName,
+      widgets: [],
+      financialMetrics: {},
+      topPerformers: [],
+      atRiskStudents: [],
+      schoolWideCategoryPerformance: {},
+      totalEnrolledStudents: 0,
+      activeStudentsThisMonth: 0,
+      overallCompletionRate: 0.0,
+      overallReadinessProbability: 0.0,
+      monthlyRevenueJPY: 0.0,
+      seatUtilizationPercent: 0.0,
+      recentInstructorActivity: [],
+    );
+}
+
+class CustomReport {
+  final String reportId;
+  final String partnershipId;
+  final String reportName;
+  final ReportType reportType;
+  final DateTime generatedAt;
+  final Map<String, dynamic> reportData;
+  final String? generatedByUserId;
+  final String? generatedByUserName;
+  final bool isPubliclyShared;
+  final List<String>? sharedWithEmails;
+  final String? exportUrl; // S3 or storage URL
+  final String? fileFormat; // 'pdf', 'csv', 'xlsx'
+
+  CustomReport({
+    required this.reportId,
+    required this.partnershipId,
+    required this.reportName,
+    required this.reportType,
+    required this.generatedAt,
+    required this.reportData,
+    this.generatedByUserId,
+    this.generatedByUserName,
+    this.isPubliclyShared = false,
+    this.sharedWithEmails,
+    this.exportUrl,
+    this.fileFormat,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'reportId': reportId,
+    'partnershipId': partnershipId,
+    'reportName': reportName,
+    'reportType': reportType.toString().split('.').last,
+    'generatedAt': generatedAt.toIso8601String(),
+    'reportData': reportData,
+    'generatedByUserId': generatedByUserId,
+    'generatedByUserName': generatedByUserName,
+    'isPubliclyShared': isPubliclyShared,
+    'sharedWithEmails': sharedWithEmails,
+    'exportUrl': exportUrl,
+    'fileFormat': fileFormat,
+  };
+
+  factory CustomReport.fromMap(Map<String, dynamic> map) =>
+    CustomReport(
+      reportId: map['reportId'] ?? '',
+      partnershipId: map['partnershipId'] ?? '',
+      reportName: map['reportName'] ?? '',
+      reportType: _parseReportType(map['reportType'] ?? ''),
+      generatedAt: DateTime.parse(map['generatedAt'] ?? DateTime.now().toIso8601String()),
+      reportData: map['reportData'] ?? {},
+      generatedByUserId: map['generatedByUserId'],
+      generatedByUserName: map['generatedByUserName'],
+      isPubliclyShared: map['isPubliclyShared'] ?? false,
+      sharedWithEmails: map['sharedWithEmails'] != null ?
+        List<String>.from(map['sharedWithEmails']) : null,
+      exportUrl: map['exportUrl'],
+      fileFormat: map['fileFormat'],
+    );
+}
+
 // ============ Helper functions ============
 
 BadgeType _parseBadgeType(String value) {
@@ -5150,5 +5650,35 @@ LicenseType _parseLicenseType(String value) {
     );
   } catch (e) {
     return LicenseType.studentAccess;
+  }
+}
+
+StudentPerformanceStatus _parseStudentPerformanceStatus(String value) {
+  try {
+    return StudentPerformanceStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return StudentPerformanceStatus.average;
+  }
+}
+
+DashboardMetricType _parseDashboardMetricType(String value) {
+  try {
+    return DashboardMetricType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return DashboardMetricType.engagement;
+  }
+}
+
+ReportType _parseReportType(String value) {
+  try {
+    return ReportType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ReportType.performance;
   }
 }
