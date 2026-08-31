@@ -1244,6 +1244,86 @@ abstract class CommunityService {
 
   /// 合格確実と判定されるreadiness閾値
   Future<bool> isPassProbableReady(String userId);
+
+  // ============ Gamification & Achievement Methods ============
+
+  /// バッジを獲得済みにマーク
+  Future<void> earnBadge({
+    required String userId,
+    required BadgeType type,
+    required String displayName,
+    required String description,
+    required BadgeRarityLevel rarity,
+    required int points,
+  });
+
+  /// ユーザーが獲得したバッジを取得
+  Future<List<AchievementBadge>> getUserBadges(String userId);
+
+  /// 特定のバッジを取得
+  Future<AchievementBadge?> getBadge(String badgeId);
+
+  /// バッジを固定/解除（プロフィール表示）
+  Future<void> toggleBadgePinned({
+    required String badgeId,
+    required bool isPinned,
+  });
+
+  /// ストリークを更新
+  Future<void> updateStreak({
+    required String userId,
+    required bool studiedToday,
+  });
+
+  /// ユーザーのストリークを取得
+  Future<StudyStreak?> getUserStreak(String userId);
+
+  /// ストリークをリセット
+  Future<void> resetStreak(String userId);
+
+  // ============ Achievement Statistics Methods ============
+
+  /// ユーザーのアチーブメント統計を取得
+  Future<AchievementStats?> getAchievementStats(String userId);
+
+  /// アチーブメント統計を初期化
+  Future<void> initializeAchievementStats(String userId);
+
+  /// XP報酬マルチプライヤーを取得
+  Future<RewardMultiplier?> getRewardMultiplier(String userId);
+
+  /// XP報酬マルチプライヤーを設定
+  Future<void> setRewardMultiplier({
+    required String userId,
+    required double multiplier,
+    required List<String> boosts,
+    DateTime? expiresAt,
+    required String reason,
+  });
+
+  /// ユーザーにXPを付与
+  Future<int> awardXP({
+    required String userId,
+    required int baseXP,
+  });
+
+  /// パーフェクトスコアを記録
+  Future<void> recordPerfectScore(String userId);
+
+  /// 最高記録を更新
+  Future<void> updateFastestTime({
+    required String userId,
+    required int timeInSeconds,
+  });
+
+  /// マイルストーン達成を検查（50問、100問など）
+  Future<List<String>> checkMilestoneAchievements(String userId);
+
+  /// ユーザーレベルを取得
+  Future<int> getUserLevel(String userId);
+
+  /// ユーザーの総XPを取得
+  Future<int> getUserTotalXP(String userId);
 }
 
 /// Firebase implementation of community service
@@ -9502,6 +9582,422 @@ class StubCommunityService implements CommunityService {
   Future<bool> isPassProbableReady(String userId) async {
     final prediction = await predictExamReadiness(userId);
     return prediction.isPassReady;
+  }
+
+  // ============ Gamification & Achievement Implementation ============
+
+  final Map<String, List<AchievementBadge>> _userBadges = {};
+  final Map<String, StudyStreak> _userStreaks = {};
+  final Map<String, AchievementStats> _achievementStats = {};
+  final Map<String, RewardMultiplier> _rewardMultipliers = {};
+
+  @override
+  Future<void> earnBadge({
+    required String userId,
+    required BadgeType type,
+    required String displayName,
+    required String description,
+    required BadgeRarityLevel rarity,
+    required int points,
+  }) async {
+    final badge = AchievementBadge(
+      badgeId: 'badge_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      type: type,
+      displayName: displayName,
+      description: description,
+      iconUrl: _getIconForBadge(type),
+      rarity: rarity,
+      points: points,
+      earnedAt: DateTime.now(),
+    );
+
+    if (!_userBadges.containsKey(userId)) {
+      _userBadges[userId] = [];
+    }
+    _userBadges[userId]!.add(badge);
+
+    // Update achievement stats
+    if (_achievementStats.containsKey(userId)) {
+      final stats = _achievementStats[userId]!;
+      _achievementStats[userId] = AchievementStats(
+        statsId: stats.statsId,
+        userId: userId,
+        totalBadgesEarned: stats.totalBadgesEarned + 1,
+        totalPoints: stats.totalPoints + points,
+        totalLevel: (stats.totalPoints + points) ~/ 1000 + 1,
+        badges: [...stats.badges, badge],
+        currentStreak: stats.currentStreak,
+        perfectScoreSessions: stats.perfectScoreSessions,
+        fastestTimeRecord: stats.fastestTimeRecord,
+        createdAt: stats.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  String _getIconForBadge(BadgeType type) {
+    const icons = {
+      BadgeType.firstQuestion: '🎯',
+      BadgeType.tenQuestions: '✅',
+      BadgeType.fiftyQuestions: '🔟',
+      BadgeType.hundredQuestions: '💯',
+      BadgeType.fiveHundredQuestions: '🚀',
+      BadgeType.threeStreak: '🔥',
+      BadgeType.sevenStreak: '🌟',
+      BadgeType.thirtyStreak: '⭐',
+      BadgeType.hundredStreak: '👑',
+      BadgeType.seventyPercent: '📈',
+      BadgeType.eightyPercent: '📊',
+      BadgeType.ninetyPercent: '📍',
+      BadgeType.perfectScore: '💎',
+      BadgeType.trafficRulesMastery: '🚗',
+      BadgeType.crisisAvoidanceMastery: '⚠️',
+      BadgeType.mechanicalKnowledgeMastery: '🔧',
+      BadgeType.allCategoriesMastery: '🏆',
+      BadgeType.dailyStudier: '📅',
+      BadgeType.weeklyConsistent: '📆',
+      BadgeType.monthlyDedicated: '🗓️',
+      BadgeType.speedDemon: '⚡',
+      BadgeType.nightOwl: '🌙',
+      BadgeType.morningStudier: '🌅',
+      BadgeType.weekendWarrior: '💪',
+    };
+    return icons[type] ?? '🏅';
+  }
+
+  @override
+  Future<List<AchievementBadge>> getUserBadges(String userId) async {
+    return _userBadges[userId] ?? [];
+  }
+
+  @override
+  Future<AchievementBadge?> getBadge(String badgeId) async {
+    for (final badges in _userBadges.values) {
+      try {
+        return badges.firstWhere((b) => b.badgeId == badgeId);
+      } catch (e) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<void> toggleBadgePinned({
+    required String badgeId,
+    required bool isPinned,
+  }) async {
+    for (final userId in _userBadges.keys) {
+      final badgeIndex = _userBadges[userId]!
+          .indexWhere((b) => b.badgeId == badgeId);
+      if (badgeIndex != -1) {
+        final badge = _userBadges[userId]![badgeIndex];
+        _userBadges[userId]![badgeIndex] = AchievementBadge(
+          badgeId: badge.badgeId,
+          userId: badge.userId,
+          type: badge.type,
+          displayName: badge.displayName,
+          description: badge.description,
+          iconUrl: badge.iconUrl,
+          rarity: badge.rarity,
+          points: badge.points,
+          earnedAt: badge.earnedAt,
+          level: badge.level,
+          isPinned: isPinned,
+        );
+        break;
+      }
+    }
+  }
+
+  @override
+  Future<void> updateStreak({
+    required String userId,
+    required bool studiedToday,
+  }) async {
+    final streak = _userStreaks[userId] ??
+        StudyStreak.empty(streakId: 'ss_$userId', userId: userId);
+
+    if (!studiedToday) {
+      _userStreaks[userId] = StudyStreak(
+        streakId: streak.streakId,
+        userId: userId,
+        currentStreak: 0,
+        longestStreak: streak.longestStreak,
+        lastStudyDate: streak.lastStudyDate,
+        studyDates: streak.studyDates,
+        totalDaysStudied: streak.totalDaysStudied,
+        createdAt: streak.createdAt,
+        updatedAt: DateTime.now(),
+      );
+      return;
+    }
+
+    final today = DateTime.now();
+    final yesterday = today.subtract(Duration(days: 1));
+    final isConsecutive = streak.lastStudyDate.year == yesterday.year &&
+        streak.lastStudyDate.month == yesterday.month &&
+        streak.lastStudyDate.day == yesterday.day;
+
+    final newStreak = isConsecutive ? streak.currentStreak + 1 : 1;
+    final newLongestStreak = newStreak > streak.longestStreak ? newStreak : streak.longestStreak;
+
+    _userStreaks[userId] = StudyStreak(
+      streakId: streak.streakId,
+      userId: userId,
+      currentStreak: newStreak,
+      longestStreak: newLongestStreak,
+      lastStudyDate: today,
+      studyDates: [...streak.studyDates, today]
+          .where((d) => d.isAfter(today.subtract(Duration(days: 90))))
+          .toList(),
+      totalDaysStudied: streak.totalDaysStudied + 1,
+      createdAt: streak.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    // Check for streak badges
+    if (newStreak == 3) {
+      await earnBadge(
+        userId: userId,
+        type: BadgeType.threeStreak,
+        displayName: '3連勝達成',
+        description: '3日連続で学習した',
+        rarity: BadgeRarityLevel.uncommon,
+        points: 50,
+      );
+    } else if (newStreak == 7) {
+      await earnBadge(
+        userId: userId,
+        type: BadgeType.sevenStreak,
+        displayName: '1週間連勝',
+        description: '7日連続で学習した',
+        rarity: BadgeRarityLevel.rare,
+        points: 150,
+      );
+    } else if (newStreak == 30) {
+      await earnBadge(
+        userId: userId,
+        type: BadgeType.thirtyStreak,
+        displayName: '1ヶ月チャレンジ',
+        description: '30日連続で学習した',
+        rarity: BadgeRarityLevel.epic,
+        points: 500,
+      );
+    }
+  }
+
+  @override
+  Future<StudyStreak?> getUserStreak(String userId) async {
+    return _userStreaks[userId];
+  }
+
+  @override
+  Future<void> resetStreak(String userId) async {
+    final streak = _userStreaks[userId];
+    if (streak != null) {
+      _userStreaks[userId] = StudyStreak(
+        streakId: streak.streakId,
+        userId: userId,
+        currentStreak: 0,
+        longestStreak: streak.longestStreak,
+        lastStudyDate: DateTime.now().subtract(Duration(days: 2)),
+        studyDates: [],
+        totalDaysStudied: streak.totalDaysStudied,
+        createdAt: streak.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<AchievementStats?> getAchievementStats(String userId) async {
+    return _achievementStats[userId];
+  }
+
+  @override
+  Future<void> initializeAchievementStats(String userId) async {
+    if (!_achievementStats.containsKey(userId)) {
+      _achievementStats[userId] = AchievementStats.empty(
+        statsId: 'as_$userId',
+        userId: userId,
+      );
+      _userStreaks.putIfAbsent(
+        userId,
+        () => StudyStreak.empty(streakId: 'ss_$userId', userId: userId),
+      );
+      _rewardMultipliers[userId] = RewardMultiplier.empty(
+        multiplierId: 'rm_$userId',
+        userId: userId,
+      );
+    }
+  }
+
+  @override
+  Future<RewardMultiplier?> getRewardMultiplier(String userId) async {
+    return _rewardMultipliers[userId];
+  }
+
+  @override
+  Future<void> setRewardMultiplier({
+    required String userId,
+    required double multiplier,
+    required List<String> boosts,
+    DateTime? expiresAt,
+    required String reason,
+  }) async {
+    _rewardMultipliers[userId] = RewardMultiplier(
+      multiplierId: 'rm_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      baseMultiplier: multiplier,
+      activeBoosts: boosts,
+      activatedAt: DateTime.now(),
+      expiresAt: expiresAt,
+      reason: reason,
+    );
+  }
+
+  @override
+  Future<int> awardXP({
+    required String userId,
+    required int baseXP,
+  }) async {
+    final multiplier = await getRewardMultiplier(userId);
+    final effectiveMultiplier = multiplier?.effectiveMultiplier ?? 1.0;
+    final totalXP = (baseXP * effectiveMultiplier).toInt();
+
+    if (_achievementStats.containsKey(userId)) {
+      final stats = _achievementStats[userId]!;
+      final newTotal = stats.totalPoints + totalXP;
+      _achievementStats[userId] = AchievementStats(
+        statsId: stats.statsId,
+        userId: userId,
+        totalBadgesEarned: stats.totalBadgesEarned,
+        totalPoints: newTotal,
+        totalLevel: newTotal ~/ 1000 + 1,
+        badges: stats.badges,
+        currentStreak: stats.currentStreak,
+        perfectScoreSessions: stats.perfectScoreSessions,
+        fastestTimeRecord: stats.fastestTimeRecord,
+        createdAt: stats.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    return totalXP;
+  }
+
+  @override
+  Future<void> recordPerfectScore(String userId) async {
+    if (_achievementStats.containsKey(userId)) {
+      final stats = _achievementStats[userId]!;
+      _achievementStats[userId] = AchievementStats(
+        statsId: stats.statsId,
+        userId: userId,
+        totalBadgesEarned: stats.totalBadgesEarned,
+        totalPoints: stats.totalPoints,
+        totalLevel: stats.totalLevel,
+        badges: stats.badges,
+        currentStreak: stats.currentStreak,
+        perfectScoreSessions: stats.perfectScoreSessions + 1,
+        fastestTimeRecord: stats.fastestTimeRecord,
+        createdAt: stats.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      if (stats.perfectScoreSessions + 1 == 1) {
+        await earnBadge(
+          userId: userId,
+          type: BadgeType.perfectScore,
+          displayName: '満点達成',
+          description: '100%の正答率でテストを完了した',
+          rarity: BadgeRarityLevel.legendary,
+          points: 300,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> updateFastestTime({
+    required String userId,
+    required int timeInSeconds,
+  }) async {
+    if (_achievementStats.containsKey(userId)) {
+      final stats = _achievementStats[userId]!;
+      final newFastestTime = stats.fastestTimeRecord == 0
+          ? timeInSeconds
+          : timeInSeconds < stats.fastestTimeRecord
+              ? timeInSeconds
+              : stats.fastestTimeRecord;
+
+      _achievementStats[userId] = AchievementStats(
+        statsId: stats.statsId,
+        userId: userId,
+        totalBadgesEarned: stats.totalBadgesEarned,
+        totalPoints: stats.totalPoints,
+        totalLevel: stats.totalLevel,
+        badges: stats.badges,
+        currentStreak: stats.currentStreak,
+        perfectScoreSessions: stats.perfectScoreSessions,
+        fastestTimeRecord: newFastestTime,
+        createdAt: stats.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      if (newFastestTime < 60) {
+        await earnBadge(
+          userId: userId,
+          type: BadgeType.speedDemon,
+          displayName: '速度の魔神',
+          description: '全問を60秒以内に完了した',
+          rarity: BadgeRarityLevel.rare,
+          points: 200,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<List<String>> checkMilestoneAchievements(String userId) async {
+    final badges = await getUserBadges(userId);
+    final earnedTypes = badges.map((b) => b.type).toSet();
+    final trackers = await getUserProgressTrackers(userId);
+
+    int totalQuestions = 0;
+    for (final tracker in trackers) {
+      totalQuestions += tracker.totalAttempts;
+    }
+
+    final achievements = <String>[];
+
+    if (totalQuestions >= 10 && !earnedTypes.contains(BadgeType.tenQuestions)) {
+      achievements.add('tenQuestions');
+    }
+    if (totalQuestions >= 50 && !earnedTypes.contains(BadgeType.fiftyQuestions)) {
+      achievements.add('fiftyQuestions');
+    }
+    if (totalQuestions >= 100 && !earnedTypes.contains(BadgeType.hundredQuestions)) {
+      achievements.add('hundredQuestions');
+    }
+    if (totalQuestions >= 500 && !earnedTypes.contains(BadgeType.fiveHundredQuestions)) {
+      achievements.add('fiveHundredQuestions');
+    }
+
+    return achievements;
+  }
+
+  @override
+  Future<int> getUserLevel(String userId) async {
+    final stats = await getAchievementStats(userId);
+    return stats?.totalLevel ?? 1;
+  }
+
+  @override
+  Future<int> getUserTotalXP(String userId) async {
+    final stats = await getAchievementStats(userId);
+    return stats?.totalPoints ?? 0;
   }
 }
 

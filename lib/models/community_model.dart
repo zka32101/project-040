@@ -61,6 +61,46 @@ enum VideoStatus { draft, published, archived, processing }
 
 enum VideoLanguage { japanese, english, mixed }
 
+enum BadgeType {
+  // Milestone badges
+  firstQuestion,
+  tenQuestions,
+  fiftyQuestions,
+  hundredQuestions,
+  fiveHundredQuestions,
+
+  // Streak badges
+  threeStreak,
+  sevenStreak,
+  thirtyStreak,
+  hundredStreak,
+
+  // Accuracy badges
+  seventyPercent,
+  eightyPercent,
+  ninetyPercent,
+  perfectScore,
+
+  // Category mastery
+  trafficRulesMastery,
+  crisisAvoidanceMastery,
+  mechanicalKnowledgeMastery,
+  allCategoriesMastery,
+
+  // Consistency badges
+  dailyStudier,
+  weeklyConsistent,
+  monthlyDedicated,
+
+  // Challenge badges
+  speedDemon,
+  nightOwl,
+  morningStudier,
+  weekendWarrior,
+}
+
+enum BadgeRarityLevel { common, uncommon, rare, epic, legendary }
+
 /// Community channel model
 class CommunityChannel {
   final String channelId;
@@ -4307,5 +4347,388 @@ class TimeToReadiness {
       'confidenceLevel': confidenceLevel,
       'calculatedAt': Timestamp.fromDate(calculatedAt),
     };
+  }
+}
+
+/// Achievement badge earned by user
+class AchievementBadge {
+  final String badgeId;
+  final String userId;
+  final BadgeType type;
+  final String displayName; // e.g., '三連勝達成'
+  final String description; // e.g., '3日連続で学習した'
+  final String iconUrl; // badge emoji or image
+  final BadgeRarityLevel rarity;
+  final int points; // XP reward
+  final DateTime earnedAt;
+  final int level; // 1-5 for progressive badges
+  final bool isPinned; // Featured on profile
+
+  AchievementBadge({
+    required this.badgeId,
+    required this.userId,
+    required this.type,
+    required this.displayName,
+    required this.description,
+    required this.iconUrl,
+    required this.rarity,
+    required this.points,
+    required this.earnedAt,
+    this.level = 1,
+    this.isPinned = false,
+  });
+
+  /// バッジの希少性に基づくポイント計算
+  int get rarityMultiplier {
+    switch (rarity) {
+      case BadgeRarityLevel.common:
+        return 1;
+      case BadgeRarityLevel.uncommon:
+        return 2;
+      case BadgeRarityLevel.rare:
+        return 3;
+      case BadgeRarityLevel.epic:
+        return 5;
+      case BadgeRarityLevel.legendary:
+        return 10;
+    }
+  }
+
+  /// バッジの年齢（日数）
+  int get ageInDays {
+    return DateTime.now().difference(earnedAt).inDays;
+  }
+
+  factory AchievementBadge.empty({
+    required String badgeId,
+    required String userId,
+  }) {
+    return AchievementBadge(
+      badgeId: badgeId,
+      userId: userId,
+      type: BadgeType.firstQuestion,
+      displayName: '',
+      description: '',
+      iconUrl: '🏅',
+      rarity: BadgeRarityLevel.common,
+      points: 0,
+      earnedAt: DateTime.now(),
+    );
+  }
+
+  factory AchievementBadge.fromMap(Map<String, dynamic> map) {
+    return AchievementBadge(
+      badgeId: map['badgeId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      type: _parseBadgeType(map['type'] as String? ?? 'firstQuestion'),
+      displayName: map['displayName'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      iconUrl: map['iconUrl'] as String? ?? '🏅',
+      rarity: _parseBadgeRarity(map['rarity'] as String? ?? 'common'),
+      points: map['points'] as int? ?? 0,
+      earnedAt: (map['earnedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      level: map['level'] as int? ?? 1,
+      isPinned: map['isPinned'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'badgeId': badgeId,
+      'userId': userId,
+      'type': type.toString(),
+      'displayName': displayName,
+      'description': description,
+      'iconUrl': iconUrl,
+      'rarity': rarity.toString(),
+      'points': points,
+      'earnedAt': Timestamp.fromDate(earnedAt),
+      'level': level,
+      'isPinned': isPinned,
+    };
+  }
+}
+
+/// Study streak tracker
+class StudyStreak {
+  final String streakId;
+  final String userId;
+  final int currentStreak; // current consecutive days
+  final int longestStreak; // personal best
+  final DateTime lastStudyDate;
+  final List<DateTime> studyDates; // recent study dates
+  final int totalDaysStudied; // lifetime
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  StudyStreak({
+    required this.streakId,
+    required this.userId,
+    required this.currentStreak,
+    required this.longestStreak,
+    required this.lastStudyDate,
+    this.studyDates = const [],
+    required this.totalDaysStudied,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  /// ストリークが有効か（昨日または今日）
+  bool get isActive {
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    return lastStudyDate.isAfter(yesterday);
+  }
+
+  /// ストリークが途切れるまでの日数
+  int get daysUntilBroken {
+    final tomorrow = DateTime.now().add(Duration(days: 1));
+    return tomorrow.difference(lastStudyDate).inDays;
+  }
+
+  factory StudyStreak.empty({
+    required String streakId,
+    required String userId,
+  }) {
+    return StudyStreak(
+      streakId: streakId,
+      userId: userId,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastStudyDate: DateTime.now(),
+      studyDates: [],
+      totalDaysStudied: 0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory StudyStreak.fromMap(Map<String, dynamic> map) {
+    return StudyStreak(
+      streakId: map['streakId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      currentStreak: map['currentStreak'] as int? ?? 0,
+      longestStreak: map['longestStreak'] as int? ?? 0,
+      lastStudyDate: (map['lastStudyDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      studyDates: (map['studyDates'] as List?)
+              ?.map((d) => (d as Timestamp).toDate())
+              .toList() ??
+          [],
+      totalDaysStudied: map['totalDaysStudied'] as int? ?? 0,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'streakId': streakId,
+      'userId': userId,
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'lastStudyDate': Timestamp.fromDate(lastStudyDate),
+      'studyDates': studyDates.map((d) => Timestamp.fromDate(d)).toList(),
+      'totalDaysStudied': totalDaysStudied,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+}
+
+/// User achievement statistics
+class AchievementStats {
+  final String statsId;
+  final String userId;
+  final int totalBadgesEarned;
+  final int totalPoints; // XP
+  final int totalLevel; // 1-100
+  final List<AchievementBadge> badges;
+  final StudyStreak currentStreak;
+  final int perfectScoreSessions; // 100% accuracy tests
+  final int fastestTimeRecord; // seconds for all questions
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  AchievementStats({
+    required this.statsId,
+    required this.userId,
+    required this.totalBadgesEarned,
+    required this.totalPoints,
+    required this.totalLevel,
+    required this.badges,
+    required this.currentStreak,
+    required this.perfectScoreSessions,
+    required this.fastestTimeRecord,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  /// 次のレベルアップまでのポイント
+  int get pointsToNextLevel {
+    final nextLevelThreshold = totalLevel * 1000;
+    return nextLevelThreshold - totalPoints;
+  }
+
+  /// レベルアップの進捗（%）
+  int get levelUpProgress {
+    final currentLevelThreshold = (totalLevel - 1) * 1000;
+    final nextLevelThreshold = totalLevel * 1000;
+    final progress = totalPoints - currentLevelThreshold;
+    final needed = nextLevelThreshold - currentLevelThreshold;
+    return needed > 0 ? ((progress / needed) * 100).toInt().clamp(0, 100) : 100;
+  }
+
+  factory AchievementStats.empty({
+    required String statsId,
+    required String userId,
+  }) {
+    return AchievementStats(
+      statsId: statsId,
+      userId: userId,
+      totalBadgesEarned: 0,
+      totalPoints: 0,
+      totalLevel: 1,
+      badges: [],
+      currentStreak: StudyStreak.empty(streakId: 'ss_$userId', userId: userId),
+      perfectScoreSessions: 0,
+      fastestTimeRecord: 0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory AchievementStats.fromMap(Map<String, dynamic> map) {
+    return AchievementStats(
+      statsId: map['statsId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      totalBadgesEarned: map['totalBadgesEarned'] as int? ?? 0,
+      totalPoints: map['totalPoints'] as int? ?? 0,
+      totalLevel: map['totalLevel'] as int? ?? 1,
+      badges: (map['badges'] as List?)
+              ?.map((b) => AchievementBadge.fromMap(b as Map<String, dynamic>))
+              .toList() ??
+          [],
+      currentStreak: StudyStreak.fromMap(
+        map['currentStreak'] as Map<String, dynamic>? ?? {},
+      ),
+      perfectScoreSessions: map['perfectScoreSessions'] as int? ?? 0,
+      fastestTimeRecord: map['fastestTimeRecord'] as int? ?? 0,
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'statsId': statsId,
+      'userId': userId,
+      'totalBadgesEarned': totalBadgesEarned,
+      'totalPoints': totalPoints,
+      'totalLevel': totalLevel,
+      'badges': badges.map((b) => b.toMap()).toList(),
+      'currentStreak': currentStreak.toMap(),
+      'perfectScoreSessions': perfectScoreSessions,
+      'fastestTimeRecord': fastestTimeRecord,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+}
+
+/// XP reward multiplier based on conditions
+class RewardMultiplier {
+  final String multiplierId;
+  final String userId;
+  final double baseMultiplier; // 1.0 = 100%
+  final List<String> activeBoosts; // e.g., ['streak_3x', 'time_bonus']
+  final DateTime activatedAt;
+  final DateTime? expiresAt;
+  final String reason; // why this multiplier is active
+
+  RewardMultiplier({
+    required this.multiplierId,
+    required this.userId,
+    required this.baseMultiplier,
+    required this.activeBoosts,
+    required this.activatedAt,
+    this.expiresAt,
+    required this.reason,
+  });
+
+  /// マルチプライヤーが有効か
+  bool get isActive {
+    if (expiresAt == null) return true;
+    return DateTime.now().isBefore(expiresAt!);
+  }
+
+  /// 実際のマルチプライヤー値（全ブーストを適用）
+  double get effectiveMultiplier {
+    if (!isActive) return 1.0;
+    double multiplier = baseMultiplier;
+    for (final boost in activeBoosts) {
+      if (boost.contains('streak')) multiplier *= 1.5;
+      if (boost.contains('time_bonus')) multiplier *= 1.2;
+      if (boost.contains('accuracy')) multiplier *= 1.1;
+    }
+    return multiplier;
+  }
+
+  factory RewardMultiplier.empty({
+    required String multiplierId,
+    required String userId,
+  }) {
+    return RewardMultiplier(
+      multiplierId: multiplierId,
+      userId: userId,
+      baseMultiplier: 1.0,
+      activeBoosts: [],
+      activatedAt: DateTime.now(),
+      reason: 'none',
+    );
+  }
+
+  factory RewardMultiplier.fromMap(Map<String, dynamic> map) {
+    return RewardMultiplier(
+      multiplierId: map['multiplierId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      baseMultiplier: (map['baseMultiplier'] as num?)?.toDouble() ?? 1.0,
+      activeBoosts: List<String>.from(map['activeBoosts'] as List? ?? []),
+      activatedAt: (map['activatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      expiresAt: (map['expiresAt'] as Timestamp?)?.toDate(),
+      reason: map['reason'] as String? ?? 'none',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'multiplierId': multiplierId,
+      'userId': userId,
+      'baseMultiplier': baseMultiplier,
+      'activeBoosts': activeBoosts,
+      'activatedAt': Timestamp.fromDate(activatedAt),
+      'expiresAt': expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,
+      'reason': reason,
+    };
+  }
+}
+
+// ============ Helper functions ============
+
+BadgeType _parseBadgeType(String value) {
+  try {
+    return BadgeType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return BadgeType.firstQuestion;
+  }
+}
+
+BadgeRarityLevel _parseBadgeRarity(String value) {
+  try {
+    return BadgeRarityLevel.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return BadgeRarityLevel.common;
   }
 }
