@@ -4078,3 +4078,234 @@ class ReviewScheduleItem {
     };
   }
 }
+
+/// Exam readiness prediction with pass probability
+class ExamReadinessPrediction {
+  final String predictionId;
+  final String userId;
+  final double passProbability; // 0.0～1.0 (68%)
+  final int estimatedHoursNeeded; // 12時間
+  final DateTime predictedReadyDate; // 目標達成日
+  final List<String> criticalWeakAreas; // 最重要分野
+  final List<String> recommendedFocusTopics; // 集中学習トピック
+  final ReadinessFactors factors;
+  final DateTime calculatedAt;
+  final DateTime updatedAt;
+
+  ExamReadinessPrediction({
+    required this.predictionId,
+    required this.userId,
+    required this.passProbability,
+    required this.estimatedHoursNeeded,
+    required this.predictedReadyDate,
+    required this.criticalWeakAreas,
+    required this.recommendedFocusTopics,
+    required this.factors,
+    required this.calculatedAt,
+    required this.updatedAt,
+  });
+
+  /// 合格ラインに達しているか
+  bool get isPassReady => passProbability >= 0.85;
+
+  /// 合格までの日数
+  int get daysToReady {
+    final now = DateTime.now();
+    return predictedReadyDate.difference(now).inDays.clamp(0, 999);
+  }
+
+  /// 分野ごとの準備度（0～100）
+  int get readinessPercentage => (passProbability * 100).toInt();
+
+  /// 学習推奨度：高=True, 低=False
+  bool get needsActiveLearning => !isPassReady && daysToReady <= 7;
+
+  factory ExamReadinessPrediction.empty({
+    required String predictionId,
+    required String userId,
+  }) {
+    return ExamReadinessPrediction(
+      predictionId: predictionId,
+      userId: userId,
+      passProbability: 0.0,
+      estimatedHoursNeeded: 0,
+      predictedReadyDate: DateTime.now(),
+      criticalWeakAreas: [],
+      recommendedFocusTopics: [],
+      factors: ReadinessFactors.empty(),
+      calculatedAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory ExamReadinessPrediction.fromMap(Map<String, dynamic> map) {
+    return ExamReadinessPrediction(
+      predictionId: map['predictionId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      passProbability: (map['passProbability'] as num?)?.toDouble() ?? 0.0,
+      estimatedHoursNeeded: map['estimatedHoursNeeded'] as int? ?? 0,
+      predictedReadyDate: (map['predictedReadyDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      criticalWeakAreas: List<String>.from(map['criticalWeakAreas'] as List? ?? []),
+      recommendedFocusTopics: List<String>.from(map['recommendedFocusTopics'] as List? ?? []),
+      factors: ReadinessFactors.fromMap(map['factors'] as Map<String, dynamic>? ?? {}),
+      calculatedAt: (map['calculatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'predictionId': predictionId,
+      'userId': userId,
+      'passProbability': passProbability,
+      'estimatedHoursNeeded': estimatedHoursNeeded,
+      'predictedReadyDate': Timestamp.fromDate(predictedReadyDate),
+      'criticalWeakAreas': criticalWeakAreas,
+      'recommendedFocusTopics': recommendedFocusTopics,
+      'factors': factors.toMap(),
+      'calculatedAt': Timestamp.fromDate(calculatedAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+}
+
+/// Readiness factors breakdown
+class ReadinessFactors {
+  final double accuracyWeighting; // 正答率の重み付け（0～1）
+  final double consistencyScore; // 一貫性スコア（連続正解率）
+  final double trendScore; // トレンドスコア（改善傾向）
+  final double timeSpentScore; // 学習時間スコア
+  final double weakAreaCoverageScore; // 弱点分野カバー率
+
+  /// 複合スコア（全要素の平均）
+  double get compositeScore {
+    final scores = [
+      accuracyWeighting,
+      consistencyScore,
+      trendScore,
+      timeSpentScore,
+      weakAreaCoverageScore,
+    ];
+    return scores.fold(0.0, (a, b) => a + b) / scores.length;
+  }
+
+  ReadinessFactors({
+    required this.accuracyWeighting,
+    required this.consistencyScore,
+    required this.trendScore,
+    required this.timeSpentScore,
+    required this.weakAreaCoverageScore,
+  });
+
+  factory ReadinessFactors.empty() {
+    return ReadinessFactors(
+      accuracyWeighting: 0.0,
+      consistencyScore: 0.0,
+      trendScore: 0.0,
+      timeSpentScore: 0.0,
+      weakAreaCoverageScore: 0.0,
+    );
+  }
+
+  factory ReadinessFactors.fromMap(Map<String, dynamic> map) {
+    return ReadinessFactors(
+      accuracyWeighting: (map['accuracyWeighting'] as num?)?.toDouble() ?? 0.0,
+      consistencyScore: (map['consistencyScore'] as num?)?.toDouble() ?? 0.0,
+      trendScore: (map['trendScore'] as num?)?.toDouble() ?? 0.0,
+      timeSpentScore: (map['timeSpentScore'] as num?)?.toDouble() ?? 0.0,
+      weakAreaCoverageScore: (map['weakAreaCoverageScore'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'accuracyWeighting': accuracyWeighting,
+      'consistencyScore': consistencyScore,
+      'trendScore': trendScore,
+      'timeSpentScore': timeSpentScore,
+      'weakAreaCoverageScore': weakAreaCoverageScore,
+    };
+  }
+}
+
+/// Time-to-readiness estimation
+class TimeToReadiness {
+  final String estimateId;
+  final String userId;
+  final String category; // e.g., '全体', '交通規則'
+  final int daysToTargetAccuracy; // 目標正答率に達するまでの日数
+  final int recommendedDailyMinutes; // 1日あたりの推奨学習時間
+  final int totalHoursNeeded; // 全体で必要な時間
+  final DateTime estimatedCompletionDate; // 目標達成予定日
+  final List<String> milestones; // マイルストーン（70% → 80% → 90%）
+  final String confidenceLevel; // 'high', 'medium', 'low'
+  final DateTime calculatedAt;
+
+  TimeToReadiness({
+    required this.estimateId,
+    required this.userId,
+    required this.category,
+    required this.daysToTargetAccuracy,
+    required this.recommendedDailyMinutes,
+    required this.totalHoursNeeded,
+    required this.estimatedCompletionDate,
+    required this.milestones,
+    required this.confidenceLevel,
+    required this.calculatedAt,
+  });
+
+  /// 1日の学習で達成できる進捗
+  double get progressPerDay => recommendedDailyMinutes > 0 ? 1.0 / daysToTargetAccuracy : 0.0;
+
+  /// 現在のペースで達成可能か
+  bool get isAchievableAtCurrentPace => daysToTargetAccuracy <= 30;
+
+  factory TimeToReadiness.empty({
+    required String estimateId,
+    required String userId,
+    required String category,
+  }) {
+    return TimeToReadiness(
+      estimateId: estimateId,
+      userId: userId,
+      category: category,
+      daysToTargetAccuracy: 0,
+      recommendedDailyMinutes: 0,
+      totalHoursNeeded: 0,
+      estimatedCompletionDate: DateTime.now(),
+      milestones: [],
+      confidenceLevel: 'low',
+      calculatedAt: DateTime.now(),
+    );
+  }
+
+  factory TimeToReadiness.fromMap(Map<String, dynamic> map) {
+    return TimeToReadiness(
+      estimateId: map['estimateId'] as String? ?? '',
+      userId: map['userId'] as String? ?? '',
+      category: map['category'] as String? ?? '',
+      daysToTargetAccuracy: map['daysToTargetAccuracy'] as int? ?? 0,
+      recommendedDailyMinutes: map['recommendedDailyMinutes'] as int? ?? 0,
+      totalHoursNeeded: map['totalHoursNeeded'] as int? ?? 0,
+      estimatedCompletionDate: (map['estimatedCompletionDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      milestones: List<String>.from(map['milestones'] as List? ?? []),
+      confidenceLevel: map['confidenceLevel'] as String? ?? 'low',
+      calculatedAt: (map['calculatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'estimateId': estimateId,
+      'userId': userId,
+      'category': category,
+      'daysToTargetAccuracy': daysToTargetAccuracy,
+      'recommendedDailyMinutes': recommendedDailyMinutes,
+      'totalHoursNeeded': totalHoursNeeded,
+      'estimatedCompletionDate': Timestamp.fromDate(estimatedCompletionDate),
+      'milestones': milestones,
+      'confidenceLevel': confidenceLevel,
+      'calculatedAt': Timestamp.fromDate(calculatedAt),
+    };
+  }
+}

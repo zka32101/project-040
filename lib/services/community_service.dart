@@ -1200,6 +1200,50 @@ abstract class CommunityService {
 
   /// パーソナライズされた学習計画を作成
   Future<StudyPlan> generatePersonalizedStudyPlan(String userId);
+
+  // ============ Exam Readiness Prediction Methods ============
+
+  /// 総合的な試験合格可能性を予測
+  Future<ExamReadinessPrediction> predictExamReadiness(String userId);
+
+  /// 分野別の試験合格可能性を予測
+  Future<ExamReadinessPrediction> predictCategoryReadiness({
+    required String userId,
+    required String category,
+  });
+
+  /// 各分野のReadinessFactorsを計算
+  Future<ReadinessFactors> calculateReadinessFactors({
+    required String userId,
+    required String category,
+  });
+
+  /// 目標正答率に達するまでの時間を推定
+  Future<TimeToReadiness> estimateTimeToReadiness({
+    required String userId,
+    required String category,
+    required int targetAccuracyPercent,
+  });
+
+  /// 複数分野の統合readiness予測
+  Future<Map<String, ExamReadinessPrediction>> predictCategoryReadinessList(
+    String userId,
+  );
+
+  /// ユーザーの試験合格予測を更新
+  Future<void> updateReadinessPrediction({
+    required String userId,
+    required ExamReadinessPrediction prediction,
+  });
+
+  /// 試験readiness予測を取得
+  Future<ExamReadinessPrediction?> getReadinessPrediction(String userId);
+
+  /// Readiness改善トレンドを取得（過去14日）
+  Future<List<Map<String, dynamic>>> getReadinessTrend(String userId);
+
+  /// 合格確実と判定されるreadiness閾値
+  Future<bool> isPassProbableReady(String userId);
 }
 
 /// Firebase implementation of community service
@@ -9086,6 +9130,378 @@ class StubCommunityService implements CommunityService {
       estimatedHours: (recommendedMinutes / 60).toDouble(),
       deadline: DateTime.now().add(Duration(days: 14)),
     );
+  }
+
+  // ============ Exam Readiness Prediction Implementation ============
+
+  final Map<String, ExamReadinessPrediction> _readinessPredictions = {};
+  final Map<String, List<DateTime>> _readinessTrendHistory = {};
+
+  @override
+  Future<ExamReadinessPrediction> predictExamReadiness(String userId) async {
+    final trackers = await getUserProgressTrackers(userId);
+    if (trackers.isEmpty) {
+      return ExamReadinessPrediction(
+        predictionId: 'erp_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        passProbability: 0.0,
+        estimatedHoursNeeded: 0,
+        predictedReadyDate: DateTime.now().add(Duration(days: 30)),
+        criticalWeakAreas: [],
+        recommendedFocusTopics: [],
+        factors: ReadinessFactors.empty(),
+        calculatedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    // Calculate overall readiness from all categories
+    double totalProbability = 0;
+    final criticalWeakAreas = <String>[];
+    final focusTopics = <String>[];
+    int totalHours = 0;
+
+    for (final tracker in trackers) {
+      final categoryFactors = await calculateReadinessFactors(
+        userId: userId,
+        category: tracker.category,
+      );
+
+      final categoryProbability = categoryFactors.compositeScore;
+      totalProbability += categoryProbability;
+
+      if (categoryProbability < 0.70) {
+        criticalWeakAreas.add(tracker.category);
+      }
+
+      final timeEstimate = await estimateTimeToReadiness(
+        userId: userId,
+        category: tracker.category,
+        targetAccuracyPercent: 85,
+      );
+      totalHours += timeEstimate.totalHoursNeeded;
+      focusTopics.addAll(timeEstimate.milestones);
+    }
+
+    final avgProbability = totalProbability / trackers.length;
+    final readyDate =
+        DateTime.now().add(Duration(hours: totalHours));
+
+    final prediction = ExamReadinessPrediction(
+      predictionId: 'erp_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      passProbability: avgProbability.clamp(0.0, 1.0),
+      estimatedHoursNeeded: totalHours.clamp(0, 180),
+      predictedReadyDate: readyDate,
+      criticalWeakAreas: criticalWeakAreas,
+      recommendedFocusTopics: focusTopics.toSet().toList(),
+      factors: ReadinessFactors(
+        accuracyWeighting: _calculateCategoryAverage(
+          trackers,
+          (t) => t.accuracyRate,
+        ),
+        consistencyScore: _calculateConsistencyScore(trackers),
+        trendScore: _calculateTrendScore(trackers),
+        timeSpentScore: _calculateTimeSpentScore(trackers),
+        weakAreaCoverageScore: 1.0 - (criticalWeakAreas.length / trackers.length),
+      ),
+      calculatedAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    _readinessPredictions[userId] = prediction;
+    _recordReadinessTrend(userId, prediction.passProbability);
+
+    return prediction;
+  }
+
+  @override
+  Future<ExamReadinessPrediction> predictCategoryReadiness({
+    required String userId,
+    required String category,
+  }) async {
+    final tracker = await getProgressTracker(
+      userId: userId,
+      category: category,
+    );
+
+    if (tracker == null) {
+      return ExamReadinessPrediction(
+        predictionId: 'erp_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        passProbability: 0.0,
+        estimatedHoursNeeded: 0,
+        predictedReadyDate: DateTime.now(),
+        criticalWeakAreas: [],
+        recommendedFocusTopics: [],
+        factors: ReadinessFactors.empty(),
+        calculatedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    final factors = await calculateReadinessFactors(
+      userId: userId,
+      category: category,
+    );
+    final timeEstimate = await estimateTimeToReadiness(
+      userId: userId,
+      category: category,
+      targetAccuracyPercent: 85,
+    );
+
+    return ExamReadinessPrediction(
+      predictionId: 'erp_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      passProbability: factors.compositeScore,
+      estimatedHoursNeeded: timeEstimate.totalHoursNeeded,
+      predictedReadyDate: timeEstimate.estimatedCompletionDate,
+      criticalWeakAreas: tracker.accuracyPercentage < 70 ? [category] : [],
+      recommendedFocusTopics: timeEstimate.milestones,
+      factors: factors,
+      calculatedAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<ReadinessFactors> calculateReadinessFactors({
+    required String userId,
+    required String category,
+  }) async {
+    final tracker = await getProgressTracker(
+      userId: userId,
+      category: category,
+    );
+
+    if (tracker == null) {
+      return ReadinessFactors.empty();
+    }
+
+    // 正答率の重み付け (40%)
+    final accuracyWeighting = tracker.accuracyRate;
+
+    // 連続正解率スコア (20%)
+    final consistencyScore = tracker.consecutiveCorrect > 0
+        ? (tracker.consecutiveCorrect / 10).clamp(0.0, 1.0)
+        : 0.0;
+
+    // トレンドスコア (20%)
+    double trendScore = 0.0;
+    if (tracker.lastFiveScores.length >= 2) {
+      final recent = tracker.lastFiveScores.sublist(
+          (tracker.lastFiveScores.length - 2).clamp(0, tracker.lastFiveScores.length));
+      if (recent.isNotEmpty && recent.length >= 2) {
+        trendScore = recent.last > recent.first ? 0.7 : 0.3;
+      }
+    }
+
+    // 学習時間スコア (10%)
+    final timeSpentScore = (tracker.minutesSpent / 120).clamp(0.0, 1.0);
+
+    // 試行回数による信頼度スコア (10%)
+    final weakAreaCoverageScore =
+        (tracker.totalAttempts / 20).clamp(0.0, 1.0);
+
+    return ReadinessFactors(
+      accuracyWeighting: accuracyWeighting * 0.4,
+      consistencyScore: consistencyScore * 0.2,
+      trendScore: trendScore * 0.2,
+      timeSpentScore: timeSpentScore * 0.1,
+      weakAreaCoverageScore: weakAreaCoverageScore * 0.1,
+    );
+  }
+
+  double _calculateCategoryAverage(
+    List<ProgressTracker> trackers,
+    double Function(ProgressTracker) getValue,
+  ) {
+    if (trackers.isEmpty) return 0.0;
+    final sum = trackers.fold(0.0, (a, t) => a + getValue(t));
+    return sum / trackers.length;
+  }
+
+  double _calculateConsistencyScore(List<ProgressTracker> trackers) {
+    if (trackers.isEmpty) return 0.0;
+    double totalConsistency = 0;
+    for (final tracker in trackers) {
+      if (tracker.totalAttempts > 0) {
+        final consistency = tracker.consecutiveCorrect / tracker.totalAttempts;
+        totalConsistency += consistency;
+      }
+    }
+    return (totalConsistency / trackers.length).clamp(0.0, 1.0);
+  }
+
+  double _calculateTrendScore(List<ProgressTracker> trackers) {
+    if (trackers.isEmpty) return 0.0;
+    double positiveTrends = 0;
+
+    for (final tracker in trackers) {
+      if (tracker.lastFiveScores.length >= 2) {
+        final recent = tracker.lastFiveScores;
+        final recent2 = recent.sublist(
+          (recent.length - 2).clamp(0, recent.length),
+        );
+        if (recent2.length >= 2 && recent2.last > recent2.first) {
+          positiveTrends++;
+        }
+      }
+    }
+
+    return (positiveTrends / trackers.length).clamp(0.0, 1.0);
+  }
+
+  double _calculateTimeSpentScore(List<ProgressTracker> trackers) {
+    if (trackers.isEmpty) return 0.0;
+    double totalTime = 0;
+    for (final tracker in trackers) {
+      totalTime += tracker.minutesSpent;
+    }
+    return (totalTime / (trackers.length * 120)).clamp(0.0, 1.0);
+  }
+
+  @override
+  Future<TimeToReadiness> estimateTimeToReadiness({
+    required String userId,
+    required String category,
+    required int targetAccuracyPercent,
+  }) async {
+    final tracker = await getProgressTracker(
+      userId: userId,
+      category: category,
+    );
+
+    if (tracker == null) {
+      return TimeToReadiness(
+        estimateId: 'ttr_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        category: category,
+        daysToTargetAccuracy: 30,
+        recommendedDailyMinutes: 60,
+        totalHoursNeeded: 30,
+        estimatedCompletionDate: DateTime.now().add(Duration(days: 30)),
+        milestones: ['基礎習得', '弱点克服', '本試験対策'],
+        confidenceLevel: 'low',
+        calculatedAt: DateTime.now(),
+      );
+    }
+
+    final currentAccuracy = tracker.accuracyPercentage;
+    final gap = (targetAccuracyPercent - currentAccuracy).abs();
+
+    // 正答率の改善度から日数を推定
+    int daysToTarget = 1;
+    if (gap > 0) {
+      // 1日で1%改善できると仮定
+      daysToTarget = gap;
+    }
+
+    final dailyMinutes = _calculateRecommendedDailyMinutes(tracker);
+    final totalHours = (daysToTarget * dailyMinutes) ~/ 60;
+
+    final milestones = _generateMilestones(currentAccuracy, targetAccuracyPercent);
+    final confidence =
+        tracker.totalAttempts >= 10 ? 'high' : 'medium';
+
+    return TimeToReadiness(
+      estimateId: 'ttr_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      category: category,
+      daysToTargetAccuracy: daysToTarget.clamp(1, 60),
+      recommendedDailyMinutes: dailyMinutes.clamp(15, 120),
+      totalHoursNeeded: totalHours.clamp(1, 180),
+      estimatedCompletionDate:
+          DateTime.now().add(Duration(days: daysToTarget)),
+      milestones: milestones,
+      confidenceLevel: confidence,
+      calculatedAt: DateTime.now(),
+    );
+  }
+
+  int _calculateRecommendedDailyMinutes(ProgressTracker tracker) {
+    final gap = 85 - tracker.accuracyPercentage;
+    if (gap <= 0) return 0;
+    return (gap * 0.8).toInt().clamp(15, 120);
+  }
+
+  List<String> _generateMilestones(int current, int target) {
+    final milestones = <String>[];
+    if (current < 60) {
+      milestones.add('基礎習得 (60%)');
+    }
+    if (current < 75) {
+      milestones.add('弱点克服 (75%)');
+    }
+    if (current < target) {
+      milestones.add('本試験対策 ($target%)');
+    }
+    return milestones.isNotEmpty
+        ? milestones
+        : ['維持・発展学習'];
+  }
+
+  @override
+  Future<Map<String, ExamReadinessPrediction>>
+      predictCategoryReadinessList(String userId) async {
+    final trackers = await getUserProgressTrackers(userId);
+    final result = <String, ExamReadinessPrediction>{};
+
+    for (final tracker in trackers) {
+      final prediction = await predictCategoryReadiness(
+        userId: userId,
+        category: tracker.category,
+      );
+      result[tracker.category] = prediction;
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> updateReadinessPrediction({
+    required String userId,
+    required ExamReadinessPrediction prediction,
+  }) async {
+    _readinessPredictions[userId] = prediction;
+  }
+
+  @override
+  Future<ExamReadinessPrediction?> getReadinessPrediction(
+    String userId,
+  ) async {
+    return _readinessPredictions[userId];
+  }
+
+  void _recordReadinessTrend(String userId, double probability) {
+    if (!_readinessTrendHistory.containsKey(userId)) {
+      _readinessTrendHistory[userId] = [];
+    }
+    _readinessTrendHistory[userId]!.add(DateTime.now());
+
+    // Keep only last 14 days
+    final twoWeeksAgo = DateTime.now().subtract(Duration(days: 14));
+    _readinessTrendHistory[userId]!
+        .removeWhere((date) => date.isBefore(twoWeeksAgo));
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getReadinessTrend(
+    String userId,
+  ) async {
+    final trend = _readinessTrendHistory[userId] ?? [];
+    return trend.map((date) {
+      return {
+        'date': date.toIso8601String(),
+        'timestamp': date.millisecondsSinceEpoch,
+      };
+    }).toList();
+  }
+
+  @override
+  Future<bool> isPassProbableReady(String userId) async {
+    final prediction = await predictExamReadiness(userId);
+    return prediction.isPassReady;
   }
 }
 
