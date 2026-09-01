@@ -83,6 +83,17 @@ enum CourseStatus { draft, active, archived, completed }
 
 enum CurriculumType { standardCurriculum, customCurriculum, accelerated }
 
+// Phase 14: Advanced Learning Resources & Study Materials
+enum ResourceType { video, pdf, article, infographic, quiz, interactiveLesson, referenceGuide, examTips, studyGuide }
+
+enum ResourceFormat { video, pdf, html, image, interactive }
+
+enum ResourceDifficulty { beginner, intermediate, advanced, expert }
+
+enum ResourceStatus { draft, published, archived, deprecated }
+
+enum MaterialCategory { roadSigns, trafficRules, defensiveDriving, vehicleHandling, emergencyProcedures, legalRequirements, examTips, studyGuide }
+
 // Phase 13: Student Performance Notifications and Alerts
 enum NotificationChannelType { inApp, email, sms, push }
 
@@ -6061,6 +6072,342 @@ class CustomReport {
     );
 }
 
+// ============ Phase 14: Advanced Learning Resources ============
+
+class StudyMaterial {
+  final String materialId;
+  final String title;
+  final String description;
+  final ResourceType resourceType;
+  final ResourceFormat format;
+  final MaterialCategory category;
+  final ResourceDifficulty difficulty;
+  final String contentUrl;
+  final String? thumbnailUrl;
+  final int durationMinutes;
+  final List<String> tags;
+  final ResourceStatus status;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final String createdByUserId;
+  final int viewCount;
+  final double averageRating;
+  final int ratingCount;
+  final Map<String, dynamic> metadata;
+
+  StudyMaterial({
+    required this.materialId,
+    required this.title,
+    required this.description,
+    required this.resourceType,
+    required this.format,
+    required this.category,
+    required this.difficulty,
+    required this.contentUrl,
+    this.thumbnailUrl,
+    this.durationMinutes = 0,
+    List<String>? tags,
+    this.status = ResourceStatus.draft,
+    required this.createdAt,
+    this.updatedAt,
+    required this.createdByUserId,
+    this.viewCount = 0,
+    this.averageRating = 0.0,
+    this.ratingCount = 0,
+    Map<String, dynamic>? metadata,
+  })
+      : tags = tags ?? [],
+        metadata = metadata ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'materialId': materialId,
+    'title': title,
+    'description': description,
+    'resourceType': resourceType.toString().split('.').last,
+    'format': format.toString().split('.').last,
+    'category': category.toString().split('.').last,
+    'difficulty': difficulty.toString().split('.').last,
+    'contentUrl': contentUrl,
+    'thumbnailUrl': thumbnailUrl,
+    'durationMinutes': durationMinutes,
+    'tags': tags,
+    'status': status.toString().split('.').last,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'createdByUserId': createdByUserId,
+    'viewCount': viewCount,
+    'averageRating': averageRating,
+    'ratingCount': ratingCount,
+    'metadata': metadata,
+  };
+
+  factory StudyMaterial.fromMap(Map<String, dynamic> map) => StudyMaterial(
+    materialId: map['materialId'] ?? '',
+    title: map['title'] ?? '',
+    description: map['description'] ?? '',
+    resourceType: _parseResourceType(map['resourceType'] ?? ''),
+    format: _parseResourceFormat(map['format'] ?? ''),
+    category: _parseMaterialCategory(map['category'] ?? ''),
+    difficulty: _parseResourceDifficulty(map['difficulty'] ?? ''),
+    contentUrl: map['contentUrl'] ?? '',
+    thumbnailUrl: map['thumbnailUrl'],
+    durationMinutes: map['durationMinutes'] ?? 0,
+    tags: List<String>.from(map['tags'] ?? []),
+    status: _parseResourceStatus(map['status'] ?? ''),
+    createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+    updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
+    createdByUserId: map['createdByUserId'] ?? '',
+    viewCount: map['viewCount'] ?? 0,
+    averageRating: (map['averageRating'] ?? 0.0).toDouble(),
+    ratingCount: map['ratingCount'] ?? 0,
+    metadata: map['metadata'] ?? {},
+  );
+}
+
+class ResourceCollection {
+  final String collectionId;
+  final String collectionName;
+  final String description;
+  final List<String> materialIds;
+  final MaterialCategory primaryCategory;
+  final ResourceDifficulty targetDifficulty;
+  final int orderIndex;
+  final bool isPublished;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final Map<String, dynamic> metadata;
+
+  ResourceCollection({
+    required this.collectionId,
+    required this.collectionName,
+    required this.description,
+    List<String>? materialIds,
+    required this.primaryCategory,
+    required this.targetDifficulty,
+    this.orderIndex = 0,
+    this.isPublished = false,
+    required this.createdAt,
+    this.updatedAt,
+    Map<String, dynamic>? metadata,
+  })
+      : materialIds = materialIds ?? [],
+        metadata = metadata ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'collectionId': collectionId,
+    'collectionName': collectionName,
+    'description': description,
+    'materialIds': materialIds,
+    'primaryCategory': primaryCategory.toString().split('.').last,
+    'targetDifficulty': targetDifficulty.toString().split('.').last,
+    'orderIndex': orderIndex,
+    'isPublished': isPublished,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'metadata': metadata,
+  };
+
+  factory ResourceCollection.fromMap(Map<String, dynamic> map) =>
+    ResourceCollection(
+      collectionId: map['collectionId'] ?? '',
+      collectionName: map['collectionName'] ?? '',
+      description: map['description'] ?? '',
+      materialIds: List<String>.from(map['materialIds'] ?? []),
+      primaryCategory: _parseMaterialCategory(map['primaryCategory'] ?? ''),
+      targetDifficulty: _parseResourceDifficulty(map['targetDifficulty'] ?? ''),
+      orderIndex: map['orderIndex'] ?? 0,
+      isPublished: map['isPublished'] ?? false,
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
+      metadata: map['metadata'] ?? {},
+    );
+}
+
+class StudentResourceProgress {
+  final String progressId;
+  final String userId;
+  final String materialId;
+  final DateTime startedAt;
+  final DateTime? completedAt;
+  final double progressPercent;
+  final bool isBookmarked;
+  final double userRating;
+  final String? userNotes;
+  final int timeSpentMinutes;
+  final Map<String, dynamic> interactionData;
+
+  StudentResourceProgress({
+    required this.progressId,
+    required this.userId,
+    required this.materialId,
+    required this.startedAt,
+    this.completedAt,
+    this.progressPercent = 0.0,
+    this.isBookmarked = false,
+    this.userRating = 0.0,
+    this.userNotes,
+    this.timeSpentMinutes = 0,
+    Map<String, dynamic>? interactionData,
+  }) : interactionData = interactionData ?? {};
+
+  bool get isCompleted => completedAt != null && progressPercent >= 100.0;
+
+  Map<String, dynamic> toMap() => {
+    'progressId': progressId,
+    'userId': userId,
+    'materialId': materialId,
+    'startedAt': startedAt.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+    'progressPercent': progressPercent,
+    'isBookmarked': isBookmarked,
+    'userRating': userRating,
+    'userNotes': userNotes,
+    'timeSpentMinutes': timeSpentMinutes,
+    'interactionData': interactionData,
+  };
+
+  factory StudentResourceProgress.fromMap(Map<String, dynamic> map) =>
+    StudentResourceProgress(
+      progressId: map['progressId'] ?? '',
+      userId: map['userId'] ?? '',
+      materialId: map['materialId'] ?? '',
+      startedAt: DateTime.parse(map['startedAt'] ?? DateTime.now().toIso8601String()),
+      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt']) : null,
+      progressPercent: (map['progressPercent'] ?? 0.0).toDouble(),
+      isBookmarked: map['isBookmarked'] ?? false,
+      userRating: (map['userRating'] ?? 0.0).toDouble(),
+      userNotes: map['userNotes'],
+      timeSpentMinutes: map['timeSpentMinutes'] ?? 0,
+      interactionData: map['interactionData'] ?? {},
+    );
+}
+
+class ResourceRecommendation {
+  final String recommendationId;
+  final String userId;
+  final List<String> materialIds;
+  final String recommendationReason;
+  final double relevanceScore;
+  final List<String> recommendedCategories;
+  final DateTime createdAt;
+  final DateTime? viewedAt;
+  final bool isAccepted;
+  final Map<String, dynamic> scoreBreakdown;
+
+  ResourceRecommendation({
+    required this.recommendationId,
+    required this.userId,
+    required this.materialIds,
+    required this.recommendationReason,
+    required this.relevanceScore,
+    required this.recommendedCategories,
+    required this.createdAt,
+    this.viewedAt,
+    this.isAccepted = false,
+    Map<String, dynamic>? scoreBreakdown,
+  }) : scoreBreakdown = scoreBreakdown ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'recommendationId': recommendationId,
+    'userId': userId,
+    'materialIds': materialIds,
+    'recommendationReason': recommendationReason,
+    'relevanceScore': relevanceScore,
+    'recommendedCategories': recommendedCategories,
+    'createdAt': createdAt.toIso8601String(),
+    'viewedAt': viewedAt?.toIso8601String(),
+    'isAccepted': isAccepted,
+    'scoreBreakdown': scoreBreakdown,
+  };
+
+  factory ResourceRecommendation.fromMap(Map<String, dynamic> map) =>
+    ResourceRecommendation(
+      recommendationId: map['recommendationId'] ?? '',
+      userId: map['userId'] ?? '',
+      materialIds: List<String>.from(map['materialIds'] ?? []),
+      recommendationReason: map['recommendationReason'] ?? '',
+      relevanceScore: (map['relevanceScore'] ?? 0.0).toDouble(),
+      recommendedCategories: List<String>.from(map['recommendedCategories'] ?? []),
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      viewedAt: map['viewedAt'] != null ? DateTime.parse(map['viewedAt']) : null,
+      isAccepted: map['isAccepted'] ?? false,
+      scoreBreakdown: map['scoreBreakdown'] ?? {},
+    );
+}
+
+class ResourceAnalytics {
+  final String analyticsId;
+  final String materialId;
+  final int totalViews;
+  final int uniqueViewers;
+  final int completionCount;
+  final double completionRate;
+  final double averageTimeSpentMinutes;
+  final double averageUserRating;
+  final Map<MaterialCategory, int> viewsByCategory;
+  final Map<ResourceDifficulty, int> viewsByDifficulty;
+  final DateTime lastViewedAt;
+  final Map<String, dynamic> engagement;
+
+  ResourceAnalytics({
+    required this.analyticsId,
+    required this.materialId,
+    this.totalViews = 0,
+    this.uniqueViewers = 0,
+    this.completionCount = 0,
+    this.completionRate = 0.0,
+    this.averageTimeSpentMinutes = 0.0,
+    this.averageUserRating = 0.0,
+    Map<MaterialCategory, int>? viewsByCategory,
+    Map<ResourceDifficulty, int>? viewsByDifficulty,
+    required this.lastViewedAt,
+    Map<String, dynamic>? engagement,
+  })
+      : viewsByCategory = viewsByCategory ?? {},
+        viewsByDifficulty = viewsByDifficulty ?? {},
+        engagement = engagement ?? {};
+
+  Map<String, dynamic> toMap() => {
+    'analyticsId': analyticsId,
+    'materialId': materialId,
+    'totalViews': totalViews,
+    'uniqueViewers': uniqueViewers,
+    'completionCount': completionCount,
+    'completionRate': completionRate,
+    'averageTimeSpentMinutes': averageTimeSpentMinutes,
+    'averageUserRating': averageUserRating,
+    'viewsByCategory': viewsByCategory.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'viewsByDifficulty': viewsByDifficulty.map((k, v) => MapEntry(k.toString().split('.').last, v)),
+    'lastViewedAt': lastViewedAt.toIso8601String(),
+    'engagement': engagement,
+  };
+
+  factory ResourceAnalytics.fromMap(Map<String, dynamic> map) {
+    final viewsByCategoryMap = (map['viewsByCategory'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(_parseMaterialCategory(k), v as int),
+    ) ?? {};
+
+    final viewsByDifficultyMap = (map['viewsByDifficulty'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(_parseResourceDifficulty(k), v as int),
+    ) ?? {};
+
+    return ResourceAnalytics(
+      analyticsId: map['analyticsId'] ?? '',
+      materialId: map['materialId'] ?? '',
+      totalViews: map['totalViews'] ?? 0,
+      uniqueViewers: map['uniqueViewers'] ?? 0,
+      completionCount: map['completionCount'] ?? 0,
+      completionRate: (map['completionRate'] ?? 0.0).toDouble(),
+      averageTimeSpentMinutes: (map['averageTimeSpentMinutes'] ?? 0.0).toDouble(),
+      averageUserRating: (map['averageUserRating'] ?? 0.0).toDouble(),
+      viewsByCategory: viewsByCategoryMap,
+      viewsByDifficulty: viewsByDifficultyMap,
+      lastViewedAt: DateTime.parse(map['lastViewedAt'] ?? DateTime.now().toIso8601String()),
+      engagement: map['engagement'] ?? {},
+    );
+  }
+}
+
 // ============ Phase 13: Student Performance Notifications ============
 
 class NotificationPreferences {
@@ -6678,5 +7025,55 @@ NotificationStatus _parseNotificationStatus(String value) {
     );
   } catch (e) {
     return NotificationStatus.pending;
+  }
+}
+
+ResourceType _parseResourceType(String value) {
+  try {
+    return ResourceType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ResourceType.video;
+  }
+}
+
+ResourceFormat _parseResourceFormat(String value) {
+  try {
+    return ResourceFormat.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ResourceFormat.video;
+  }
+}
+
+ResourceDifficulty _parseResourceDifficulty(String value) {
+  try {
+    return ResourceDifficulty.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ResourceDifficulty.intermediate;
+  }
+}
+
+ResourceStatus _parseResourceStatus(String value) {
+  try {
+    return ResourceStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return ResourceStatus.draft;
+  }
+}
+
+MaterialCategory _parseMaterialCategory(String value) {
+  try {
+    return MaterialCategory.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return MaterialCategory.studyGuide;
   }
 }

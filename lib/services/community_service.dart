@@ -1688,6 +1688,156 @@ abstract class CommunityService {
   /// カリキュラム完了率を取得
   Future<double> getCurriculumCompletionRate(String curriculumId);
 
+  // ============ Phase 14: Advanced Learning Resources ============
+
+  /// 学習教材を作成
+  Future<String> createStudyMaterial({
+    required String title,
+    required String description,
+    required ResourceType resourceType,
+    required ResourceFormat format,
+    required MaterialCategory category,
+    required ResourceDifficulty difficulty,
+    required String contentUrl,
+    String? thumbnailUrl,
+    int durationMinutes,
+    List<String>? tags,
+    required String createdByUserId,
+    Map<String, dynamic>? metadata,
+  });
+
+  /// 学習教材を取得
+  Future<StudyMaterial?> getStudyMaterial(String materialId);
+
+  /// カテゴリ別の学習教材を取得
+  Future<List<StudyMaterial>> getMaterialsByCategory(MaterialCategory category);
+
+  /// 難易度別の学習教材を取得
+  Future<List<StudyMaterial>> getMaterialsByDifficulty(ResourceDifficulty difficulty);
+
+  /// 検索クエリで学習教材を検索
+  Future<List<StudyMaterial>> searchMaterials(String query);
+
+  /// 学習教材のステータスを更新
+  Future<void> updateMaterialStatus(String materialId, ResourceStatus status);
+
+  /// リソースコレクションを作成
+  Future<String> createResourceCollection({
+    required String collectionName,
+    required String description,
+    required MaterialCategory primaryCategory,
+    required ResourceDifficulty targetDifficulty,
+    List<String>? materialIds,
+    Map<String, dynamic>? metadata,
+  });
+
+  /// リソースコレクションを取得
+  Future<ResourceCollection?> getResourceCollection(String collectionId);
+
+  /// 公開されているコレクションを取得
+  Future<List<ResourceCollection>> getPublishedCollections();
+
+  /// コレクションに教材を追加
+  Future<void> addMaterialToCollection({
+    required String collectionId,
+    required String materialId,
+  });
+
+  /// コレクションから教材を削除
+  Future<void> removeMaterialFromCollection({
+    required String collectionId,
+    required String materialId,
+  });
+
+  /// 学生のリソース進捗を開始
+  Future<String> startResourceProgress({
+    required String userId,
+    required String materialId,
+  });
+
+  /// 学生のリソース進捗を更新
+  Future<void> updateResourceProgress({
+    required String progressId,
+    required double progressPercent,
+    int? timeSpentMinutes,
+    String? userNotes,
+    Map<String, dynamic>? interactionData,
+  });
+
+  /// 学生のリソース進捗を完了
+  Future<void> completeResourceProgress(String progressId);
+
+  /// 学生のリソース進捗を取得
+  Future<StudentResourceProgress?> getResourceProgress(String progressId);
+
+  /// 学生の全リソース進捗を取得
+  Future<List<StudentResourceProgress>> getUserResourceProgress(String userId);
+
+  /// 教材にブックマークを追加
+  Future<void> bookmarkMaterial({
+    required String progressId,
+    required bool isBookmarked,
+  });
+
+  /// 教材を評価
+  Future<void> rateMaterial({
+    required String progressId,
+    required double rating,
+  });
+
+  /// ユーザーのブックマーク済み教材を取得
+  Future<List<StudentResourceProgress>> getUserBookmarks(String userId);
+
+  /// リソースレコメンデーションを作成
+  Future<String> createResourceRecommendation({
+    required String userId,
+    required List<String> materialIds,
+    required String recommendationReason,
+    required double relevanceScore,
+    List<String>? recommendedCategories,
+    Map<String, dynamic>? scoreBreakdown,
+  });
+
+  /// ユーザーのレコメンデーションを取得
+  Future<List<ResourceRecommendation>> getUserRecommendations(String userId);
+
+  /// レコメンデーションを確認済みにマーク
+  Future<void> markRecommendationAsViewed(String recommendationId);
+
+  /// レコメンデーションを受け入れ
+  Future<void> acceptRecommendation(String recommendationId);
+
+  /// リソース分析を取得
+  Future<ResourceAnalytics?> getResourceAnalytics(String materialId);
+
+  /// 教材ビューを記録
+  Future<void> recordMaterialView({
+    required String materialId,
+    required String userId,
+  });
+
+  /// カテゴリ別のビュー統計を取得
+  Future<Map<MaterialCategory, int>> getViewsByCategory(String materialId);
+
+  /// 難易度別のビュー統計を取得
+  Future<Map<ResourceDifficulty, int>> getViewsByDifficulty(String materialId);
+
+  /// 推奨教材を生成
+  Future<List<String>> generateRecommendedMaterials({
+    required String userId,
+    required List<String> weakAreas,
+    required int maxRecommendations,
+  });
+
+  /// 学生の学習パターンに基づくコレクションを取得
+  Future<List<ResourceCollection>> getPersonalizedCollections({
+    required String userId,
+    required int maxCollections,
+  });
+
+  /// 教材の完了率を取得
+  Future<double> getMaterialCompletionRate(String materialId);
+
   // ============ Phase 13: Student Performance Notifications ============
 
   /// ユーザーの通知設定を作成
@@ -11861,6 +12011,542 @@ class StubCommunityService implements CommunityService {
 
     final totalProgress = progress.fold<double>(0, (sum, p) => sum + p.overallProgress);
     return totalProgress / progress.length;
+  }
+
+  // ============ Phase 14: Advanced Learning Resources ============
+
+  final Map<String, StudyMaterial> _studyMaterials = {};
+  final Map<String, ResourceCollection> _resourceCollections = {};
+  final Map<String, StudentResourceProgress> _resourceProgress = {};
+  final Map<String, ResourceRecommendation> _resourceRecommendations = {};
+  final Map<String, ResourceAnalytics> _resourceAnalytics = {};
+
+  @override
+  Future<String> createStudyMaterial({
+    required String title,
+    required String description,
+    required ResourceType resourceType,
+    required ResourceFormat format,
+    required MaterialCategory category,
+    required ResourceDifficulty difficulty,
+    required String contentUrl,
+    String? thumbnailUrl,
+    int durationMinutes = 0,
+    List<String>? tags,
+    required String createdByUserId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final id = 'material_${DateTime.now().millisecondsSinceEpoch}';
+    final material = StudyMaterial(
+      materialId: id,
+      title: title,
+      description: description,
+      resourceType: resourceType,
+      format: format,
+      category: category,
+      difficulty: difficulty,
+      contentUrl: contentUrl,
+      thumbnailUrl: thumbnailUrl,
+      durationMinutes: durationMinutes,
+      tags: tags,
+      createdAt: DateTime.now(),
+      createdByUserId: createdByUserId,
+      metadata: metadata,
+    );
+    _studyMaterials[id] = material;
+    _resourceAnalytics[id] = ResourceAnalytics(
+      analyticsId: 'analytics_$id',
+      materialId: id,
+      lastViewedAt: DateTime.now(),
+    );
+    return id;
+  }
+
+  @override
+  Future<StudyMaterial?> getStudyMaterial(String materialId) async {
+    return _studyMaterials[materialId];
+  }
+
+  @override
+  Future<List<StudyMaterial>> getMaterialsByCategory(MaterialCategory category) async {
+    return _studyMaterials.values
+        .where((m) => m.category == category && m.status == ResourceStatus.published)
+        .toList();
+  }
+
+  @override
+  Future<List<StudyMaterial>> getMaterialsByDifficulty(ResourceDifficulty difficulty) async {
+    return _studyMaterials.values
+        .where((m) => m.difficulty == difficulty && m.status == ResourceStatus.published)
+        .toList();
+  }
+
+  @override
+  Future<List<StudyMaterial>> searchMaterials(String query) async {
+    final lowerQuery = query.toLowerCase();
+    return _studyMaterials.values
+        .where((m) =>
+            m.status == ResourceStatus.published &&
+            (m.title.toLowerCase().contains(lowerQuery) ||
+                m.description.toLowerCase().contains(lowerQuery) ||
+                m.tags.any((t) => t.toLowerCase().contains(lowerQuery))))
+        .toList();
+  }
+
+  @override
+  Future<void> updateMaterialStatus(String materialId, ResourceStatus status) async {
+    final material = _studyMaterials[materialId];
+    if (material != null) {
+      _studyMaterials[materialId] = StudyMaterial(
+        materialId: material.materialId,
+        title: material.title,
+        description: material.description,
+        resourceType: material.resourceType,
+        format: material.format,
+        category: material.category,
+        difficulty: material.difficulty,
+        contentUrl: material.contentUrl,
+        thumbnailUrl: material.thumbnailUrl,
+        durationMinutes: material.durationMinutes,
+        tags: material.tags,
+        status: status,
+        createdAt: material.createdAt,
+        updatedAt: DateTime.now(),
+        createdByUserId: material.createdByUserId,
+        viewCount: material.viewCount,
+        averageRating: material.averageRating,
+        ratingCount: material.ratingCount,
+        metadata: material.metadata,
+      );
+    }
+  }
+
+  @override
+  Future<String> createResourceCollection({
+    required String collectionName,
+    required String description,
+    required MaterialCategory primaryCategory,
+    required ResourceDifficulty targetDifficulty,
+    List<String>? materialIds,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final id = 'collection_${DateTime.now().millisecondsSinceEpoch}';
+    final collection = ResourceCollection(
+      collectionId: id,
+      collectionName: collectionName,
+      description: description,
+      materialIds: materialIds,
+      primaryCategory: primaryCategory,
+      targetDifficulty: targetDifficulty,
+      createdAt: DateTime.now(),
+      metadata: metadata,
+    );
+    _resourceCollections[id] = collection;
+    return id;
+  }
+
+  @override
+  Future<ResourceCollection?> getResourceCollection(String collectionId) async {
+    return _resourceCollections[collectionId];
+  }
+
+  @override
+  Future<List<ResourceCollection>> getPublishedCollections() async {
+    return _resourceCollections.values
+        .where((c) => c.isPublished)
+        .toList();
+  }
+
+  @override
+  Future<void> addMaterialToCollection({
+    required String collectionId,
+    required String materialId,
+  }) async {
+    final collection = _resourceCollections[collectionId];
+    if (collection != null && !collection.materialIds.contains(materialId)) {
+      _resourceCollections[collectionId] = ResourceCollection(
+        collectionId: collection.collectionId,
+        collectionName: collection.collectionName,
+        description: collection.description,
+        materialIds: [...collection.materialIds, materialId],
+        primaryCategory: collection.primaryCategory,
+        targetDifficulty: collection.targetDifficulty,
+        orderIndex: collection.orderIndex,
+        isPublished: collection.isPublished,
+        createdAt: collection.createdAt,
+        updatedAt: DateTime.now(),
+        metadata: collection.metadata,
+      );
+    }
+  }
+
+  @override
+  Future<void> removeMaterialFromCollection({
+    required String collectionId,
+    required String materialId,
+  }) async {
+    final collection = _resourceCollections[collectionId];
+    if (collection != null) {
+      final updated = collection.materialIds
+          .where((id) => id != materialId)
+          .toList();
+      _resourceCollections[collectionId] = ResourceCollection(
+        collectionId: collection.collectionId,
+        collectionName: collection.collectionName,
+        description: collection.description,
+        materialIds: updated,
+        primaryCategory: collection.primaryCategory,
+        targetDifficulty: collection.targetDifficulty,
+        orderIndex: collection.orderIndex,
+        isPublished: collection.isPublished,
+        createdAt: collection.createdAt,
+        updatedAt: DateTime.now(),
+        metadata: collection.metadata,
+      );
+    }
+  }
+
+  @override
+  Future<String> startResourceProgress({
+    required String userId,
+    required String materialId,
+  }) async {
+    final id = 'progress_${DateTime.now().millisecondsSinceEpoch}';
+    final progress = StudentResourceProgress(
+      progressId: id,
+      userId: userId,
+      materialId: materialId,
+      startedAt: DateTime.now(),
+    );
+    _resourceProgress[id] = progress;
+    return id;
+  }
+
+  @override
+  Future<void> updateResourceProgress({
+    required String progressId,
+    required double progressPercent,
+    int? timeSpentMinutes,
+    String? userNotes,
+    Map<String, dynamic>? interactionData,
+  }) async {
+    final progress = _resourceProgress[progressId];
+    if (progress != null) {
+      _resourceProgress[progressId] = StudentResourceProgress(
+        progressId: progress.progressId,
+        userId: progress.userId,
+        materialId: progress.materialId,
+        startedAt: progress.startedAt,
+        completedAt: progressPercent >= 100.0 ? DateTime.now() : progress.completedAt,
+        progressPercent: progressPercent,
+        isBookmarked: progress.isBookmarked,
+        userRating: progress.userRating,
+        userNotes: userNotes ?? progress.userNotes,
+        timeSpentMinutes: timeSpentMinutes ?? progress.timeSpentMinutes,
+        interactionData: interactionData ?? progress.interactionData,
+      );
+    }
+  }
+
+  @override
+  Future<void> completeResourceProgress(String progressId) async {
+    final progress = _resourceProgress[progressId];
+    if (progress != null) {
+      _resourceProgress[progressId] = StudentResourceProgress(
+        progressId: progress.progressId,
+        userId: progress.userId,
+        materialId: progress.materialId,
+        startedAt: progress.startedAt,
+        completedAt: DateTime.now(),
+        progressPercent: 100.0,
+        isBookmarked: progress.isBookmarked,
+        userRating: progress.userRating,
+        userNotes: progress.userNotes,
+        timeSpentMinutes: progress.timeSpentMinutes,
+        interactionData: progress.interactionData,
+      );
+    }
+  }
+
+  @override
+  Future<StudentResourceProgress?> getResourceProgress(String progressId) async {
+    return _resourceProgress[progressId];
+  }
+
+  @override
+  Future<List<StudentResourceProgress>> getUserResourceProgress(String userId) async {
+    return _resourceProgress.values
+        .where((p) => p.userId == userId)
+        .toList();
+  }
+
+  @override
+  Future<void> bookmarkMaterial({
+    required String progressId,
+    required bool isBookmarked,
+  }) async {
+    final progress = _resourceProgress[progressId];
+    if (progress != null) {
+      _resourceProgress[progressId] = StudentResourceProgress(
+        progressId: progress.progressId,
+        userId: progress.userId,
+        materialId: progress.materialId,
+        startedAt: progress.startedAt,
+        completedAt: progress.completedAt,
+        progressPercent: progress.progressPercent,
+        isBookmarked: isBookmarked,
+        userRating: progress.userRating,
+        userNotes: progress.userNotes,
+        timeSpentMinutes: progress.timeSpentMinutes,
+        interactionData: progress.interactionData,
+      );
+    }
+  }
+
+  @override
+  Future<void> rateMaterial({
+    required String progressId,
+    required double rating,
+  }) async {
+    final progress = _resourceProgress[progressId];
+    if (progress != null) {
+      _resourceProgress[progressId] = StudentResourceProgress(
+        progressId: progress.progressId,
+        userId: progress.userId,
+        materialId: progress.materialId,
+        startedAt: progress.startedAt,
+        completedAt: progress.completedAt,
+        progressPercent: progress.progressPercent,
+        isBookmarked: progress.isBookmarked,
+        userRating: rating,
+        userNotes: progress.userNotes,
+        timeSpentMinutes: progress.timeSpentMinutes,
+        interactionData: progress.interactionData,
+      );
+
+      final material = _studyMaterials[progress.materialId];
+      if (material != null) {
+        final newAvgRating = (material.averageRating * material.ratingCount + rating) / (material.ratingCount + 1);
+        _studyMaterials[progress.materialId] = StudyMaterial(
+          materialId: material.materialId,
+          title: material.title,
+          description: material.description,
+          resourceType: material.resourceType,
+          format: material.format,
+          category: material.category,
+          difficulty: material.difficulty,
+          contentUrl: material.contentUrl,
+          thumbnailUrl: material.thumbnailUrl,
+          durationMinutes: material.durationMinutes,
+          tags: material.tags,
+          status: material.status,
+          createdAt: material.createdAt,
+          updatedAt: DateTime.now(),
+          createdByUserId: material.createdByUserId,
+          viewCount: material.viewCount,
+          averageRating: newAvgRating,
+          ratingCount: material.ratingCount + 1,
+          metadata: material.metadata,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<List<StudentResourceProgress>> getUserBookmarks(String userId) async {
+    return _resourceProgress.values
+        .where((p) => p.userId == userId && p.isBookmarked)
+        .toList();
+  }
+
+  @override
+  Future<String> createResourceRecommendation({
+    required String userId,
+    required List<String> materialIds,
+    required String recommendationReason,
+    required double relevanceScore,
+    List<String>? recommendedCategories,
+    Map<String, dynamic>? scoreBreakdown,
+  }) async {
+    final id = 'recommendation_${DateTime.now().millisecondsSinceEpoch}';
+    final recommendation = ResourceRecommendation(
+      recommendationId: id,
+      userId: userId,
+      materialIds: materialIds,
+      recommendationReason: recommendationReason,
+      relevanceScore: relevanceScore,
+      recommendedCategories: recommendedCategories ?? [],
+      createdAt: DateTime.now(),
+      scoreBreakdown: scoreBreakdown,
+    );
+    _resourceRecommendations[id] = recommendation;
+    return id;
+  }
+
+  @override
+  Future<List<ResourceRecommendation>> getUserRecommendations(String userId) async {
+    return _resourceRecommendations.values
+        .where((r) => r.userId == userId)
+        .toList();
+  }
+
+  @override
+  Future<void> markRecommendationAsViewed(String recommendationId) async {
+    final rec = _resourceRecommendations[recommendationId];
+    if (rec != null) {
+      _resourceRecommendations[recommendationId] = ResourceRecommendation(
+        recommendationId: rec.recommendationId,
+        userId: rec.userId,
+        materialIds: rec.materialIds,
+        recommendationReason: rec.recommendationReason,
+        relevanceScore: rec.relevanceScore,
+        recommendedCategories: rec.recommendedCategories,
+        createdAt: rec.createdAt,
+        viewedAt: DateTime.now(),
+        isAccepted: rec.isAccepted,
+        scoreBreakdown: rec.scoreBreakdown,
+      );
+    }
+  }
+
+  @override
+  Future<void> acceptRecommendation(String recommendationId) async {
+    final rec = _resourceRecommendations[recommendationId];
+    if (rec != null) {
+      _resourceRecommendations[recommendationId] = ResourceRecommendation(
+        recommendationId: rec.recommendationId,
+        userId: rec.userId,
+        materialIds: rec.materialIds,
+        recommendationReason: rec.recommendationReason,
+        relevanceScore: rec.relevanceScore,
+        recommendedCategories: rec.recommendedCategories,
+        createdAt: rec.createdAt,
+        viewedAt: rec.viewedAt ?? DateTime.now(),
+        isAccepted: true,
+        scoreBreakdown: rec.scoreBreakdown,
+      );
+    }
+  }
+
+  @override
+  Future<ResourceAnalytics?> getResourceAnalytics(String materialId) async {
+    return _resourceAnalytics[materialId];
+  }
+
+  @override
+  Future<void> recordMaterialView({
+    required String materialId,
+    required String userId,
+  }) async {
+    final analytics = _resourceAnalytics[materialId];
+    if (analytics != null) {
+      _resourceAnalytics[materialId] = ResourceAnalytics(
+        analyticsId: analytics.analyticsId,
+        materialId: materialId,
+        totalViews: analytics.totalViews + 1,
+        uniqueViewers: analytics.uniqueViewers + 1,
+        completionCount: analytics.completionCount,
+        completionRate: analytics.completionRate,
+        averageTimeSpentMinutes: analytics.averageTimeSpentMinutes,
+        averageUserRating: analytics.averageUserRating,
+        viewsByCategory: analytics.viewsByCategory,
+        viewsByDifficulty: analytics.viewsByDifficulty,
+        lastViewedAt: DateTime.now(),
+        engagement: analytics.engagement,
+      );
+    }
+
+    final material = _studyMaterials[materialId];
+    if (material != null) {
+      _studyMaterials[materialId] = StudyMaterial(
+        materialId: material.materialId,
+        title: material.title,
+        description: material.description,
+        resourceType: material.resourceType,
+        format: material.format,
+        category: material.category,
+        difficulty: material.difficulty,
+        contentUrl: material.contentUrl,
+        thumbnailUrl: material.thumbnailUrl,
+        durationMinutes: material.durationMinutes,
+        tags: material.tags,
+        status: material.status,
+        createdAt: material.createdAt,
+        updatedAt: DateTime.now(),
+        createdByUserId: material.createdByUserId,
+        viewCount: material.viewCount + 1,
+        averageRating: material.averageRating,
+        ratingCount: material.ratingCount,
+        metadata: material.metadata,
+      );
+    }
+  }
+
+  @override
+  Future<Map<MaterialCategory, int>> getViewsByCategory(String materialId) async {
+    final analytics = _resourceAnalytics[materialId];
+    return analytics?.viewsByCategory ?? {};
+  }
+
+  @override
+  Future<Map<ResourceDifficulty, int>> getViewsByDifficulty(String materialId) async {
+    final analytics = _resourceAnalytics[materialId];
+    return analytics?.viewsByDifficulty ?? {};
+  }
+
+  @override
+  Future<List<String>> generateRecommendedMaterials({
+    required String userId,
+    required List<String> weakAreas,
+    required int maxRecommendations,
+  }) async {
+    final recommended = <String>[];
+    for (final area in weakAreas) {
+      final materials = _studyMaterials.values
+          .where((m) => m.tags.contains(area) && m.status == ResourceStatus.published)
+          .take(maxRecommendations ~/ weakAreas.length)
+          .map((m) => m.materialId)
+          .toList();
+      recommended.addAll(materials);
+    }
+    return recommended.take(maxRecommendations).toList();
+  }
+
+  @override
+  Future<List<ResourceCollection>> getPersonalizedCollections({
+    required String userId,
+    required int maxCollections,
+  }) async {
+    final userProgress = _resourceProgress.values
+        .where((p) => p.userId == userId)
+        .toList();
+
+    final preferredCategories = <MaterialCategory>{};
+    for (final progress in userProgress) {
+      final material = _studyMaterials[progress.materialId];
+      if (material != null) {
+        preferredCategories.add(material.category);
+      }
+    }
+
+    final collections = _resourceCollections.values
+        .where((c) => c.isPublished && preferredCategories.contains(c.primaryCategory))
+        .take(maxCollections)
+        .toList();
+
+    return collections;
+  }
+
+  @override
+  Future<double> getMaterialCompletionRate(String materialId) async {
+    final allProgress = _resourceProgress.values
+        .where((p) => p.materialId == materialId)
+        .toList();
+
+    if (allProgress.isEmpty) return 0.0;
+
+    final completed = allProgress.where((p) => p.isCompleted).length;
+    return (completed / allProgress.length) * 100;
   }
 
   // ============ Phase 13: Student Performance Notifications ============
