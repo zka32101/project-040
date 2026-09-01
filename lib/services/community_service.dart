@@ -1984,6 +1984,79 @@ abstract class CommunityService {
     required NotificationTriggerType triggerType,
     required AlertSeverity severity,
   });
+
+  // ============ PHASE 15: ADVANCED ANALYTICS & PROGRESS DASHBOARD ============
+
+  /// Create or update student analytics dashboard
+  Future<String> upsertStudentAnalyticsDashboard(StudentAnalyticsDashboard dashboard);
+
+  /// Get student analytics dashboard
+  Future<StudentAnalyticsDashboard?> getStudentAnalyticsDashboard(String studentId);
+
+  /// Get performance trend analysis
+  Future<PerformanceTrendAnalysis?> getPerformanceTrend({
+    required String studentId,
+    required String metricType,
+    required int daysPeriod,
+  });
+
+  /// Create performance trend analysis
+  Future<String> createPerformanceTrend(PerformanceTrendAnalysis trend);
+
+  /// Get or generate student insights
+  Future<StudentInsights?> getStudentInsights(String studentId);
+
+  /// Generate new insights for student
+  Future<String> generateStudentInsights(String studentId);
+
+  /// Create learning path recommendation
+  Future<String> createLearningPathRecommendation(LearningPathRecommendation recommendation);
+
+  /// Get pending learning recommendations for student
+  Future<List<LearningPathRecommendation>> getPendingRecommendations(String studentId);
+
+  /// Accept learning recommendation
+  Future<void> acceptLearningRecommendation(String recommendationId);
+
+  /// Mark recommendation as completed
+  Future<void> completeLearningRecommendation(String recommendationId);
+
+  /// Record progress milestone
+  Future<String> recordProgressMilestone(ProgressMilestone milestone);
+
+  /// Get student milestones
+  Future<List<ProgressMilestone>> getStudentMilestones(String studentId);
+
+  /// Calculate peer benchmarks
+  Future<String> calculatePeerBenchmark({
+    required String studentId,
+    required String metricType,
+    required int cohortSize,
+  });
+
+  /// Get peer benchmark
+  Future<PeerBenchmark?> getPeerBenchmark({
+    required String studentId,
+    required String metricType,
+  });
+
+  /// Get dashboard with cached analytics
+  Future<StudentAnalyticsDashboard?> getAnalyticsDashboardWithCache(String studentId);
+
+  /// Get insights for institutional view
+  Future<List<StudentAnalyticsDashboard>> getInstitutionalAnalytics({
+    required String institutionId,
+    int limit = 100,
+  });
+
+  /// Calculate cohort statistics
+  Future<Map<String, dynamic>> calculateCohortStatistics(List<String> studentIds);
+
+  /// Get students needing intervention
+  Future<List<StudentAnalyticsDashboard>> getStudentsNeedingIntervention({
+    required String institutionId,
+    double accuracyThreshold = 60.0,
+  });
 }
 
 /// Firebase implementation of community service
@@ -5900,6 +5973,242 @@ class FirebaseCommunityService implements CommunityService {
       'questionsLinked': 1,
       'engagementRate': (video.viewCount > 0 ? video.averageRating / 5.0 : 0.0) * 100,
     };
+  }
+
+  // ============ PHASE 15: ADVANCED ANALYTICS & PROGRESS DASHBOARD ============
+
+  @override
+  Future<String> upsertStudentAnalyticsDashboard(StudentAnalyticsDashboard dashboard) async {
+    await _db.collection('studentAnalyticsDashboards').doc(dashboard.id).set(dashboard.toMap());
+    return dashboard.id;
+  }
+
+  @override
+  Future<StudentAnalyticsDashboard?> getStudentAnalyticsDashboard(String studentId) async {
+    try {
+      final doc = await _db.collection('studentAnalyticsDashboards').doc(studentId).get();
+      if (doc.exists) {
+        return StudentAnalyticsDashboard.fromMap(doc.data() as Map<String, dynamic>);
+      }
+    } catch (e) {
+      print('Error getting analytics dashboard: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<PerformanceTrendAnalysis?> getPerformanceTrend({
+    required String studentId,
+    required String metricType,
+    required int daysPeriod,
+  }) async {
+    try {
+      final doc = await _db
+          .collection('performanceTrends')
+          .where('studentId', isEqualTo: studentId)
+          .where('metricType', isEqualTo: metricType)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+      if (doc.docs.isNotEmpty) {
+        return PerformanceTrendAnalysis.fromMap(doc.docs.first.data());
+      }
+    } catch (e) {
+      print('Error getting performance trend: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<String> createPerformanceTrend(PerformanceTrendAnalysis trend) async {
+    await _db.collection('performanceTrends').doc(trend.id).set(trend.toMap());
+    return trend.id;
+  }
+
+  @override
+  Future<StudentInsights?> getStudentInsights(String studentId) async {
+    try {
+      final doc = await _db.collection('studentInsights').doc(studentId).get();
+      if (doc.exists) {
+        return StudentInsights.fromMap(doc.data() as Map<String, dynamic>);
+      }
+    } catch (e) {
+      print('Error getting student insights: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<String> generateStudentInsights(String studentId) async {
+    final insightsId = 'insights_${DateTime.now().millisecondsSinceEpoch}';
+    final insights = StudentInsights(
+      id: insightsId,
+      studentId: studentId,
+      insights: [],
+      actionItems: [],
+      overallAssessment: 'Generated insights',
+      generatedAt: DateTime.now(),
+      nextReviewAt: DateTime.now().add(const Duration(days: 7)),
+    );
+    await _db.collection('studentInsights').doc(insightsId).set(insights.toMap());
+    return insightsId;
+  }
+
+  @override
+  Future<String> createLearningPathRecommendation(LearningPathRecommendation recommendation) async {
+    await _db.collection('learningRecommendations').doc(recommendation.id).set(recommendation.toMap());
+    return recommendation.id;
+  }
+
+  @override
+  Future<List<LearningPathRecommendation>> getPendingRecommendations(String studentId) async {
+    try {
+      final docs = await _db
+          .collection('learningRecommendations')
+          .where('studentId', isEqualTo: studentId)
+          .where('accepted', isEqualTo: false)
+          .get();
+      return docs.docs.map((d) => LearningPathRecommendation.fromMap(d.data())).toList();
+    } catch (e) {
+      print('Error getting pending recommendations: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<void> acceptLearningRecommendation(String recommendationId) async {
+    try {
+      await _db.collection('learningRecommendations').doc(recommendationId).update({'accepted': true});
+    } catch (e) {
+      print('Error accepting recommendation: $e');
+    }
+  }
+
+  @override
+  Future<void> completeLearningRecommendation(String recommendationId) async {
+    try {
+      await _db
+          .collection('learningRecommendations')
+          .doc(recommendationId)
+          .update({'completedAt': DateTime.now().toIso8601String()});
+    } catch (e) {
+      print('Error completing recommendation: $e');
+    }
+  }
+
+  @override
+  Future<String> recordProgressMilestone(ProgressMilestone milestone) async {
+    await _db.collection('progressMilestones').doc(milestone.id).set(milestone.toMap());
+    return milestone.id;
+  }
+
+  @override
+  Future<List<ProgressMilestone>> getStudentMilestones(String studentId) async {
+    try {
+      final docs = await _db
+          .collection('progressMilestones')
+          .where('studentId', isEqualTo: studentId)
+          .orderBy('achievedAt', descending: true)
+          .get();
+      return docs.docs.map((d) => ProgressMilestone.fromMap(d.data())).toList();
+    } catch (e) {
+      print('Error getting milestones: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<String> calculatePeerBenchmark({
+    required String studentId,
+    required String metricType,
+    required int cohortSize,
+  }) async {
+    final benchmarkId = 'bench_${DateTime.now().millisecondsSinceEpoch}';
+    final benchmark = PeerBenchmark(
+      id: benchmarkId,
+      studentId: studentId,
+      metricType: metricType,
+      studentValue: 0.0,
+      cohortMedian: 0.0,
+      cohortMean: 0.0,
+      percentile: 50.0,
+      cohortSize: cohortSize,
+      calculatedAt: DateTime.now(),
+    );
+    await _db.collection('peerBenchmarks').doc(benchmarkId).set(benchmark.toMap());
+    return benchmarkId;
+  }
+
+  @override
+  Future<PeerBenchmark?> getPeerBenchmark({
+    required String studentId,
+    required String metricType,
+  }) async {
+    try {
+      final docs = await _db
+          .collection('peerBenchmarks')
+          .where('studentId', isEqualTo: studentId)
+          .where('metricType', isEqualTo: metricType)
+          .orderBy('calculatedAt', descending: true)
+          .limit(1)
+          .get();
+      if (docs.docs.isNotEmpty) {
+        return PeerBenchmark.fromMap(docs.docs.first.data());
+      }
+    } catch (e) {
+      print('Error getting peer benchmark: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<StudentAnalyticsDashboard?> getAnalyticsDashboardWithCache(String studentId) async {
+    return getStudentAnalyticsDashboard(studentId);
+  }
+
+  @override
+  Future<List<StudentAnalyticsDashboard>> getInstitutionalAnalytics({
+    required String institutionId,
+    int limit = 100,
+  }) async {
+    try {
+      final docs = await _db
+          .collection('studentAnalyticsDashboards')
+          .limit(limit)
+          .get();
+      return docs.docs.map((d) => StudentAnalyticsDashboard.fromMap(d.data())).toList();
+    } catch (e) {
+      print('Error getting institutional analytics: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> calculateCohortStatistics(List<String> studentIds) async {
+    return {
+      'totalStudents': studentIds.length,
+      'averageAccuracy': 0.0,
+      'medianScore': 0.0,
+      'topPerformers': 0,
+      'needsSupport': 0,
+    };
+  }
+
+  @override
+  Future<List<StudentAnalyticsDashboard>> getStudentsNeedingIntervention({
+    required String institutionId,
+    double accuracyThreshold = 60.0,
+  }) async {
+    try {
+      final docs = await _db
+          .collection('studentAnalyticsDashboards')
+          .where('currentAccuracy', isLessThan: accuracyThreshold)
+          .get();
+      return docs.docs.map((d) => StudentAnalyticsDashboard.fromMap(d.data())).toList();
+    } catch (e) {
+      print('Error getting students needing intervention: $e');
+      return [];
+    }
   }
 }
 
@@ -12990,6 +13299,235 @@ class StubCommunityService implements CommunityService {
       sentIds.add(id);
     }
     return sentIds;
+  }
+
+  // ============ PHASE 15: ADVANCED ANALYTICS & PROGRESS DASHBOARD (STUB) ============
+
+  final Map<String, StudentAnalyticsDashboard> _analyticsDashboards = {};
+  final Map<String, PerformanceTrendAnalysis> _performanceTrends = {};
+  final Map<String, StudentInsights> _studentInsights = {};
+  final Map<String, LearningPathRecommendation> _learningRecommendations = {};
+  final Map<String, ProgressMilestone> _progressMilestones = {};
+  final Map<String, PeerBenchmark> _peerBenchmarks = {};
+
+  @override
+  Future<String> upsertStudentAnalyticsDashboard(StudentAnalyticsDashboard dashboard) async {
+    _analyticsDashboards[dashboard.id] = dashboard;
+    return dashboard.id;
+  }
+
+  @override
+  Future<StudentAnalyticsDashboard?> getStudentAnalyticsDashboard(String studentId) async {
+    return _analyticsDashboards.values.firstWhere(
+      (d) => d.studentId == studentId,
+      orElse: () => null as StudentAnalyticsDashboard,
+    );
+  }
+
+  @override
+  Future<PerformanceTrendAnalysis?> getPerformanceTrend({
+    required String studentId,
+    required String metricType,
+    required int daysPeriod,
+  }) async {
+    final trends = _performanceTrends.values
+        .where((t) => t.studentId == studentId && t.metricType == metricType)
+        .toList();
+    return trends.isNotEmpty ? trends.first : null;
+  }
+
+  @override
+  Future<String> createPerformanceTrend(PerformanceTrendAnalysis trend) async {
+    _performanceTrends[trend.id] = trend;
+    return trend.id;
+  }
+
+  @override
+  Future<StudentInsights?> getStudentInsights(String studentId) async {
+    return _studentInsights.values.firstWhere(
+      (i) => i.studentId == studentId,
+      orElse: () => null as StudentInsights,
+    );
+  }
+
+  @override
+  Future<String> generateStudentInsights(String studentId) async {
+    final insightsId = 'insights_${DateTime.now().millisecondsSinceEpoch}';
+    final insights = StudentInsights(
+      id: insightsId,
+      studentId: studentId,
+      insights: [
+        Insight(
+          title: 'Strong Performance',
+          description: 'You are performing well overall',
+          type: InsightType.strength,
+          confidence: 0.85,
+          relatedCategories: ['roadSigns'],
+          createdAt: DateTime.now(),
+        )
+      ],
+      actionItems: ['Continue practicing', 'Review weak areas'],
+      overallAssessment: 'Good progress',
+      generatedAt: DateTime.now(),
+      nextReviewAt: DateTime.now().add(const Duration(days: 7)),
+    );
+    _studentInsights[insightsId] = insights;
+    return insightsId;
+  }
+
+  @override
+  Future<String> createLearningPathRecommendation(LearningPathRecommendation recommendation) async {
+    _learningRecommendations[recommendation.id] = recommendation;
+    return recommendation.id;
+  }
+
+  @override
+  Future<List<LearningPathRecommendation>> getPendingRecommendations(String studentId) async {
+    return _learningRecommendations.values
+        .where((r) => r.studentId == studentId && !r.accepted && r.completedAt == null)
+        .toList();
+  }
+
+  @override
+  Future<void> acceptLearningRecommendation(String recommendationId) async {
+    final rec = _learningRecommendations[recommendationId];
+    if (rec != null) {
+      _learningRecommendations[recommendationId] = LearningPathRecommendation(
+        id: rec.id,
+        studentId: rec.studentId,
+        type: rec.type,
+        title: rec.title,
+        description: rec.description,
+        suggestedMaterials: rec.suggestedMaterials,
+        suggestedQuestions: rec.suggestedQuestions,
+        estimatedMinutes: rec.estimatedMinutes,
+        priority: rec.priority,
+        accepted: true,
+        createdAt: rec.createdAt,
+        completedAt: rec.completedAt,
+      );
+    }
+  }
+
+  @override
+  Future<void> completeLearningRecommendation(String recommendationId) async {
+    final rec = _learningRecommendations[recommendationId];
+    if (rec != null) {
+      _learningRecommendations[recommendationId] = LearningPathRecommendation(
+        id: rec.id,
+        studentId: rec.studentId,
+        type: rec.type,
+        title: rec.title,
+        description: rec.description,
+        suggestedMaterials: rec.suggestedMaterials,
+        suggestedQuestions: rec.suggestedQuestions,
+        estimatedMinutes: rec.estimatedMinutes,
+        priority: rec.priority,
+        accepted: rec.accepted,
+        createdAt: rec.createdAt,
+        completedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<String> recordProgressMilestone(ProgressMilestone milestone) async {
+    _progressMilestones[milestone.id] = milestone;
+    return milestone.id;
+  }
+
+  @override
+  Future<List<ProgressMilestone>> getStudentMilestones(String studentId) async {
+    return _progressMilestones.values
+        .where((m) => m.studentId == studentId)
+        .toList();
+  }
+
+  @override
+  Future<String> calculatePeerBenchmark({
+    required String studentId,
+    required String metricType,
+    required int cohortSize,
+  }) async {
+    final benchmarkId = 'bench_${DateTime.now().millisecondsSinceEpoch}';
+    final benchmark = PeerBenchmark(
+      id: benchmarkId,
+      studentId: studentId,
+      metricType: metricType,
+      studentValue: 75.0,
+      cohortMedian: 70.0,
+      cohortMean: 68.5,
+      percentile: 65.0,
+      cohortSize: cohortSize,
+      calculatedAt: DateTime.now(),
+    );
+    _peerBenchmarks[benchmarkId] = benchmark;
+    return benchmarkId;
+  }
+
+  @override
+  Future<PeerBenchmark?> getPeerBenchmark({
+    required String studentId,
+    required String metricType,
+  }) async {
+    return _peerBenchmarks.values.firstWhere(
+      (b) => b.studentId == studentId && b.metricType == metricType,
+      orElse: () => null as PeerBenchmark,
+    );
+  }
+
+  @override
+  Future<StudentAnalyticsDashboard?> getAnalyticsDashboardWithCache(String studentId) async {
+    return getStudentAnalyticsDashboard(studentId);
+  }
+
+  @override
+  Future<List<StudentAnalyticsDashboard>> getInstitutionalAnalytics({
+    required String institutionId,
+    int limit = 100,
+  }) async {
+    return _analyticsDashboards.values.take(limit).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> calculateCohortStatistics(List<String> studentIds) async {
+    final dashboards = _analyticsDashboards.values
+        .where((d) => studentIds.contains(d.studentId))
+        .toList();
+
+    if (dashboards.isEmpty) {
+      return {
+        'totalStudents': 0,
+        'averageAccuracy': 0.0,
+        'medianScore': 0.0,
+        'topPerformers': 0,
+        'needsSupport': 0,
+      };
+    }
+
+    final scores = dashboards.map((d) => d.overallScore).toList()..sort();
+    final average = dashboards.fold<double>(0, (sum, d) => sum + d.overallScore) / dashboards.length;
+    final median = scores[scores.length ~/ 2];
+    final topPerformers = dashboards.where((d) => d.isHighPerformer).length;
+    final needsSupport = dashboards.where((d) => d.needsSupport).length;
+
+    return {
+      'totalStudents': dashboards.length,
+      'averageAccuracy': average,
+      'medianScore': median,
+      'topPerformers': topPerformers,
+      'needsSupport': needsSupport,
+    };
+  }
+
+  @override
+  Future<List<StudentAnalyticsDashboard>> getStudentsNeedingIntervention({
+    required String institutionId,
+    double accuracyThreshold = 60.0,
+  }) async {
+    return _analyticsDashboards.values
+        .where((d) => d.currentAccuracy < accuracyThreshold)
+        .toList();
   }
 }
 

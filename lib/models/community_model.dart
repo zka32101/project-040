@@ -7077,3 +7077,687 @@ MaterialCategory _parseMaterialCategory(String value) {
     return MaterialCategory.studyGuide;
   }
 }
+
+// ============ PHASE 15: ADVANCED ANALYTICS & PROGRESS DASHBOARD ============
+
+enum AnalyticsMetricType {
+  accuracy,
+  completionRate,
+  timeSpent,
+  engagementScore,
+  learningVelocity,
+  retentionRate,
+  consistencyScore,
+  categoryStrength,
+  weakAreaProgress
+}
+
+enum TrendDirection { improving, declining, stable, fluctuating }
+
+enum InsightType {
+  strength,
+  weakness,
+  opportunity,
+  milestone,
+  alert,
+  recommendation,
+  trend
+}
+
+enum RecommendationType {
+  focusArea,
+  practiceMore,
+  reviewConcept,
+  nextChapter,
+  changeStrategy,
+  increaseFrequency,
+  slowDown,
+  deepen
+}
+
+/// Student Analytics Dashboard - Comprehensive view of student performance
+class StudentAnalyticsDashboard {
+  final String id;
+  final String studentId;
+  final double overallScore; // 0.0-100.0
+  final double learningVelocity; // Progress speed
+  final int totalQuestionsAttempted;
+  final int correctAnswers;
+  final double currentAccuracy;
+  final int totalStudyTimeMinutes;
+  final int consistencyDaysStreak;
+  final int totalSessionsCompleted;
+  final List<CategoryPerformance> categoryPerformances;
+  final List<WeakAreaMetric> weakAreas;
+  final List<StrengthArea> strengths;
+  final int daysActive;
+  final int materialsCompleted;
+  final double engagementScore; // 0.0-100.0
+  final DateTime lastActivityAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  StudentAnalyticsDashboard({
+    required this.id,
+    required this.studentId,
+    required this.overallScore,
+    required this.learningVelocity,
+    required this.totalQuestionsAttempted,
+    required this.correctAnswers,
+    required this.currentAccuracy,
+    required this.totalStudyTimeMinutes,
+    required this.consistencyDaysStreak,
+    required this.totalSessionsCompleted,
+    required this.categoryPerformances,
+    required this.weakAreas,
+    required this.strengths,
+    required this.daysActive,
+    required this.materialsCompleted,
+    required this.engagementScore,
+    required this.lastActivityAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isHighPerformer => overallScore >= 85.0;
+  bool get needsSupport => overallScore < 60.0;
+  bool get isConsistent => consistencyDaysStreak >= 10;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'overallScore': overallScore,
+      'learningVelocity': learningVelocity,
+      'totalQuestionsAttempted': totalQuestionsAttempted,
+      'correctAnswers': correctAnswers,
+      'currentAccuracy': currentAccuracy,
+      'totalStudyTimeMinutes': totalStudyTimeMinutes,
+      'consistencyDaysStreak': consistencyDaysStreak,
+      'totalSessionsCompleted': totalSessionsCompleted,
+      'categoryPerformances': categoryPerformances.map((c) => c.toMap()).toList(),
+      'weakAreas': weakAreas.map((w) => w.toMap()).toList(),
+      'strengths': strengths.map((s) => s.toMap()).toList(),
+      'daysActive': daysActive,
+      'materialsCompleted': materialsCompleted,
+      'engagementScore': engagementScore,
+      'lastActivityAt': lastActivityAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  factory StudentAnalyticsDashboard.fromMap(Map<String, dynamic> map) {
+    return StudentAnalyticsDashboard(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      overallScore: (map['overallScore'] ?? 0.0).toDouble(),
+      learningVelocity: (map['learningVelocity'] ?? 0.0).toDouble(),
+      totalQuestionsAttempted: map['totalQuestionsAttempted'] ?? 0,
+      correctAnswers: map['correctAnswers'] ?? 0,
+      currentAccuracy: (map['currentAccuracy'] ?? 0.0).toDouble(),
+      totalStudyTimeMinutes: map['totalStudyTimeMinutes'] ?? 0,
+      consistencyDaysStreak: map['consistencyDaysStreak'] ?? 0,
+      totalSessionsCompleted: map['totalSessionsCompleted'] ?? 0,
+      categoryPerformances: (map['categoryPerformances'] as List<dynamic>?)
+              ?.map((c) => CategoryPerformance.fromMap(c as Map<String, dynamic>))
+              .toList() ??
+          [],
+      weakAreas: (map['weakAreas'] as List<dynamic>?)
+              ?.map((w) => WeakAreaMetric.fromMap(w as Map<String, dynamic>))
+              .toList() ??
+          [],
+      strengths: (map['strengths'] as List<dynamic>?)
+              ?.map((s) => StrengthArea.fromMap(s as Map<String, dynamic>))
+              .toList() ??
+          [],
+      daysActive: map['daysActive'] ?? 0,
+      materialsCompleted: map['materialsCompleted'] ?? 0,
+      engagementScore: (map['engagementScore'] ?? 0.0).toDouble(),
+      lastActivityAt: map['lastActivityAt'] != null
+          ? DateTime.parse(map['lastActivityAt'])
+          : DateTime.now(),
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
+          : DateTime.now(),
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.parse(map['updatedAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
+/// Category-specific performance metrics
+class CategoryPerformance {
+  final String category;
+  final double accuracy;
+  final int questionsAttempted;
+  final int correctAnswers;
+  final int timeSpentMinutes;
+  final TrendDirection trend;
+  final double trendPercentage;
+
+  CategoryPerformance({
+    required this.category,
+    required this.accuracy,
+    required this.questionsAttempted,
+    required this.correctAnswers,
+    required this.timeSpentMinutes,
+    required this.trend,
+    required this.trendPercentage,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'category': category,
+      'accuracy': accuracy,
+      'questionsAttempted': questionsAttempted,
+      'correctAnswers': correctAnswers,
+      'timeSpentMinutes': timeSpentMinutes,
+      'trend': trend.toString().split('.').last,
+      'trendPercentage': trendPercentage,
+    };
+  }
+
+  factory CategoryPerformance.fromMap(Map<String, dynamic> map) {
+    return CategoryPerformance(
+      category: map['category'] ?? '',
+      accuracy: (map['accuracy'] ?? 0.0).toDouble(),
+      questionsAttempted: map['questionsAttempted'] ?? 0,
+      correctAnswers: map['correctAnswers'] ?? 0,
+      timeSpentMinutes: map['timeSpentMinutes'] ?? 0,
+      trend: _parseTrendDirection(map['trend'] ?? 'stable'),
+      trendPercentage: (map['trendPercentage'] ?? 0.0).toDouble(),
+    );
+  }
+}
+
+/// Weak area tracking with progress metrics
+class WeakAreaMetric {
+  final String category;
+  final double currentAccuracy;
+  final int attemptCount;
+  final double improvementRate;
+  final DateTime firstIdentifiedAt;
+  final DateTime lastAttemptAt;
+  final int recommendedReviewCount;
+  final List<String> suggestedTopics;
+
+  WeakAreaMetric({
+    required this.category,
+    required this.currentAccuracy,
+    required this.attemptCount,
+    required this.improvementRate,
+    required this.firstIdentifiedAt,
+    required this.lastAttemptAt,
+    required this.recommendedReviewCount,
+    required this.suggestedTopics,
+  });
+
+  bool get needsImmediate => currentAccuracy < 40.0;
+  bool get improving => improvementRate > 0;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'category': category,
+      'currentAccuracy': currentAccuracy,
+      'attemptCount': attemptCount,
+      'improvementRate': improvementRate,
+      'firstIdentifiedAt': firstIdentifiedAt.toIso8601String(),
+      'lastAttemptAt': lastAttemptAt.toIso8601String(),
+      'recommendedReviewCount': recommendedReviewCount,
+      'suggestedTopics': suggestedTopics,
+    };
+  }
+
+  factory WeakAreaMetric.fromMap(Map<String, dynamic> map) {
+    return WeakAreaMetric(
+      category: map['category'] ?? '',
+      currentAccuracy: (map['currentAccuracy'] ?? 0.0).toDouble(),
+      attemptCount: map['attemptCount'] ?? 0,
+      improvementRate: (map['improvementRate'] ?? 0.0).toDouble(),
+      firstIdentifiedAt: map['firstIdentifiedAt'] != null
+          ? DateTime.parse(map['firstIdentifiedAt'])
+          : DateTime.now(),
+      lastAttemptAt: map['lastAttemptAt'] != null
+          ? DateTime.parse(map['lastAttemptAt'])
+          : DateTime.now(),
+      recommendedReviewCount: map['recommendedReviewCount'] ?? 0,
+      suggestedTopics: List<String>.from(map['suggestedTopics'] ?? []),
+    );
+  }
+}
+
+/// Strong area tracking
+class StrengthArea {
+  final String category;
+  final double accuracy;
+  final int questionsMastered;
+  final DateTime achievedAt;
+  final double consistencyScore;
+
+  StrengthArea({
+    required this.category,
+    required this.accuracy,
+    required this.questionsMastered,
+    required this.achievedAt,
+    required this.consistencyScore,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'category': category,
+      'accuracy': accuracy,
+      'questionsMastered': questionsMastered,
+      'achievedAt': achievedAt.toIso8601String(),
+      'consistencyScore': consistencyScore,
+    };
+  }
+
+  factory StrengthArea.fromMap(Map<String, dynamic> map) {
+    return StrengthArea(
+      category: map['category'] ?? '',
+      accuracy: (map['accuracy'] ?? 0.0).toDouble(),
+      questionsMastered: map['questionsMastered'] ?? 0,
+      achievedAt: map['achievedAt'] != null
+          ? DateTime.parse(map['achievedAt'])
+          : DateTime.now(),
+      consistencyScore: (map['consistencyScore'] ?? 0.0).toDouble(),
+    );
+  }
+}
+
+/// Performance trend analysis
+class PerformanceTrendAnalysis {
+  final String id;
+  final String studentId;
+  final String metricType; // e.g., 'accuracy', 'completionRate'
+  final List<TrendDataPoint> dataPoints; // Time-series data
+  final TrendDirection overallTrend;
+  final double percentageChange;
+  final int daysPeriod;
+  final DateTime createdAt;
+
+  PerformanceTrendAnalysis({
+    required this.id,
+    required this.studentId,
+    required this.metricType,
+    required this.dataPoints,
+    required this.overallTrend,
+    required this.percentageChange,
+    required this.daysPeriod,
+    required this.createdAt,
+  });
+
+  bool get isImproving => overallTrend == TrendDirection.improving;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'metricType': metricType,
+      'dataPoints': dataPoints.map((d) => d.toMap()).toList(),
+      'overallTrend': overallTrend.toString().split('.').last,
+      'percentageChange': percentageChange,
+      'daysPeriod': daysPeriod,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory PerformanceTrendAnalysis.fromMap(Map<String, dynamic> map) {
+    return PerformanceTrendAnalysis(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      metricType: map['metricType'] ?? '',
+      dataPoints: (map['dataPoints'] as List<dynamic>?)
+              ?.map((d) => TrendDataPoint.fromMap(d as Map<String, dynamic>))
+              .toList() ??
+          [],
+      overallTrend: _parseTrendDirection(map['overallTrend'] ?? 'stable'),
+      percentageChange: (map['percentageChange'] ?? 0.0).toDouble(),
+      daysPeriod: map['daysPeriod'] ?? 30,
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
+/// Individual trend data point
+class TrendDataPoint {
+  final DateTime date;
+  final double value;
+  final int sampleSize; // How many data points contributed to this value
+
+  TrendDataPoint({
+    required this.date,
+    required this.value,
+    required this.sampleSize,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date.toIso8601String(),
+      'value': value,
+      'sampleSize': sampleSize,
+    };
+  }
+
+  factory TrendDataPoint.fromMap(Map<String, dynamic> map) {
+    return TrendDataPoint(
+      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      value: (map['value'] ?? 0.0).toDouble(),
+      sampleSize: map['sampleSize'] ?? 1,
+    );
+  }
+}
+
+/// Personalized learning insights
+class StudentInsights {
+  final String id;
+  final String studentId;
+  final List<Insight> insights;
+  final List<String> actionItems;
+  final String overallAssessment;
+  final DateTime generatedAt;
+  final DateTime? nextReviewAt;
+
+  StudentInsights({
+    required this.id,
+    required this.studentId,
+    required this.insights,
+    required this.actionItems,
+    required this.overallAssessment,
+    required this.generatedAt,
+    this.nextReviewAt,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'insights': insights.map((i) => i.toMap()).toList(),
+      'actionItems': actionItems,
+      'overallAssessment': overallAssessment,
+      'generatedAt': generatedAt.toIso8601String(),
+      'nextReviewAt': nextReviewAt?.toIso8601String(),
+    };
+  }
+
+  factory StudentInsights.fromMap(Map<String, dynamic> map) {
+    return StudentInsights(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      insights: (map['insights'] as List<dynamic>?)
+              ?.map((i) => Insight.fromMap(i as Map<String, dynamic>))
+              .toList() ??
+          [],
+      actionItems: List<String>.from(map['actionItems'] ?? []),
+      overallAssessment: map['overallAssessment'] ?? '',
+      generatedAt: map['generatedAt'] != null
+          ? DateTime.parse(map['generatedAt'])
+          : DateTime.now(),
+      nextReviewAt: map['nextReviewAt'] != null
+          ? DateTime.parse(map['nextReviewAt'])
+          : null,
+    );
+  }
+}
+
+/// Individual insight entry
+class Insight {
+  final String title;
+  final String description;
+  final InsightType type;
+  final double confidence; // 0.0-1.0
+  final List<String> relatedCategories;
+  final DateTime createdAt;
+
+  Insight({
+    required this.title,
+    required this.description,
+    required this.type,
+    required this.confidence,
+    required this.relatedCategories,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'type': type.toString().split('.').last,
+      'confidence': confidence,
+      'relatedCategories': relatedCategories,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory Insight.fromMap(Map<String, dynamic> map) {
+    return Insight(
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      type: _parseInsightType(map['type'] ?? 'recommendation'),
+      confidence: (map['confidence'] ?? 0.8).toDouble(),
+      relatedCategories: List<String>.from(map['relatedCategories'] ?? []),
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
+/// AI-powered learning recommendations
+class LearningPathRecommendation {
+  final String id;
+  final String studentId;
+  final RecommendationType type;
+  final String title;
+  final String description;
+  final List<String> suggestedMaterials;
+  final List<String> suggestedQuestions;
+  final int estimatedMinutes;
+  final double priority; // 0.0-1.0
+  final bool accepted;
+  final DateTime createdAt;
+  final DateTime? completedAt;
+
+  LearningPathRecommendation({
+    required this.id,
+    required this.studentId,
+    required this.type,
+    required this.title,
+    required this.description,
+    required this.suggestedMaterials,
+    required this.suggestedQuestions,
+    required this.estimatedMinutes,
+    required this.priority,
+    required this.accepted,
+    required this.createdAt,
+    this.completedAt,
+  });
+
+  bool get isPending => !accepted && completedAt == null;
+  bool get isHighPriority => priority >= 0.7;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'type': type.toString().split('.').last,
+      'title': title,
+      'description': description,
+      'suggestedMaterials': suggestedMaterials,
+      'suggestedQuestions': suggestedQuestions,
+      'estimatedMinutes': estimatedMinutes,
+      'priority': priority,
+      'accepted': accepted,
+      'createdAt': createdAt.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+    };
+  }
+
+  factory LearningPathRecommendation.fromMap(Map<String, dynamic> map) {
+    return LearningPathRecommendation(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      type: _parseRecommendationType(map['type'] ?? 'focusArea'),
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      suggestedMaterials: List<String>.from(map['suggestedMaterials'] ?? []),
+      suggestedQuestions: List<String>.from(map['suggestedQuestions'] ?? []),
+      estimatedMinutes: map['estimatedMinutes'] ?? 0,
+      priority: (map['priority'] ?? 0.5).toDouble(),
+      accepted: map['accepted'] ?? false,
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
+          : DateTime.now(),
+      completedAt:
+          map['completedAt'] != null ? DateTime.parse(map['completedAt']) : null,
+    );
+  }
+}
+
+/// Progress milestone tracking
+class ProgressMilestone {
+  final String id;
+  final String studentId;
+  final String title;
+  final String description;
+  final double accuracyThreshold;
+  final int questionsRequired;
+  final DateTime achievedAt;
+  final String category;
+  final bool isCertified;
+
+  ProgressMilestone({
+    required this.id,
+    required this.studentId,
+    required this.title,
+    required this.description,
+    required this.accuracyThreshold,
+    required this.questionsRequired,
+    required this.achievedAt,
+    required this.category,
+    required this.isCertified,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'title': title,
+      'description': description,
+      'accuracyThreshold': accuracyThreshold,
+      'questionsRequired': questionsRequired,
+      'achievedAt': achievedAt.toIso8601String(),
+      'category': category,
+      'isCertified': isCertified,
+    };
+  }
+
+  factory ProgressMilestone.fromMap(Map<String, dynamic> map) {
+    return ProgressMilestone(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      accuracyThreshold: (map['accuracyThreshold'] ?? 0.0).toDouble(),
+      questionsRequired: map['questionsRequired'] ?? 0,
+      achievedAt: map['achievedAt'] != null
+          ? DateTime.parse(map['achievedAt'])
+          : DateTime.now(),
+      category: map['category'] ?? '',
+      isCertified: map['isCertified'] ?? false,
+    );
+  }
+}
+
+/// Peer benchmarking data
+class PeerBenchmark {
+  final String id;
+  final String studentId;
+  final String metricType; // e.g., 'accuracy', 'speed'
+  final double studentValue;
+  final double cohortMedian;
+  final double cohortMean;
+  final double percentile; // 0-100
+  final int cohortSize;
+  final DateTime calculatedAt;
+
+  PeerBenchmark({
+    required this.id,
+    required this.studentId,
+    required this.metricType,
+    required this.studentValue,
+    required this.cohortMedian,
+    required this.cohortMean,
+    required this.percentile,
+    required this.cohortSize,
+    required this.calculatedAt,
+  });
+
+  bool get isAboveAverage => studentValue > cohortMean;
+  bool get isAboveMedian => studentValue > cohortMedian;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'metricType': metricType,
+      'studentValue': studentValue,
+      'cohortMedian': cohortMedian,
+      'cohortMean': cohortMean,
+      'percentile': percentile,
+      'cohortSize': cohortSize,
+      'calculatedAt': calculatedAt.toIso8601String(),
+    };
+  }
+
+  factory PeerBenchmark.fromMap(Map<String, dynamic> map) {
+    return PeerBenchmark(
+      id: map['id'] ?? '',
+      studentId: map['studentId'] ?? '',
+      metricType: map['metricType'] ?? '',
+      studentValue: (map['studentValue'] ?? 0.0).toDouble(),
+      cohortMedian: (map['cohortMedian'] ?? 0.0).toDouble(),
+      cohortMean: (map['cohortMean'] ?? 0.0).toDouble(),
+      percentile: (map['percentile'] ?? 0.0).toDouble(),
+      cohortSize: map['cohortSize'] ?? 0,
+      calculatedAt: map['calculatedAt'] != null
+          ? DateTime.parse(map['calculatedAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
+/// Helper functions for parsing Phase 15 enums
+TrendDirection _parseTrendDirection(String value) {
+  try {
+    return TrendDirection.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return TrendDirection.stable;
+  }
+}
+
+InsightType _parseInsightType(String value) {
+  try {
+    return InsightType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return InsightType.recommendation;
+  }
+}
+
+RecommendationType _parseRecommendationType(String value) {
+  try {
+    return RecommendationType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+    );
+  } catch (e) {
+    return RecommendationType.focusArea;
+  }
+}
