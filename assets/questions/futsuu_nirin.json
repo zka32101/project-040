@@ -53,11 +53,11 @@
     "choices": [
       "20kg",
       "30kg",
-      "50kg",
+      "60kg",
       "70kg"
     ],
-    "answer": 0,
-    "explanation": "普通二輪車の最大積載量は20kgと定められている。これを超える積載は違反になる。",
+    "answer": 2,
+    "explanation": "普通二輪車（側車付きを除く）の最大積載量は60kgと定められている。これを超える積載は違反になる。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
@@ -746,12 +746,12 @@
     "questionText": "普通二輪での積載物の規制について正しいのはどれか。",
     "choices": [
       "積載制限はなく自由",
-      "最大積載量は20kgであり、且つシートより高くない",
+      "最大積載量は60kgであり、且つシートより高くない",
       "シートより高ければ大丈夫",
       "重さに制限はなく、外観さえ大丈夫"
     ],
     "answer": 1,
-    "explanation": "普通二輪の積載物は最大20kgであり、且つシートの高さを超えてはいけない。",
+    "explanation": "普通二輪の積載物は最大60kgであり、且つシートの高さを超えてはいけない。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
   },
@@ -1299,5 +1299,2840 @@
     "explanation": "前に重い荷物を積むと、前輪の操舵性が失われ、最も危険。",
     "isTrapQuestion": true,
     "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f066",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での二人乗りについて、最初の免許取得から可能なのはいつか。",
+    "choices": [
+      "免許取得直後",
+      "1年後",
+      "2年後",
+      "3年後"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪での二人乗りは、免許取得後1年の実乗経験が必須条件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "f067",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での積載量制限は原付とどう異なるか。",
+    "choices": [
+      "原付と同じ30kg",
+      "60kg（原付の2倍）",
+      "100kg以上",
+      "制限なし"
+    ],
+    "answer": 1,
+    "explanation": "普通二輪の最大積載量は60kg。原付（30kg）の2倍。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f068",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での高速道路での二人乗りについて正しいのは。",
+    "choices": [
+      "誰でも可能",
+      "20歳以上・3年以上の条件が必要",
+      "高速道路での二人乗りは禁止",
+      "1年以上で可能"
+    ],
+    "answer": 1,
+    "explanation": "高速道路での二人乗りは20歳以上・免許取得3年以上の厳しい条件。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "f069",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での二人乗り時の乗客の役割で最も重要なのは。",
+    "choices": [
+      "ライダーの邪魔をしない",
+      "バランス調整に積極参加",
+      "カーブで傾ける",
+      "ブレーキ操作を手伝う"
+    ],
+    "answer": 0,
+    "explanation": "乗客はライダーの操作を信頼し、邪魔しないことが安全の基本。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f070",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での二人乗り時のハンドル操作で気をつけることは。",
+    "choices": [
+      "乗客が強く掴む",
+      "乗客は抱きつくが、ハンドルには掴まない",
+      "乗客がハンドルを支援",
+      "乗客の力は関係ない"
+    ],
+    "answer": 1,
+    "explanation": "乗客はライダーの腰に抱きつくが、ハンドルに掴まると操作が阻害される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "twoPersonRiding"
+  },
+  {
+    "id": "f071",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での最高速度制限は。",
+    "choices": [
+      "30km/h",
+      "60km/h",
+      "法定速度に従う",
+      "制限なし"
+    ],
+    "answer": 2,
+    "explanation": "普通二輪は法定速度（60km/h 一般道、100km/h 高速）に従う。",
+    "isTrapQuestion": true,
+    "trapNumberType": "speedLimit"
+  },
+  {
+    "id": "f072",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪でのコーナリング時の乗客との傾きについて。",
+    "choices": [
+      "乗客は立ち上がる",
+      "乗客はライダーと同じ角度に傾く",
+      "乗客は反対方向に傾く",
+      "乗客は傾かない"
+    ],
+    "answer": 1,
+    "explanation": "二人乗り時、乗客はライダーと同じ角度に傾くことで安定性が向上。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f073",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での制動力で重要な操作は。",
+    "choices": [
+      "フロントブレーキのみ",
+      "リアブレーキのみ",
+      "フロント7:リア3の比率",
+      "どちらでもいい"
+    ],
+    "answer": 2,
+    "explanation": "安全な制動はフロントブレーキ70%・リアブレーキ30%の比率が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f074",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での雨天時のブレーキング距離は。",
+    "choices": [
+      "乾燥時と同じ",
+      "1.5倍程度",
+      "2倍以上",
+      "短くなる"
+    ],
+    "answer": 2,
+    "explanation": "雨天時は路面グリップ低下により、ブレーキング距離が著しく延びる。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f075",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での急ハンドル操作が危険な理由は。",
+    "choices": [
+      "スピード低下",
+      "横転リスク増加",
+      "燃費悪化",
+      "エンジン過熱"
+    ],
+    "answer": 1,
+    "explanation": "急ハンドル操作は重心移動により横転リスクが急増する。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f076",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f077",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f078",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f079",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f080",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f081",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f082",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f083",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f084",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f085",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f086",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f087",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f088",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f089",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f090",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f091",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f092",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f093",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f094",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f095",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f096",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f097",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f098",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f099",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f100",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f101",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f102",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f103",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f104",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f105",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f106",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f107",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f108",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f109",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f110",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f111",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f112",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f113",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f114",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f115",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f116",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f117",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f118",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f119",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f120",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f121",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f122",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f123",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f124",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f125",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f126",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f127",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f128",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f129",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f130",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第一段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f131",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f132",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f133",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f134",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f135",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f136",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f137",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f138",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f139",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f140",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f141",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f142",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f143",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f144",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f145",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f146",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f147",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f148",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f149",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f150",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f151",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f152",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f153",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f154",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f155",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f156",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f157",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f158",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f159",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f160",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f161",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f162",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f163",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f164",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f165",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f166",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f167",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f168",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f169",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f170",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f171",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f172",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f173",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f174",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f175",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f176",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f177",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f178",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f179",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f180",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f181",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f182",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f183",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f184",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f185",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f186",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f187",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f188",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f189",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f190",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f191",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での夜間走行での視界確保で最効果的なのは。",
+    "choices": [
+      "ハイビーム多用",
+      "適切な照度のハイビーム",
+      "ローライト",
+      "ライト消灯"
+    ],
+    "answer": 1,
+    "explanation": "夜間の視界確保はハイビームの適切な使用が基本。",
+    "isTrapQuestion": true,
+    "trapNumberType": "nightDriving"
+  },
+  {
+    "id": "f192",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での黄点滅信号での対応は。",
+    "choices": [
+      "加速通過",
+      "注意して安全確認後進行",
+      "必ず停止",
+      "速度維持"
+    ],
+    "answer": 1,
+    "explanation": "黄点滅は注意信号。周囲確認後、安全なら進行可能。",
+    "isTrapQuestion": true,
+    "trapNumberType": "signalAndMarkings"
+  },
+  {
+    "id": "f193",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での時速60km走行時のブレーキング距離は。",
+    "choices": [
+      "約10m",
+      "約20m",
+      "約30m",
+      "約50m"
+    ],
+    "answer": 2,
+    "explanation": "時速60km時のブレーキング距離は約30mが目安。",
+    "isTrapQuestion": true,
+    "trapNumberType": "brakingDistance"
+  },
+  {
+    "id": "f194",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪免許の更新時期は。",
+    "choices": [
+      "1年ごと",
+      "有効期限の3ヶ月前から可能",
+      "満期当日のみ",
+      "1ヶ月前から"
+    ],
+    "answer": 1,
+    "explanation": "免許更新は有効期限の3ヶ月前から可能。早期更新も許可される。",
+    "isTrapQuestion": true,
+    "trapNumberType": "licensePeriod"
+  },
+  {
+    "id": "f195",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での緊急時の対応で最優先は。",
+    "choices": [
+      "他車への伝達",
+      "自身の安全確保",
+      "スピード加速",
+      "クラクション"
+    ],
+    "answer": 1,
+    "explanation": "緊急時は自身の安全確保が最優先。その後、他者への連絡。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f196",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 2,
+    "questionText": "普通二輪での走行時の最重要注意事項は。",
+    "choices": [
+      "最高速度達成",
+      "周囲確認と予測運転",
+      "加速度向上",
+      "他車圧迫"
+    ],
+    "answer": 1,
+    "explanation": "安全走行は周囲の車両・歩行者の行動予測と事前対応が最重要。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f197",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 3,
+    "questionText": "普通二輪での右折時の対向車対応で正しいのは。",
+    "choices": [
+      "加速して先に進む",
+      "対向車完全通過後に右折",
+      "右ウインカー出で優先権確保",
+      "停止位置まで進む"
+    ],
+    "answer": 1,
+    "explanation": "対向車には右折時に優先権がある。対向車通過後の右折が正解。",
+    "isTrapQuestion": true,
+    "trapNumberType": "turningRules"
+  },
+  {
+    "id": "f198",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 4,
+    "questionText": "普通二輪での積載物の重心位置で正しいのは。",
+    "choices": [
+      "できるだけ高く",
+      "バイク中央、低い位置",
+      "後部に集中",
+      "前部に集中"
+    ],
+    "answer": 1,
+    "explanation": "積載物の重心はバイク中央部、低い位置が安定性を保つ。",
+    "isTrapQuestion": true,
+    "trapNumberType": "loadLimit"
+  },
+  {
+    "id": "f199",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 5,
+    "questionText": "普通二輪での豪雨時の走行対応で最優先は。",
+    "choices": [
+      "スピード維持",
+      "速度低下と視界確保",
+      "他車追い越し",
+      "ハイビーム"
+    ],
+    "answer": 1,
+    "explanation": "豪雨時は視界悪化とグリップ低下が顕著。速度低下が最優先。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
+  },
+  {
+    "id": "f200",
+    "licenseCategory": [
+      "futsuuNirin",
+      "kogataGentsukiNirin",
+      "atGentei"
+    ],
+    "stageTag": "第二段階",
+    "difficulty": 1,
+    "questionText": "普通二輪での危険予測で最重要なのは。",
+    "choices": [
+      "スピード最大化",
+      "他者の行動を事前予測",
+      "短距離走行",
+      "単独走行"
+    ],
+    "answer": 1,
+    "explanation": "危険予測は他者（車・歩行者）の行動を読み、事前対応する能力。",
+    "isTrapQuestion": false,
+    "trapNumberType": "none"
   }
 ]
