@@ -1,383 +1,629 @@
-/// Phase 27: データベースサービス
-/// リポジトリパターン実装、データベース操作
+/// Phase 43: Database Schema Management データベーススキーマサービス実装
+///
+/// スキーマ操作、マイグレーション、リポジトリ、エンジン
 
-import '../models/async_job_model.dart';
-import '../models/analytics_model.dart';
-import '../models/search_export_model.dart';
+import 'package:project_040/models/database_models.dart';
 
-// ==================== リポジトリインターフェース ====================
+/// データベースリポジトリインターフェース
+abstract class DatabaseRepository {
+  /// テーブルを保存
+  Future<void> saveTable(Table table);
 
-/// ジョブリポジトリ
-abstract class JobRepository {
-  /// ジョブを追加
-  Future<void> insert(AsyncJob job);
+  /// テーブルを取得
+  Future<Table?> getTable(String tableId);
 
-  /// ジョブを取得
-  Future<AsyncJob?> getById(String jobId);
+  /// すべてのテーブルを取得
+  Future<List<Table>> getAllTables();
 
-  /// ユーザーのジョブを取得
-  Future<List<AsyncJob>> getUserJobs(String userId);
+  /// テーブルを削除
+  Future<void> deleteTable(String tableId);
 
-  /// ジョブを更新
-  Future<void> update(AsyncJob job);
+  /// インデックスを保存
+  Future<void> saveIndex(Index index);
 
-  /// ジョブを削除
-  Future<void> delete(String jobId);
+  /// テーブルのインデックスを取得
+  Future<List<Index>> getIndexesByTable(String tableId);
 
-  /// すべてのジョブを取得
-  Future<List<AsyncJob>> getAll();
+  /// インデックスを削除
+  Future<void> deleteIndex(String indexId);
 
-  /// ジョブをクエリ
-  Future<List<AsyncJob>> query({
-    String? userId,
-    AsyncJobStatus? status,
-    AsyncJobType? jobType,
-    DateTime? createdAfter,
-  });
+  /// 外部キーを保存
+  Future<void> saveForeignKey(ForeignKey foreignKey);
+
+  /// テーブルの外部キーを取得
+  Future<List<ForeignKey>> getForeignKeysByTable(String tableId);
+
+  /// マイグレーションを保存
+  Future<void> saveMigration(Migration migration);
+
+  /// すべてのマイグレーションを取得
+  Future<List<Migration>> getMigrations();
+
+  /// マイグレーションを取得
+  Future<Migration?> getMigration(String migrationId);
+
+  /// スキーマバージョンを保存
+  Future<void> saveSchemaVersion(SchemaVersion version);
+
+  /// スキーマバージョンを取得
+  Future<SchemaVersion?> getSchemaVersion(String versionId);
+
+  /// 最新のスキーマバージョンを取得
+  Future<SchemaVersion?> getLatestSchemaVersion();
 }
 
-/// 分析リポジトリ
-abstract class AnalyticsRepository {
-  /// 実行時間分析を保存
-  Future<void> saveExecutionTimeAnalytics(ExecutionTimeAnalytics analytics);
-
-  /// 成功率統計を保存
-  Future<void> saveSuccessRateStatistics(SuccessRateStatistics statistics);
-
-  /// パフォーマンスメトリクスを保存
-  Future<void> savePerformanceMetrics(PerformanceMetrics metrics);
-
-  /// レポートを保存
-  Future<void> saveReport(AnalyticsReport report);
-
-  /// レポートを取得
-  Future<AnalyticsReport?> getReport(String reportId);
-
-  /// 期間内のレポートを取得
-  Future<List<AnalyticsReport>> getReportsByDateRange(DateRange range);
-}
-
-/// 検索リポジトリ
-abstract class SearchRepository {
-  /// 検索クエリを保存
-  Future<void> saveQuery(SearchQuery query);
-
-  /// 検索履歴エントリを保存
-  Future<void> saveHistoryEntry(SearchHistoryEntry entry);
-
-  /// ユーザーの検索履歴を取得
-  Future<List<SearchHistoryEntry>> getUserHistory(String userId);
-
-  /// ユーザーの保存検索を取得
-  Future<List<SearchQuery>> getUserSavedSearches(String userId);
-
-  /// 検索履歴をクリア
-  Future<void> clearHistory(String userId);
-}
-
-/// エクスポートリポジトリ
-abstract class ExportRepository {
-  /// エクスポート結果を保存
-  Future<void> saveExportResult(ExportResult result);
-
-  /// エクスポート結果を取得
-  Future<ExportResult?> getExportResult(String exportId);
-
-  /// ユーザーのエクスポート履歴を取得
-  Future<List<ExportResult>> getUserExportHistory(String userId);
-
-  /// エクスポート結果を更新
-  Future<void> updateExportResult(ExportResult result);
-
-  /// エクスポート結果を削除
-  Future<void> deleteExportResult(String exportId);
-}
-
-// ==================== メモリ実装 ====================
-
-/// メモリベースのジョブリポジトリ
-class MemoryJobRepository implements JobRepository {
-  final Map<String, AsyncJob> _jobs = {};
+/// メモリ実装のデータベースリポジトリ
+class MemoryDatabaseRepository implements DatabaseRepository {
+  final Map<String, Table> _tables = {};
+  final Map<String, Index> _indexes = {};
+  final Map<String, List<Index>> _indexesByTable = {};
+  final Map<String, ForeignKey> _foreignKeys = {};
+  final Map<String, List<ForeignKey>> _foreignKeysByTable = {};
+  final Map<String, Migration> _migrations = {};
+  final Map<String, SchemaVersion> _schemaVersions = {};
+  String? _latestSchemaVersionId;
 
   @override
-  Future<void> insert(AsyncJob job) async {
-    _jobs[job.jobId] = job;
+  Future<void> saveTable(Table table) async {
+    _tables[table.tableId] = table;
   }
 
   @override
-  Future<AsyncJob?> getById(String jobId) async {
-    return _jobs[jobId];
+  Future<Table?> getTable(String tableId) async => _tables[tableId];
+
+  @override
+  Future<List<Table>> getAllTables() async => _tables.values.toList();
+
+  @override
+  Future<void> deleteTable(String tableId) async {
+    _tables.remove(tableId);
+    _indexesByTable.remove(tableId);
+    _foreignKeysByTable.remove(tableId);
   }
 
   @override
-  Future<List<AsyncJob>> getUserJobs(String userId) async {
-    return _jobs.values.where((job) => job.userId == userId).toList();
+  Future<void> saveIndex(Index index) async {
+    _indexes[index.indexId] = index;
+    _indexesByTable.putIfAbsent(index.tableId, () => []).add(index);
   }
 
   @override
-  Future<void> update(AsyncJob job) async {
-    _jobs[job.jobId] = job;
-  }
+  Future<List<Index>> getIndexesByTable(String tableId) async =>
+      _indexesByTable[tableId] ?? [];
 
   @override
-  Future<void> delete(String jobId) async {
-    _jobs.remove(jobId);
-  }
-
-  @override
-  Future<List<AsyncJob>> getAll() async {
-    return _jobs.values.toList();
-  }
-
-  @override
-  Future<List<AsyncJob>> query({
-    String? userId,
-    AsyncJobStatus? status,
-    AsyncJobType? jobType,
-    DateTime? createdAfter,
-  }) async {
-    var results = _jobs.values.toList();
-
-    if (userId != null) {
-      results = results.where((j) => j.userId == userId).toList();
+  Future<void> deleteIndex(String indexId) async {
+    final index = _indexes.remove(indexId);
+    if (index != null) {
+      _indexesByTable[index.tableId]?.removeWhere((i) => i.indexId == indexId);
     }
-    if (status != null) {
-      results = results.where((j) => j.status == status).toList();
-    }
-    if (jobType != null) {
-      results = results.where((j) => j.jobType == jobType).toList();
-    }
-    if (createdAfter != null) {
-      results = results.where((j) => j.createdAt.isAfter(createdAfter)).toList();
-    }
+  }
 
-    return results;
+  @override
+  Future<void> saveForeignKey(ForeignKey foreignKey) async {
+    _foreignKeys[foreignKey.foreignKeyId] = foreignKey;
+    _foreignKeysByTable.putIfAbsent(foreignKey.tableId, () => []).add(foreignKey);
+  }
+
+  @override
+  Future<List<ForeignKey>> getForeignKeysByTable(String tableId) async =>
+      _foreignKeysByTable[tableId] ?? [];
+
+  @override
+  Future<void> saveMigration(Migration migration) async {
+    _migrations[migration.migrationId] = migration;
+  }
+
+  @override
+  Future<List<Migration>> getMigrations() async => _migrations.values.toList();
+
+  @override
+  Future<Migration?> getMigration(String migrationId) async =>
+      _migrations[migrationId];
+
+  @override
+  Future<void> saveSchemaVersion(SchemaVersion version) async {
+    _schemaVersions[version.versionId] = version;
+    _latestSchemaVersionId = version.versionId;
+  }
+
+  @override
+  Future<SchemaVersion?> getSchemaVersion(String versionId) async =>
+      _schemaVersions[versionId];
+
+  @override
+  Future<SchemaVersion?> getLatestSchemaVersion() async {
+    if (_latestSchemaVersionId == null) return null;
+    return _schemaVersions[_latestSchemaVersionId];
   }
 }
 
-/// メモリベースの分析リポジトリ
-class MemoryAnalyticsRepository implements AnalyticsRepository {
-  final Map<String, ExecutionTimeAnalytics> _executionAnalytics = {};
-  final Map<String, SuccessRateStatistics> _successStats = {};
-  final Map<String, PerformanceMetrics> _metrics = {};
-  final Map<String, AnalyticsReport> _reports = {};
+/// スキーマエンジンインターフェース
+abstract class SchemaEngine {
+  /// テーブルを作成
+  Future<void> createTable(Table table);
 
-  @override
-  Future<void> saveExecutionTimeAnalytics(
-    ExecutionTimeAnalytics analytics,
-  ) async {
-    _executionAnalytics[analytics.jobId] = analytics;
-  }
+  /// テーブルを削除
+  Future<void> dropTable(String tableId);
 
-  @override
-  Future<void> saveSuccessRateStatistics(
-    SuccessRateStatistics statistics,
-  ) async {
-    _successStats['${statistics.period.startDate}-${statistics.period.endDate}'] =
-        statistics;
-  }
+  /// カラムを追加
+  Future<void> addColumn(String tableId, Column column);
 
-  @override
-  Future<void> savePerformanceMetrics(PerformanceMetrics metrics) async {
-    _metrics['${metrics.timestamp.toIso8601String()}'] = metrics;
-  }
+  /// カラムを削除
+  Future<void> dropColumn(String tableId, String columnName);
 
-  @override
-  Future<void> saveReport(AnalyticsReport report) async {
-    _reports[report.reportId] = report;
-  }
+  /// インデックスを作成
+  Future<void> createIndex(Index index);
 
-  @override
-  Future<AnalyticsReport?> getReport(String reportId) async {
-    return _reports[reportId];
-  }
+  /// インデックスを削除
+  Future<void> dropIndex(String indexId);
 
-  @override
-  Future<List<AnalyticsReport>> getReportsByDateRange(
-    DateRange range,
-  ) async {
-    return _reports.values
-        .where((r) =>
-            r.period.startDate.isAfter(range.startDate) &&
-            r.period.endDate.isBefore(range.endDate))
-        .toList();
-  }
+  /// スキーマを取得
+  Future<List<Table>> getSchema();
+
+  /// メトリクスを計算
+  Future<DatabaseMetrics> calculateMetrics();
+
+  /// テーブルを取得
+  Future<Table?> getTable(String tableId);
 }
 
-/// メモリベースの検索リポジトリ
-class MemorySearchRepository implements SearchRepository {
-  final Map<String, List<SearchQuery>> _savedSearches = {};
-  final Map<String, List<SearchHistoryEntry>> _history = {};
+/// メモリ実装のスキーマエンジン
+class MemorySchemaEngine implements SchemaEngine {
+  final DatabaseRepository _repository;
+  int _totalOperations = 0;
+
+  MemorySchemaEngine(this._repository);
 
   @override
-  Future<void> saveQuery(SearchQuery query) async {
-    // 保存検索管理（実装簡略化）
+  Future<void> createTable(Table table) async {
+    await _repository.saveTable(table);
+    _totalOperations++;
   }
 
   @override
-  Future<void> saveHistoryEntry(SearchHistoryEntry entry) async {
-    if (!_history.containsKey(entry.userId)) {
-      _history[entry.userId] = [];
+  Future<void> dropTable(String tableId) async {
+    await _repository.deleteTable(tableId);
+    _totalOperations++;
+  }
+
+  @override
+  Future<void> addColumn(String tableId, Column column) async {
+    final table = await _repository.getTable(tableId);
+    if (table != null) {
+      final updatedTable = Table(
+        tableId: table.tableId,
+        name: table.name,
+        columns: [...table.columns, column],
+        primaryKey: table.primaryKey,
+        createdAt: table.createdAt,
+        updatedAt: DateTime.now(),
+      );
+      await _repository.saveTable(updatedTable);
+      _totalOperations++;
     }
-    _history[entry.userId]!.add(entry);
   }
 
   @override
-  Future<List<SearchHistoryEntry>> getUserHistory(String userId) async {
-    return _history[userId] ?? [];
+  Future<void> dropColumn(String tableId, String columnName) async {
+    final table = await _repository.getTable(tableId);
+    if (table != null) {
+      final updatedTable = Table(
+        tableId: table.tableId,
+        name: table.name,
+        columns: table.columns.where((c) => c.name != columnName).toList(),
+        primaryKey: table.primaryKey,
+        createdAt: table.createdAt,
+        updatedAt: DateTime.now(),
+      );
+      await _repository.saveTable(updatedTable);
+      _totalOperations++;
+    }
   }
 
   @override
-  Future<List<SearchQuery>> getUserSavedSearches(String userId) async {
-    return _savedSearches[userId] ?? [];
+  Future<void> createIndex(Index index) async {
+    await _repository.saveIndex(index);
+    _totalOperations++;
   }
 
   @override
-  Future<void> clearHistory(String userId) async {
-    _history[userId] = [];
+  Future<void> dropIndex(String indexId) async {
+    await _repository.deleteIndex(indexId);
+    _totalOperations++;
   }
+
+  @override
+  Future<List<Table>> getSchema() async => _repository.getAllTables();
+
+  @override
+  Future<DatabaseMetrics> calculateMetrics() async {
+    final tables = await _repository.getAllTables();
+    final totalTables = tables.length;
+    final totalColumns = tables.fold(0, (sum, t) => sum + t.columnCount);
+
+    int totalIndexes = 0;
+    int totalForeignKeys = 0;
+    for (final table in tables) {
+      final indexes = await _repository.getIndexesByTable(table.tableId);
+      final foreignKeys = await _repository.getForeignKeysByTable(table.tableId);
+      totalIndexes += indexes.length;
+      totalForeignKeys += foreignKeys.length;
+    }
+
+    final avgColumnCount =
+        totalTables > 0 ? totalColumns / totalTables : 0.0;
+    final avgIndexCount =
+        totalTables > 0 ? totalIndexes / totalTables : 0.0;
+
+    return DatabaseMetrics(
+      metricsId: 'metrics:${DateTime.now().millisecondsSinceEpoch}',
+      totalTables: totalTables,
+      totalColumns: totalColumns,
+      totalIndexes: totalIndexes,
+      totalForeignKeys: totalForeignKeys,
+      averageColumnCount: avgColumnCount,
+      averageIndexCount: avgIndexCount,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<Table?> getTable(String tableId) async =>
+      _repository.getTable(tableId);
 }
 
-/// メモリベースのエクスポートリポジトリ
-class MemoryExportRepository implements ExportRepository {
-  final Map<String, ExportResult> _exports = {};
+/// マイグレーションエンジンインターフェース
+abstract class MigrationEngine {
+  /// マイグレーションを実行
+  Future<void> applyMigration(Migration migration);
 
-  @override
-  Future<void> saveExportResult(ExportResult result) async {
-    _exports[result.exportId] = result;
-  }
+  /// マイグレーションをロールバック
+  Future<void> rollbackMigration(Migration migration);
 
-  @override
-  Future<ExportResult?> getExportResult(String exportId) async {
-    return _exports[exportId];
-  }
+  /// ペンディングのマイグレーションを取得
+  Future<List<Migration>> getPendingMigrations();
 
-  @override
-  Future<List<ExportResult>> getUserExportHistory(String userId) async {
-    // ユーザーIDを関連付ける必要があるが、簡略化のため全件返却
-    return _exports.values.toList();
-  }
+  /// 実行済みマイグレーションを取得
+  Future<List<Migration>> getAppliedMigrations();
 
-  @override
-  Future<void> updateExportResult(ExportResult result) async {
-    _exports[result.exportId] = result;
-  }
-
-  @override
-  Future<void> deleteExportResult(String exportId) async {
-    _exports.remove(exportId);
-  }
+  /// 現在のバージョンを取得
+  Future<SchemaVersion?> getCurrentVersion();
 }
 
-// ==================== データベース管理 ====================
+/// メモリ実装のマイグレーションエンジン
+class MemoryMigrationEngine implements MigrationEngine {
+  final DatabaseRepository _repository;
 
-/// データベースサービス（リポジトリファサード）
-class DatabaseService {
-  late JobRepository jobRepository;
-  late AnalyticsRepository analyticsRepository;
-  late SearchRepository searchRepository;
-  late ExportRepository exportRepository;
+  MemoryMigrationEngine(this._repository);
 
-  DatabaseService({
-    JobRepository? jobRepository,
-    AnalyticsRepository? analyticsRepository,
-    SearchRepository? searchRepository,
-    ExportRepository? exportRepository,
-  }) {
-    this.jobRepository = jobRepository ?? MemoryJobRepository();
-    this.analyticsRepository =
-        analyticsRepository ?? MemoryAnalyticsRepository();
-    this.searchRepository = searchRepository ?? MemorySearchRepository();
-    this.exportRepository = exportRepository ?? MemoryExportRepository();
-  }
+  @override
+  Future<void> applyMigration(Migration migration) async {
+    final updatedMigration = Migration(
+      migrationId: migration.migrationId,
+      version: migration.version,
+      description: migration.description,
+      upScript: migration.upScript,
+      downScript: migration.downScript,
+      status: MigrationStatus.running,
+      createdAt: migration.createdAt,
+    );
 
-  /// データベースを初期化
-  Future<void> initialize() async {
-    // マイグレーション実行、テーブル作成等
-  }
-
-  /// データベース接続をクローズ
-  Future<void> close() async {
-    // リソース解放
-  }
-
-  /// トランザクションを実行
-  Future<T> transaction<T>(Future<T> Function() operation) async {
     try {
-      return await operation();
+      updatedMigration.apply();
+      await _repository.saveMigration(updatedMigration);
     } catch (e) {
+      updatedMigration.status = MigrationStatus.failed;
+      updatedMigration.errorMessage = e.toString();
+      await _repository.saveMigration(updatedMigration);
       rethrow;
     }
   }
+
+  @override
+  Future<void> rollbackMigration(Migration migration) async {
+    if (!migration.isRollbackable) {
+      throw Exception('Migration is not rollbackable');
+    }
+
+    final updatedMigration = Migration(
+      migrationId: migration.migrationId,
+      version: migration.version,
+      description: migration.description,
+      upScript: migration.upScript,
+      downScript: migration.downScript,
+      status: migration.status,
+      createdAt: migration.createdAt,
+      appliedAt: migration.appliedAt,
+    );
+
+    updatedMigration.rollback();
+    await _repository.saveMigration(updatedMigration);
+  }
+
+  @override
+  Future<List<Migration>> getPendingMigrations() async {
+    final migrations = await _repository.getMigrations();
+    return migrations
+        .where((m) => m.status == MigrationStatus.pending)
+        .toList();
+  }
+
+  @override
+  Future<List<Migration>> getAppliedMigrations() async {
+    final migrations = await _repository.getMigrations();
+    return migrations
+        .where((m) => m.status == MigrationStatus.completed)
+        .toList();
+  }
+
+  @override
+  Future<SchemaVersion?> getCurrentVersion() async {
+    return _repository.getLatestSchemaVersion();
+  }
 }
 
-// ==================== クエリビルダー ====================
+/// データベースマネージャーインターフェース
+abstract class DatabaseManager {
+  /// スキーマを作成
+  Future<void> createSchema(SchemaVersion version);
 
-/// クエリビルダー（型安全な動的クエリ構築）
-class JobQueryBuilder {
-  String? userId;
-  AsyncJobStatus? status;
-  AsyncJobType? jobType;
-  DateTime? createdAfter;
-  int? limit;
-  int? offset;
-  String? orderBy;
-  bool descending = false;
+  /// スキーマをマイグレーション
+  Future<void> migrateSchema(String targetVersion);
 
-  /// ユーザーでフィルター
-  JobQueryBuilder withUserId(String userId) {
-    this.userId = userId;
-    return this;
+  /// マイグレーション履歴を取得
+  Future<List<Migration>> getMigrationHistory();
+
+  /// メトリクスを取得
+  Future<DatabaseMetrics?> getMetrics();
+
+  /// レポートを生成
+  Future<DatabaseReport> generateReport();
+}
+
+/// メモリ実装のデータベースマネージャー
+class MemoryDatabaseManager implements DatabaseManager {
+  final DatabaseRepository _repository;
+  final SchemaEngine _schemaEngine;
+  final MigrationEngine _migrationEngine;
+
+  MemoryDatabaseManager(
+    this._repository,
+    this._schemaEngine,
+    this._migrationEngine,
+  );
+
+  @override
+  Future<void> createSchema(SchemaVersion version) async {
+    for (final table in version.tables) {
+      await _schemaEngine.createTable(table);
+    }
+
+    if (version.indexes != null) {
+      for (final index in version.indexes!) {
+        await _schemaEngine.createIndex(index);
+      }
+    }
+
+    await _repository.saveSchemaVersion(version);
   }
 
-  /// ステータスでフィルター
-  JobQueryBuilder withStatus(AsyncJobStatus status) {
-    this.status = status;
-    return this;
+  @override
+  Future<void> migrateSchema(String targetVersion) async {
+    final pendingMigrations = await _migrationEngine.getPendingMigrations();
+
+    for (final migration in pendingMigrations) {
+      if (migration.version == targetVersion) {
+        await _migrationEngine.applyMigration(migration);
+      }
+    }
   }
 
-  /// ジョブタイプでフィルター
-  JobQueryBuilder withJobType(AsyncJobType jobType) {
-    this.jobType = jobType;
-    return this;
+  @override
+  Future<List<Migration>> getMigrationHistory() async {
+    return _repository.getMigrations();
   }
 
-  /// 作成日時でフィルター
-  JobQueryBuilder createdAfter(DateTime date) {
-    this.createdAfter = date;
-    return this;
+  @override
+  Future<DatabaseMetrics?> getMetrics() async {
+    try {
+      return await _schemaEngine.calculateMetrics();
+    } catch (e) {
+      return null;
+    }
   }
 
-  /// 制限
-  JobQueryBuilder withLimit(int limit) {
-    this.limit = limit;
-    return this;
+  @override
+  Future<DatabaseReport> generateReport() async {
+    final currentVersion = await _migrationEngine.getCurrentVersion();
+    final metrics = await getMetrics();
+
+    if (currentVersion == null || metrics == null) {
+      return DatabaseReport(
+        reportId: 'report:${DateTime.now().millisecondsSinceEpoch}',
+        generatedAt: DateTime.now(),
+        schemaVersion: SchemaVersion(
+          versionId: 'empty',
+          version: '0.0.0',
+          tables: [],
+          appliedAt: DateTime.now(),
+        ),
+        metrics: DatabaseMetrics(
+          metricsId: 'empty',
+          totalTables: 0,
+          totalColumns: 0,
+          totalIndexes: 0,
+          totalForeignKeys: 0,
+          averageColumnCount: 0.0,
+          averageIndexCount: 0.0,
+          createdAt: DateTime.now(),
+        ),
+        recommendations: ['Initialize schema first'],
+      );
+    }
+
+    final recommendations = _generateRecommendations(metrics);
+
+    return DatabaseReport(
+      reportId: 'report:${DateTime.now().millisecondsSinceEpoch}',
+      generatedAt: DateTime.now(),
+      schemaVersion: currentVersion,
+      metrics: metrics,
+      recommendations: recommendations,
+    );
   }
 
-  /// オフセット
-  JobQueryBuilder withOffset(int offset) {
-    this.offset = offset;
-    return this;
+  List<String> _generateRecommendations(DatabaseMetrics metrics) {
+    final recommendations = <String>[];
+
+    if (metrics.totalIndexes < metrics.totalTables) {
+      recommendations.add('Consider adding more indexes for better performance');
+    }
+
+    if (metrics.averageColumnCount > 20) {
+      recommendations.add('Tables have many columns; consider normalization');
+    }
+
+    if (metrics.healthScore < 50) {
+      recommendations.add('Schema health score is low; review table structure');
+    }
+
+    if (recommendations.isEmpty) {
+      recommendations.add('Schema is well-designed');
+    }
+
+    return recommendations;
+  }
+}
+
+/// データベースマネージャーファサード
+class DatabaseManagerFacade {
+  late DatabaseRepository _repository;
+  late SchemaEngine _schemaEngine;
+  late MigrationEngine _migrationEngine;
+  late DatabaseManager _manager;
+
+  DatabaseManagerFacade({
+    DatabaseRepository? repository,
+    SchemaEngine? schemaEngine,
+    MigrationEngine? migrationEngine,
+    DatabaseManager? manager,
+  }) {
+    _repository = repository ?? MemoryDatabaseRepository();
+    _schemaEngine = schemaEngine ?? MemorySchemaEngine(_repository);
+    _migrationEngine = migrationEngine ?? MemoryMigrationEngine(_repository);
+    _manager = manager ??
+        MemoryDatabaseManager(_repository, _schemaEngine, _migrationEngine);
   }
 
-  /// ソート
-  JobQueryBuilder orderBy(String field, {bool descending = false}) {
-    this.orderBy = field;
-    this.descending = descending;
-    return this;
-  }
+  /// テーブルを作成
+  Future<void> createTable(Table table) => _schemaEngine.createTable(table);
 
-  /// クエリを構築
-  Map<String, dynamic> build() {
-    return {
-      if (userId != null) 'userId': userId,
-      if (status != null) 'status': status,
-      if (jobType != null) 'jobType': jobType,
-      if (createdAfter != null) 'createdAfter': createdAfter,
-      if (limit != null) 'limit': limit,
-      if (offset != null) 'offset': offset,
-      if (orderBy != null) 'orderBy': orderBy,
-      if (orderBy != null) 'descending': descending,
-    };
+  /// テーブルを削除
+  Future<void> dropTable(String tableId) => _schemaEngine.dropTable(tableId);
+
+  /// テーブルを取得
+  Future<Table?> getTable(String tableId) => _schemaEngine.getTable(tableId);
+
+  /// すべてのテーブルを取得
+  Future<List<Table>> getAllTables() => _schemaEngine.getSchema();
+
+  /// カラムを追加
+  Future<void> addColumn(String tableId, Column column) =>
+      _schemaEngine.addColumn(tableId, column);
+
+  /// カラムを削除
+  Future<void> dropColumn(String tableId, String columnName) =>
+      _schemaEngine.dropColumn(tableId, columnName);
+
+  /// インデックスを作成
+  Future<void> createIndex(Index index) => _schemaEngine.createIndex(index);
+
+  /// インデックスを削除
+  Future<void> dropIndex(String indexId) => _schemaEngine.dropIndex(indexId);
+
+  /// テーブルのインデックスを取得
+  Future<List<Index>> getIndexesByTable(String tableId) =>
+      _repository.getIndexesByTable(tableId);
+
+  /// 外部キーを作成
+  Future<void> createForeignKey(ForeignKey foreignKey) =>
+      _repository.saveForeignKey(foreignKey);
+
+  /// テーブルの外部キーを取得
+  Future<List<ForeignKey>> getForeignKeysByTable(String tableId) =>
+      _repository.getForeignKeysByTable(tableId);
+
+  /// スキーマを作成
+  Future<void> createSchema(SchemaVersion version) =>
+      _manager.createSchema(version);
+
+  /// マイグレーションを実行
+  Future<void> applyMigration(Migration migration) =>
+      _migrationEngine.applyMigration(migration);
+
+  /// マイグレーションをロールバック
+  Future<void> rollbackMigration(Migration migration) =>
+      _migrationEngine.rollbackMigration(migration);
+
+  /// スキーマをマイグレーション
+  Future<void> migrateSchema(String targetVersion) =>
+      _manager.migrateSchema(targetVersion);
+
+  /// ペンディングマイグレーションを取得
+  Future<List<Migration>> getPendingMigrations() =>
+      _migrationEngine.getPendingMigrations();
+
+  /// 実行済みマイグレーションを取得
+  Future<List<Migration>> getAppliedMigrations() =>
+      _migrationEngine.getAppliedMigrations();
+
+  /// マイグレーション履歴を取得
+  Future<List<Migration>> getMigrationHistory() =>
+      _manager.getMigrationHistory();
+
+  /// 現在のスキーマバージョンを取得
+  Future<SchemaVersion?> getCurrentVersion() =>
+      _migrationEngine.getCurrentVersion();
+
+  /// メトリクスを取得
+  Future<DatabaseMetrics?> getMetrics() => _manager.getMetrics();
+
+  /// レポートを生成
+  Future<DatabaseReport> generateReport() => _manager.generateReport();
+
+  /// スキーマ操作を実行
+  Future<void> executeSchemaOperation(
+    DatabaseOperation operation,
+    dynamic data,
+  ) async {
+    switch (operation) {
+      case DatabaseOperation.create:
+        if (data is Table) {
+          await createTable(data);
+        } else if (data is Index) {
+          await createIndex(data);
+        } else if (data is ForeignKey) {
+          await createForeignKey(data);
+        }
+        break;
+      case DatabaseOperation.read:
+        // Read operations return values
+        break;
+      case DatabaseOperation.update:
+        // Update operations (e.g., alter table)
+        break;
+      case DatabaseOperation.delete:
+        if (data is String) {
+          // Assuming it's a table ID
+          await dropTable(data);
+        }
+        break;
+      case DatabaseOperation.migrate:
+        if (data is Migration) {
+          await applyMigration(data);
+        }
+        break;
+    }
   }
 }
