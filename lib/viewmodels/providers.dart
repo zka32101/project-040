@@ -34,6 +34,9 @@ import '../services/connectivity_service.dart';
 import '../services/conflict_resolution_service.dart';
 import '../services/user_deletion_service.dart';
 import '../services/network_queue_processor.dart';
+import '../services/report_service.dart';
+import '../services/export_service.dart';
+import '../models/report_model.dart';
 
 // ---------------------------------------------------------------------------
 // Service層 Provider（差し替え可能。main.dart の overrides で本番実装に切替）
@@ -911,3 +914,178 @@ final notificationEnabledProvider = FutureProvider<bool>((ref) async {
   final service = ref.read(notificationServiceProvider);
   return service.isNotificationEnabled();
 });
+
+// ---------------------------------------------------------------------------
+// Phase 18: Reporting & Export System Providers
+// ---------------------------------------------------------------------------
+
+/// レポート生成サービスプロバイダ
+final reportServiceProvider = Provider<ReportService>((ref) {
+  return ReportService();
+});
+
+/// データエクスポートサービスプロバイダ
+final exportServiceProvider = Provider<ExportService>((ref) {
+  return ExportService();
+});
+
+/// レポート生成パラメータ用クラス
+class ReportGenerationParams {
+  final String templateId;
+  final String reportType;
+  final String format;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String title;
+  final String generatedBy;
+  final Map<String, dynamic> dataSource;
+
+  ReportGenerationParams({
+    required this.templateId,
+    required this.reportType,
+    required this.format,
+    required this.startDate,
+    required this.endDate,
+    required this.title,
+    required this.generatedBy,
+    required this.dataSource,
+  });
+}
+
+/// レポート生成プロバイダ
+final reportGenerationProvider =
+    FutureProvider.family<GeneratedReport, ReportGenerationParams>(
+  (ref, params) async {
+    final service = ref.watch(reportServiceProvider);
+    final config = ReportConfig(
+      id: 'config_${DateTime.now().millisecondsSinceEpoch}',
+      templateId: params.templateId,
+      reportType: params.reportType,
+      format: params.format,
+      startDate: params.startDate,
+      endDate: params.endDate,
+    );
+    return service.generateReport(
+      templateId: params.templateId,
+      config: config,
+      title: params.title,
+      generatedBy: params.generatedBy,
+      dataSource: params.dataSource,
+    );
+  },
+);
+
+/// エクスポートデータパラメータ用クラス
+class ExportDataParams {
+  final String exportId;
+  final String dataType;
+  final String format;
+  final DateTime startDate;
+  final DateTime endDate;
+  final List<String>? includedFields;
+  final bool maskPersonalData;
+  final bool includePersonalInfo;
+  final String? encryptionType;
+  final List<Map<String, dynamic>> dataRecords;
+
+  ExportDataParams({
+    required this.exportId,
+    required this.dataType,
+    required this.format,
+    required this.startDate,
+    required this.endDate,
+    this.includedFields,
+    this.maskPersonalData = false,
+    this.includePersonalInfo = true,
+    this.encryptionType,
+    required this.dataRecords,
+  });
+}
+
+/// データエクスポートプロバイダ
+final exportDataProvider =
+    FutureProvider.family<ExportResult, ExportDataParams>(
+  (ref, params) async {
+    final service = ref.watch(exportServiceProvider);
+    final config = ExportConfig(
+      id: params.exportId,
+      dataType: params.dataType,
+      format: params.format,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      includedFields: params.includedFields,
+      maskPersonalData: params.maskPersonalData,
+      includePersonalInfo: params.includePersonalInfo,
+      encryptionType: params.encryptionType,
+    );
+    return service.exportData(
+      exportId: params.exportId,
+      config: config,
+      dataRecords: params.dataRecords,
+    );
+  },
+);
+
+/// スケジュール配信パラメータ用クラス
+class ScheduleDeliveryParams {
+  final String templateId;
+  final String deliveryType;
+  final String frequency;
+  final String time;
+  final List<String> recipientEmails;
+  final String? dayOfWeek;
+  final int? dayOfMonth;
+
+  ScheduleDeliveryParams({
+    required this.templateId,
+    required this.deliveryType,
+    required this.frequency,
+    required this.time,
+    required this.recipientEmails,
+    this.dayOfWeek,
+    this.dayOfMonth,
+  });
+}
+
+/// レポート配信スケジュール設定プロバイダ
+final scheduleReportDeliveryProvider =
+    FutureProvider.family<ReportDeliverySchedule, ScheduleDeliveryParams>(
+  (ref, params) async {
+    final service = ref.watch(reportServiceProvider);
+    return service.scheduleReportDelivery(
+      templateId: params.templateId,
+      deliveryType: params.deliveryType,
+      frequency: params.frequency,
+      time: params.time,
+      recipientEmails: params.recipientEmails,
+      dayOfWeek: params.dayOfWeek,
+      dayOfMonth: params.dayOfMonth,
+    );
+  },
+);
+
+/// クラス管理ビュー生成パラメータ用クラス
+class ClassViewParams {
+  final String classId;
+  final String className;
+  final List<StudentPerformanceAnalysis> studentAnalyses;
+
+  ClassViewParams({
+    required this.classId,
+    required this.className,
+    required this.studentAnalyses,
+  });
+}
+
+/// クラス管理ビュー生成プロバイダ
+final classManagementViewProvider =
+    FutureProvider.family<ClassManagementView, ClassViewParams>(
+  (ref, params) async {
+    final service = ref.watch(reportServiceProvider);
+    return service.generateClassView(
+      classId: params.classId,
+      className: params.className,
+      studentAnalyses: params.studentAnalyses,
+    );
+  },
+);
