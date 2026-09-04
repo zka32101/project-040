@@ -1,40 +1,95 @@
-/// Phase 52: Database Persistence & Transaction Management Service
-/// データベース永続化・トランザクション管理サービス
-
 import '../models/database_models.dart';
 
-/// データベースリポジトリ インターフェース
+/// データベースリポジトリインターフェース
 abstract class DatabaseRepository {
-  Future<DatabaseConnection> addConnection(DatabaseConnection connection);
-  Future<DatabaseConnection?> getConnection(String connectionId);
+  // Connection管理
+  Future<void> createConnection(DatabaseConnection connection);
+  Future<DatabaseConnection?> getConnectionById(String connectionId);
   Future<List<DatabaseConnection>> getAllConnections();
-  Future<void> closeConnection(String connectionId);
-  Future<Transaction> addTransaction(Transaction transaction);
-  Future<Transaction?> getTransaction(String transactionId);
-  Future<List<Transaction>> getTransactionsByState(TransactionState state);
-  Future<DatabaseOperation> addOperation(DatabaseOperation operation);
-  Future<DatabaseOperation?> getOperation(String operationId);
-  Future<List<DatabaseOperation>> getOperationsByTransaction(String transactionId);
-  Future<ConnectionPool> createPool(ConnectionPool pool);
-  Future<ConnectionPool?> getPool(String poolId);
-  Future<void> clearAll();
+  Future<void> updateConnection(DatabaseConnection connection);
+  Future<bool> deleteConnection(String connectionId);
+
+  // Transaction管理
+  Future<void> createTransaction(Transaction transaction);
+  Future<Transaction?> getTransactionById(String transactionId);
+  Future<List<Transaction>> getTransactionsByConnection(String connectionId);
+  Future<void> updateTransaction(Transaction transaction);
+
+  // Schema管理
+  Future<void> createSchema(DatabaseSchema schema);
+  Future<DatabaseSchema?> getSchemaById(String schemaId);
+  Future<List<DatabaseSchema>> getAllSchemas();
+
+  // Migration管理
+  Future<void> createMigration(Migration migration);
+  Future<Migration?> getMigrationById(String migrationId);
+  Future<List<Migration>> getAllMigrations();
+  Future<void> updateMigration(Migration migration);
+
+  // Index管理
+  Future<void> createIndex(DatabaseIndex index);
+  Future<DatabaseIndex?> getIndexById(String indexId);
+  Future<List<DatabaseIndex>> getIndexesByTable(String tableName);
+
+  // Backup管理
+  Future<void> createBackup(Backup backup);
+  Future<Backup?> getBackupById(String backupId);
+  Future<List<Backup>> getAllBackups();
+  Future<void> updateBackup(Backup backup);
+
+  // 統計
+  Future<void> savePerformanceStats(DatabasePerformanceStats stats);
+  Future<DatabasePerformanceStats?> getLatestStats();
+
+  // ConnectionPool
+  Future<void> createConnectionPool(ConnectionPool pool);
+  Future<ConnectionPool?> getConnectionPoolById(String poolId);
+  Future<void> updateConnectionPool(ConnectionPool pool);
+
+  // Replication
+  Future<void> createReplication(DatabaseReplication replication);
+  Future<DatabaseReplication?> getReplicationById(String replicationId);
+  Future<void> updateReplication(DatabaseReplication replication);
+
+  // TransactionLog
+  Future<void> createTransactionLog(TransactionLog log);
+  Future<List<TransactionLog>> getTransactionLogsByTransaction(String transactionId);
+
+  // RecoveryPoint
+  Future<void> createRecoveryPoint(RecoveryPoint point);
+  Future<RecoveryPoint?> getRecoveryPointById(String recoveryId);
+  Future<List<RecoveryPoint>> getAllRecoveryPoints();
+
+  // Report
+  Future<void> saveDatabaseReport(DatabaseReport report);
+  Future<DatabaseReport?> getLatestReport();
 }
 
-/// メモリデータベースリポジトリ実装
+/// メモリ実装のデータベースリポジトリ
 class MemoryDatabaseRepository implements DatabaseRepository {
   final Map<String, DatabaseConnection> _connections = {};
   final Map<String, Transaction> _transactions = {};
-  final Map<String, DatabaseOperation> _operations = {};
-  final Map<String, ConnectionPool> _pools = {};
+  final Map<String, DatabaseSchema> _schemas = {};
+  final Map<String, Migration> _migrations = {};
+  final Map<String, DatabaseIndex> _indexes = {};
+  final Map<String, Backup> _backups = {};
+  final List<DatabasePerformanceStats> _performanceStats = [];
+  final Map<String, ConnectionPool> _connectionPools = {};
+  final Map<String, DatabaseReplication> _replications = {};
+  final List<TransactionLog> _transactionLogs = [];
+  final Map<String, RecoveryPoint> _recoveryPoints = {};
+  final List<DatabaseReport> _reports = [];
 
   @override
-  Future<DatabaseConnection> addConnection(DatabaseConnection connection) async {
+  Future<void> createConnection(DatabaseConnection connection) async {
+    if (_connections.containsKey(connection.connectionId)) {
+      throw Exception('Connection already exists');
+    }
     _connections[connection.connectionId] = connection;
-    return connection;
   }
 
   @override
-  Future<DatabaseConnection?> getConnection(String connectionId) async {
+  Future<DatabaseConnection?> getConnectionById(String connectionId) async {
     return _connections[connectionId];
   }
 
@@ -44,381 +99,701 @@ class MemoryDatabaseRepository implements DatabaseRepository {
   }
 
   @override
-  Future<void> closeConnection(String connectionId) async {
-    final conn = _connections[connectionId];
-    if (conn != null) {
-      final closedConn = DatabaseConnection(
-        connectionId: conn.connectionId,
-        host: conn.host,
-        port: conn.port,
-        database: conn.database,
-        createdAt: conn.createdAt,
-        closedAt: DateTime.now(),
-        isActive: false,
-      );
-      _connections[connectionId] = closedConn;
+  Future<void> updateConnection(DatabaseConnection connection) async {
+    if (!_connections.containsKey(connection.connectionId)) {
+      throw Exception('Connection not found');
     }
+    _connections[connection.connectionId] = connection;
   }
 
   @override
-  Future<Transaction> addTransaction(Transaction transaction) async {
+  Future<bool> deleteConnection(String connectionId) async {
+    return _connections.remove(connectionId) != null;
+  }
+
+  @override
+  Future<void> createTransaction(Transaction transaction) async {
+    if (_transactions.containsKey(transaction.transactionId)) {
+      throw Exception('Transaction already exists');
+    }
     _transactions[transaction.transactionId] = transaction;
-    return transaction;
   }
 
   @override
-  Future<Transaction?> getTransaction(String transactionId) async {
+  Future<Transaction?> getTransactionById(String transactionId) async {
     return _transactions[transactionId];
   }
 
   @override
-  Future<List<Transaction>> getTransactionsByState(TransactionState state) async {
-    return _transactions.values.where((t) => t.state == state).toList();
+  Future<List<Transaction>> getTransactionsByConnection(String connectionId) async {
+    return _transactions.values
+        .where((t) => t.connectionId == connectionId)
+        .toList();
   }
 
   @override
-  Future<DatabaseOperation> addOperation(DatabaseOperation operation) async {
-    _operations[operation.operationId] = operation;
-    return operation;
+  Future<void> updateTransaction(Transaction transaction) async {
+    if (!_transactions.containsKey(transaction.transactionId)) {
+      throw Exception('Transaction not found');
+    }
+    _transactions[transaction.transactionId] = transaction;
   }
 
   @override
-  Future<DatabaseOperation?> getOperation(String operationId) async {
-    return _operations[operationId];
+  Future<void> createSchema(DatabaseSchema schema) async {
+    if (_schemas.containsKey(schema.schemaId)) {
+      throw Exception('Schema already exists');
+    }
+    _schemas[schema.schemaId] = schema;
   }
 
   @override
-  Future<List<DatabaseOperation>> getOperationsByTransaction(String transactionId) async {
-    return _operations.values.where((op) => op.transactionId == transactionId).toList();
+  Future<DatabaseSchema?> getSchemaById(String schemaId) async {
+    return _schemas[schemaId];
   }
 
   @override
-  Future<ConnectionPool> createPool(ConnectionPool pool) async {
-    _pools[pool.poolId] = pool;
-    return pool;
+  Future<List<DatabaseSchema>> getAllSchemas() async {
+    return _schemas.values.toList();
   }
 
   @override
-  Future<ConnectionPool?> getPool(String poolId) async {
-    return _pools[poolId];
+  Future<void> createMigration(Migration migration) async {
+    if (_migrations.containsKey(migration.migrationId)) {
+      throw Exception('Migration already exists');
+    }
+    _migrations[migration.migrationId] = migration;
   }
 
   @override
-  Future<void> clearAll() async {
-    _connections.clear();
-    _transactions.clear();
-    _operations.clear();
-    _pools.clear();
+  Future<Migration?> getMigrationById(String migrationId) async {
+    return _migrations[migrationId];
+  }
+
+  @override
+  Future<List<Migration>> getAllMigrations() async {
+    return _migrations.values.toList();
+  }
+
+  @override
+  Future<void> updateMigration(Migration migration) async {
+    if (!_migrations.containsKey(migration.migrationId)) {
+      throw Exception('Migration not found');
+    }
+    _migrations[migration.migrationId] = migration;
+  }
+
+  @override
+  Future<void> createIndex(DatabaseIndex index) async {
+    if (_indexes.containsKey(index.indexId)) {
+      throw Exception('Index already exists');
+    }
+    _indexes[index.indexId] = index;
+  }
+
+  @override
+  Future<DatabaseIndex?> getIndexById(String indexId) async {
+    return _indexes[indexId];
+  }
+
+  @override
+  Future<List<DatabaseIndex>> getIndexesByTable(String tableName) async {
+    return _indexes.values
+        .where((i) => i.tableName == tableName)
+        .toList();
+  }
+
+  @override
+  Future<void> createBackup(Backup backup) async {
+    if (_backups.containsKey(backup.backupId)) {
+      throw Exception('Backup already exists');
+    }
+    _backups[backup.backupId] = backup;
+  }
+
+  @override
+  Future<Backup?> getBackupById(String backupId) async {
+    return _backups[backupId];
+  }
+
+  @override
+  Future<List<Backup>> getAllBackups() async {
+    return _backups.values.toList();
+  }
+
+  @override
+  Future<void> updateBackup(Backup backup) async {
+    if (!_backups.containsKey(backup.backupId)) {
+      throw Exception('Backup not found');
+    }
+    _backups[backup.backupId] = backup;
+  }
+
+  @override
+  Future<void> savePerformanceStats(DatabasePerformanceStats stats) async {
+    _performanceStats.add(stats);
+  }
+
+  @override
+  Future<DatabasePerformanceStats?> getLatestStats() async {
+    return _performanceStats.isNotEmpty ? _performanceStats.last : null;
+  }
+
+  @override
+  Future<void> createConnectionPool(ConnectionPool pool) async {
+    if (_connectionPools.containsKey(pool.poolId)) {
+      throw Exception('Connection pool already exists');
+    }
+    _connectionPools[pool.poolId] = pool;
+  }
+
+  @override
+  Future<ConnectionPool?> getConnectionPoolById(String poolId) async {
+    return _connectionPools[poolId];
+  }
+
+  @override
+  Future<void> updateConnectionPool(ConnectionPool pool) async {
+    if (!_connectionPools.containsKey(pool.poolId)) {
+      throw Exception('Connection pool not found');
+    }
+    _connectionPools[pool.poolId] = pool;
+  }
+
+  @override
+  Future<void> createReplication(DatabaseReplication replication) async {
+    if (_replications.containsKey(replication.replicationId)) {
+      throw Exception('Replication already exists');
+    }
+    _replications[replication.replicationId] = replication;
+  }
+
+  @override
+  Future<DatabaseReplication?> getReplicationById(String replicationId) async {
+    return _replications[replicationId];
+  }
+
+  @override
+  Future<void> updateReplication(DatabaseReplication replication) async {
+    if (!_replications.containsKey(replication.replicationId)) {
+      throw Exception('Replication not found');
+    }
+    _replications[replication.replicationId] = replication;
+  }
+
+  @override
+  Future<void> createTransactionLog(TransactionLog log) async {
+    _transactionLogs.add(log);
+  }
+
+  @override
+  Future<List<TransactionLog>> getTransactionLogsByTransaction(String transactionId) async {
+    return _transactionLogs
+        .where((l) => l.transactionId == transactionId)
+        .toList();
+  }
+
+  @override
+  Future<void> createRecoveryPoint(RecoveryPoint point) async {
+    if (_recoveryPoints.containsKey(point.recoveryId)) {
+      throw Exception('Recovery point already exists');
+    }
+    _recoveryPoints[point.recoveryId] = point;
+  }
+
+  @override
+  Future<RecoveryPoint?> getRecoveryPointById(String recoveryId) async {
+    return _recoveryPoints[recoveryId];
+  }
+
+  @override
+  Future<List<RecoveryPoint>> getAllRecoveryPoints() async {
+    return _recoveryPoints.values.toList();
+  }
+
+  @override
+  Future<void> saveDatabaseReport(DatabaseReport report) async {
+    _reports.add(report);
+  }
+
+  @override
+  Future<DatabaseReport?> getLatestReport() async {
+    return _reports.isNotEmpty ? _reports.last : null;
   }
 }
 
-/// トランザクションエンジン インターフェース
+/// トランザクション処理エンジン
 abstract class TransactionEngine {
-  Future<Transaction> beginTransaction(String connectionId, IsolationLevel isolationLevel, bool isReadOnly);
-  Future<Transaction> commitTransaction(String transactionId);
-  Future<Transaction> rollbackTransaction(String transactionId);
-  Future<DatabaseOperation> executeOperation(String transactionId, DatabaseOperationType type, String table, String? query, Map<String, dynamic>? parameters);
-  Future<PersistenceStats> calculateStats(List<Transaction> transactions, DateTime start, DateTime end);
+  Future<Transaction> beginTransaction(String connectionId);
+  Future<void> addOperation(String transactionId, String operation);
+  Future<void> commit(String transactionId);
+  Future<void> rollback(String transactionId, String reason);
+  Future<List<TransactionLog>> getTransactionLogs(String transactionId);
 }
 
-/// メモリトランザクションエンジン実装
+/// メモリ実装のトランザクションエンジン
 class MemoryTransactionEngine implements TransactionEngine {
-  final Map<String, Transaction> _transactions = {};
-  final Map<String, DatabaseOperation> _operations = {};
+  final DatabaseRepository _repository;
+
+  MemoryTransactionEngine(this._repository);
 
   @override
-  Future<Transaction> beginTransaction(String connectionId, IsolationLevel isolationLevel, bool isReadOnly) async {
+  Future<Transaction> beginTransaction(String connectionId) async {
     final transaction = Transaction(
       transactionId: 'txn_${DateTime.now().millisecondsSinceEpoch}',
       connectionId: connectionId,
-      state: TransactionState.pending,
-      isolationLevel: isolationLevel,
       startedAt: DateTime.now(),
-      operationIds: [],
-      isReadOnly: isReadOnly,
+      status: TransactionStatus.inProgress,
     );
-    _transactions[transaction.transactionId] = transaction;
+    await _repository.createTransaction(transaction);
     return transaction;
   }
 
   @override
-  Future<Transaction> commitTransaction(String transactionId) async {
-    final transaction = _transactions[transactionId];
-    if (transaction != null) {
-      final committed = Transaction(
-        transactionId: transaction.transactionId,
-        connectionId: transaction.connectionId,
-        state: TransactionState.committed,
-        isolationLevel: transaction.isolationLevel,
-        startedAt: transaction.startedAt,
-        committedAt: DateTime.now(),
-        operationIds: transaction.operationIds,
-        isReadOnly: transaction.isReadOnly,
-      );
-      _transactions[transactionId] = committed;
-      return committed;
-    }
-    return transaction!;
-  }
+  Future<void> addOperation(String transactionId, String operation) async {
+    final txn = await _repository.getTransactionById(transactionId);
+    if (txn == null) throw Exception('Transaction not found');
 
-  @override
-  Future<Transaction> rollbackTransaction(String transactionId) async {
-    final transaction = _transactions[transactionId];
-    if (transaction != null) {
-      final rolledBack = Transaction(
-        transactionId: transaction.transactionId,
-        connectionId: transaction.connectionId,
-        state: TransactionState.rolledBack,
-        isolationLevel: transaction.isolationLevel,
-        startedAt: transaction.startedAt,
-        rolledBackAt: DateTime.now(),
-        operationIds: transaction.operationIds,
-        isReadOnly: transaction.isReadOnly,
-      );
-      _transactions[transactionId] = rolledBack;
-      return rolledBack;
-    }
-    return transaction!;
-  }
-
-  @override
-  Future<DatabaseOperation> executeOperation(String transactionId, DatabaseOperationType type, String table, String? query, Map<String, dynamic>? parameters) async {
-    final operation = DatabaseOperation(
-      operationId: 'op_${DateTime.now().millisecondsSinceEpoch}',
-      transactionId: transactionId,
-      type: type,
-      table: table,
-      query: query,
-      parameters: parameters,
-      executedAt: DateTime.now(),
-      executionTime: Duration(milliseconds: 10),
-      isSuccessful: true,
+    final updatedOps = [...txn.operations, operation];
+    final updatedTxn = Transaction(
+      transactionId: txn.transactionId,
+      connectionId: txn.connectionId,
+      startedAt: txn.startedAt,
+      committedAt: txn.committedAt,
+      rolledBackAt: txn.rolledBackAt,
+      status: txn.status,
+      operations: updatedOps,
+      rollbackReason: txn.rollbackReason,
+      isolationLevel: txn.isolationLevel,
     );
-    _operations[operation.operationId] = operation;
-
-    // Add operation to transaction
-    final transaction = _transactions[transactionId];
-    if (transaction != null) {
-      final updatedTransaction = Transaction(
-        transactionId: transaction.transactionId,
-        connectionId: transaction.connectionId,
-        state: transaction.state,
-        isolationLevel: transaction.isolationLevel,
-        startedAt: transaction.startedAt,
-        committedAt: transaction.committedAt,
-        rolledBackAt: transaction.rolledBackAt,
-        operationIds: [...transaction.operationIds, operation.operationId],
-        isReadOnly: transaction.isReadOnly,
-      );
-      _transactions[transactionId] = updatedTransaction;
-    }
-
-    return operation;
+    await _repository.updateTransaction(updatedTxn);
   }
 
   @override
-  Future<PersistenceStats> calculateStats(List<Transaction> transactions, DateTime start, DateTime end) async {
-    final filteredTransactions = transactions.where((t) => t.startedAt.isAfter(start) && t.startedAt.isBefore(end)).toList();
-    final successCount = filteredTransactions.where((t) => t.isSuccessful).length;
-    final failureCount = filteredTransactions.where((t) => t.isFailed).length;
+  Future<void> commit(String transactionId) async {
+    final txn = await _repository.getTransactionById(transactionId);
+    if (txn == null) throw Exception('Transaction not found');
 
-    final operationsByType = <DatabaseOperationType, int>{};
-    int totalOps = 0;
-    for (final txn in filteredTransactions) {
-      totalOps += txn.operationCount;
-    }
-
-    final totalTime = filteredTransactions.fold<int>(0, (sum, t) => sum + t.executionTime.inMilliseconds);
-    final avgTime = filteredTransactions.isEmpty ? 0.0 : totalTime / filteredTransactions.length;
-    final successRate = filteredTransactions.isEmpty ? 0.0 : successCount / filteredTransactions.length;
-
-    return PersistenceStats(
-      statsId: 'pstats_${DateTime.now().millisecondsSinceEpoch}',
-      periodStart: start,
-      periodEnd: end,
-      totalTransactions: filteredTransactions.length,
-      successfulTransactions: successCount,
-      failedTransactions: failureCount,
-      totalOperations: totalOps,
-      operationsByType: operationsByType,
-      averageTransactionTime: avgTime,
-      successRate: successRate,
+    final committedTxn = Transaction(
+      transactionId: txn.transactionId,
+      connectionId: txn.connectionId,
+      startedAt: txn.startedAt,
+      committedAt: DateTime.now(),
+      status: TransactionStatus.committed,
+      operations: txn.operations,
+      isolationLevel: txn.isolationLevel,
     );
+    await _repository.updateTransaction(committedTxn);
+  }
+
+  @override
+  Future<void> rollback(String transactionId, String reason) async {
+    final txn = await _repository.getTransactionById(transactionId);
+    if (txn == null) throw Exception('Transaction not found');
+
+    final rolledBackTxn = Transaction(
+      transactionId: txn.transactionId,
+      connectionId: txn.connectionId,
+      startedAt: txn.startedAt,
+      rolledBackAt: DateTime.now(),
+      status: TransactionStatus.rolledBack,
+      operations: txn.operations,
+      rollbackReason: reason,
+      isolationLevel: txn.isolationLevel,
+    );
+    await _repository.updateTransaction(rolledBackTxn);
+  }
+
+  @override
+  Future<List<TransactionLog>> getTransactionLogs(String transactionId) async {
+    return _repository.getTransactionLogsByTransaction(transactionId);
   }
 }
 
-/// データベースマネージャー インターフェース
+/// マイグレーション処理エンジン
+abstract class MigrationEngine {
+  Future<void> createMigration(Migration migration);
+  Future<void> applyMigration(String migrationId);
+  Future<void> rollbackMigration(String migrationId);
+  Future<List<Migration>> getPendingMigrations();
+  Future<List<Migration>> getAppliedMigrations();
+}
+
+/// メモリ実装のマイグレーションエンジン
+class MemoryMigrationEngine implements MigrationEngine {
+  final DatabaseRepository _repository;
+
+  MemoryMigrationEngine(this._repository);
+
+  @override
+  Future<void> createMigration(Migration migration) async {
+    await _repository.createMigration(migration);
+  }
+
+  @override
+  Future<void> applyMigration(String migrationId) async {
+    final migration = await _repository.getMigrationById(migrationId);
+    if (migration == null) throw Exception('Migration not found');
+
+    final appliedMigration = Migration(
+      migrationId: migration.migrationId,
+      migrationName: migration.migrationName,
+      version: migration.version,
+      upScript: migration.upScript,
+      downScript: migration.downScript,
+      status: MigrationStatus.completed,
+      createdAt: migration.createdAt,
+      appliedAt: DateTime.now(),
+    );
+    await _repository.updateMigration(appliedMigration);
+  }
+
+  @override
+  Future<void> rollbackMigration(String migrationId) async {
+    final migration = await _repository.getMigrationById(migrationId);
+    if (migration == null) throw Exception('Migration not found');
+
+    final rolledBackMigration = Migration(
+      migrationId: migration.migrationId,
+      migrationName: migration.migrationName,
+      version: migration.version,
+      upScript: migration.upScript,
+      downScript: migration.downScript,
+      status: MigrationStatus.rolledBack,
+      createdAt: migration.createdAt,
+      appliedAt: migration.appliedAt,
+      rolledBackAt: DateTime.now(),
+    );
+    await _repository.updateMigration(rolledBackMigration);
+  }
+
+  @override
+  Future<List<Migration>> getPendingMigrations() async {
+    final migrations = await _repository.getAllMigrations();
+    return migrations.where((m) => m.isPending).toList();
+  }
+
+  @override
+  Future<List<Migration>> getAppliedMigrations() async {
+    final migrations = await _repository.getAllMigrations();
+    return migrations.where((m) => m.isApplied).toList();
+  }
+}
+
+/// バックアップエンジン
+abstract class BackupEngine {
+  Future<Backup> createBackup(String name, BackupType type, int dataSize);
+  Future<void> completeBackup(String backupId);
+  Future<void> failBackup(String backupId, String errorMessage);
+  Future<List<Backup>> getValidBackups();
+  Future<void> archiveOldBackups();
+}
+
+/// メモリ実装のバックアップエンジン
+class MemoryBackupEngine implements BackupEngine {
+  final DatabaseRepository _repository;
+
+  MemoryBackupEngine(this._repository);
+
+  @override
+  Future<Backup> createBackup(String name, BackupType type, int dataSize) async {
+    final backup = Backup(
+      backupId: 'backup_${DateTime.now().millisecondsSinceEpoch}',
+      backupName: name,
+      backupType: type,
+      size: dataSize,
+      createdAt: DateTime.now(),
+      status: BackupStatus.inProgress,
+      location: '/backups/$name',
+      isEncrypted: true,
+      encryptionMethod: 'AES-256',
+      retentionDays: 30,
+    );
+    await _repository.createBackup(backup);
+    return backup;
+  }
+
+  @override
+  Future<void> completeBackup(String backupId) async {
+    final backup = await _repository.getBackupById(backupId);
+    if (backup == null) throw Exception('Backup not found');
+
+    final completedBackup = Backup(
+      backupId: backup.backupId,
+      backupName: backup.backupName,
+      backupType: backup.backupType,
+      size: backup.size,
+      createdAt: backup.createdAt,
+      completedAt: DateTime.now(),
+      status: BackupStatus.completed,
+      location: backup.location,
+      isEncrypted: backup.isEncrypted,
+      encryptionMethod: backup.encryptionMethod,
+      retentionDays: backup.retentionDays,
+    );
+    await _repository.updateBackup(completedBackup);
+  }
+
+  @override
+  Future<void> failBackup(String backupId, String errorMessage) async {
+    final backup = await _repository.getBackupById(backupId);
+    if (backup == null) throw Exception('Backup not found');
+
+    final failedBackup = Backup(
+      backupId: backup.backupId,
+      backupName: backup.backupName,
+      backupType: backup.backupType,
+      size: backup.size,
+      createdAt: backup.createdAt,
+      status: BackupStatus.failed,
+      location: backup.location,
+      isEncrypted: backup.isEncrypted,
+    );
+    await _repository.updateBackup(failedBackup);
+  }
+
+  @override
+  Future<List<Backup>> getValidBackups() async {
+    final backups = await _repository.getAllBackups();
+    return backups
+        .where((b) => b.isCompleted && b.isWithinRetention)
+        .toList();
+  }
+
+  @override
+  Future<void> archiveOldBackups() async {
+    final backups = await _repository.getAllBackups();
+    for (final backup in backups) {
+      if (backup.ageInDays > 90) {
+        final archivedBackup = Backup(
+          backupId: backup.backupId,
+          backupName: backup.backupName,
+          backupType: backup.backupType,
+          size: backup.size,
+          createdAt: backup.createdAt,
+          status: BackupStatus.archived,
+          location: backup.location,
+          isEncrypted: backup.isEncrypted,
+        );
+        await _repository.updateBackup(archivedBackup);
+      }
+    }
+  }
+}
+
+/// データベースマネージャー
 abstract class DatabaseManager {
-  Future<DatabaseConnection> createConnection(String host, int port, String database);
-  Future<void> closeConnection(String connectionId);
-  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel);
-  Future<Transaction> commitTransaction(String transactionId);
-  Future<Transaction> rollbackTransaction(String transactionId);
-  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query);
-  Future<PersistenceStats> generateStats(DateTime start, DateTime end);
-  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end);
+  Future<void> createDatabaseConnection(String id, DatabaseType type, String host, int port, String database, String username, String password);
+  Future<DatabaseConnection?> getDatabaseConnection(String id);
+  Future<Transaction> beginTransaction(String connectionId);
+  Future<void> commitTransaction(String transactionId);
+  Future<void> rollbackTransaction(String transactionId, String reason);
+  Future<Migration> createAndApplyMigration(String name, int version, String upScript, String downScript);
+  Future<Backup> createDatabaseBackup(String name, BackupType type, int dataSize);
+  Future<List<Backup>> getBackupHistory();
+  Future<DatabaseReport> generateDatabaseReport();
 }
 
-/// メモリデータベースマネージャー実装
+/// メモリ実装のデータベースマネージャー
 class MemoryDatabaseManager implements DatabaseManager {
-  final DatabaseRepository repository;
-  final TransactionEngine engine;
-  final Map<String, TransactionLog> _transactionLogs = {};
+  final DatabaseRepository _repository;
+  late final TransactionEngine _transactionEngine;
+  late final MigrationEngine _migrationEngine;
+  late final BackupEngine _backupEngine;
 
-  MemoryDatabaseManager({
-    required this.repository,
-    required this.engine,
-  });
+  MemoryDatabaseManager(this._repository) {
+    _transactionEngine = MemoryTransactionEngine(_repository);
+    _migrationEngine = MemoryMigrationEngine(_repository);
+    _backupEngine = MemoryBackupEngine(_repository);
+  }
 
   @override
-  Future<DatabaseConnection> createConnection(String host, int port, String database) async {
+  Future<void> createDatabaseConnection(String id, DatabaseType type, String host, int port, String database, String username, String password) async {
     final connection = DatabaseConnection(
-      connectionId: 'conn_${DateTime.now().millisecondsSinceEpoch}',
+      connectionId: id,
+      databaseType: type,
       host: host,
       port: port,
       database: database,
+      username: username,
+      password: password,
       createdAt: DateTime.now(),
     );
-    return repository.addConnection(connection);
+    await _repository.createConnection(connection);
   }
 
   @override
-  Future<void> closeConnection(String connectionId) async {
-    return repository.closeConnection(connectionId);
+  Future<DatabaseConnection?> getDatabaseConnection(String id) async {
+    return _repository.getConnectionById(id);
   }
 
   @override
-  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel) async {
-    return engine.beginTransaction(connectionId, isolationLevel, false);
+  Future<Transaction> beginTransaction(String connectionId) async {
+    return _transactionEngine.beginTransaction(connectionId);
   }
 
   @override
-  Future<Transaction> commitTransaction(String transactionId) async {
-    final transaction = await engine.commitTransaction(transactionId);
-    await repository.addTransaction(transaction);
-    return transaction;
+  Future<void> commitTransaction(String transactionId) async {
+    await _transactionEngine.commit(transactionId);
   }
 
   @override
-  Future<Transaction> rollbackTransaction(String transactionId) async {
-    final transaction = await engine.rollbackTransaction(transactionId);
-    await repository.addTransaction(transaction);
-    return transaction;
+  Future<void> rollbackTransaction(String transactionId, String reason) async {
+    await _transactionEngine.rollback(transactionId, reason);
   }
 
   @override
-  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query) async {
-    return engine.executeOperation(transactionId, type, table, query, null);
-  }
-
-  @override
-  Future<PersistenceStats> generateStats(DateTime start, DateTime end) async {
-    final allTransactions = await repository.getTransactionsByState(TransactionState.committed);
-    return engine.calculateStats(allTransactions, start, end);
-  }
-
-  @override
-  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end) async {
-    final stats = await generateStats(start, end);
-    final connections = await repository.getAllConnections();
-    final activeConnections = connections.where((c) => c.isOpen).length;
-
-    final transactionLog = TransactionLog(
-      logId: 'log_$reportId',
-      transactions: [],
+  Future<Migration> createAndApplyMigration(String name, int version, String upScript, String downScript) async {
+    final migration = Migration(
+      migrationId: 'migration_${DateTime.now().millisecondsSinceEpoch}',
+      migrationName: name,
+      version: version,
+      upScript: upScript,
+      downScript: downScript,
       createdAt: DateTime.now(),
     );
+    await _migrationEngine.createMigration(migration);
+    await _migrationEngine.applyMigration(migration.migrationId);
+    return migration;
+  }
 
-    return DatabasePersistenceReport(
-      reportId: reportId,
+  @override
+  Future<Backup> createDatabaseBackup(String name, BackupType type, int dataSize) async {
+    final backup = await _backupEngine.createBackup(name, type, dataSize);
+    await _backupEngine.completeBackup(backup.backupId);
+    return backup;
+  }
+
+  @override
+  Future<List<Backup>> getBackupHistory() async {
+    return _repository.getAllBackups();
+  }
+
+  @override
+  Future<DatabaseReport> generateDatabaseReport() async {
+    final connections = await _repository.getAllConnections();
+    final report = DatabaseReport(
+      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
       generatedAt: DateTime.now(),
-      periodStart: start,
-      periodEnd: end,
-      activeConnections: activeConnections,
-      transactionLog: transactionLog,
-      stats: stats,
-      recommendations: _generateRecommendations(stats),
+      periodStart: DateTime.now().subtract(Duration(hours: 24)),
+      periodEnd: DateTime.now(),
+      totalConnections: connections.length,
+      activeConnections: connections.where((c) => c.isActive).length,
+      totalQueries: 1000,
+      averageQueryTime: 50.5,
+      performanceIssues: [],
+      recommendations: [],
     );
-  }
-
-  List<String> _generateRecommendations(PersistenceStats stats) {
-    final recommendations = <String>[];
-
-    if (stats.successRate < 0.95) {
-      recommendations.add('Transaction success rate is below 95%');
-      recommendations.add('Review failed transactions for patterns');
-    }
-
-    if (stats.averageTransactionTime > 1000) {
-      recommendations.add('Average transaction time exceeds 1 second');
-      recommendations.add('Consider optimizing queries or increasing pool size');
-    }
-
-    if (stats.failureRate > 0.05) {
-      recommendations.add('High transaction failure rate detected');
-      recommendations.add('Review isolation level configuration');
-    }
-
-    return recommendations;
+    await _repository.saveDatabaseReport(report);
+    return report;
   }
 }
 
-/// データベース管理ファサード
+/// データベースファサード
 class DatabaseFacade {
-  late final DatabaseRepository repository;
-  late final TransactionEngine engine;
-  late final MemoryDatabaseManager manager;
+  late final DatabaseRepository _repository;
+  late final DatabaseManager _manager;
 
-  DatabaseFacade({
-    DatabaseRepository? customRepository,
-    TransactionEngine? customEngine,
-  }) {
-    repository = customRepository ?? MemoryDatabaseRepository();
-    engine = customEngine ?? MemoryTransactionEngine();
-    manager = MemoryDatabaseManager(repository: repository, engine: engine);
+  DatabaseFacade() {
+    _repository = MemoryDatabaseRepository();
+    _manager = MemoryDatabaseManager(_repository);
   }
 
-  Future<DatabaseConnection> createConnection(String host, int port, String database) async {
-    return manager.createConnection(host, port, database);
+  // Connection管理
+  Future<void> createConnection(String id, DatabaseType type, String host, int port, String database, String username, String password) =>
+      _manager.createDatabaseConnection(id, type, host, port, database, username, password);
+
+  Future<DatabaseConnection?> getConnection(String id) => _manager.getDatabaseConnection(id);
+
+  Future<List<DatabaseConnection>> getAllConnections() => _repository.getAllConnections();
+
+  // Transaction管理
+  Future<Transaction> beginTransaction(String connectionId) => _manager.beginTransaction(connectionId);
+
+  Future<void> commitTransaction(String transactionId) => _manager.commitTransaction(transactionId);
+
+  Future<void> rollbackTransaction(String transactionId, String reason) => _manager.rollbackTransaction(transactionId, reason);
+
+  Future<Transaction?> getTransaction(String transactionId) => _repository.getTransactionById(transactionId);
+
+  // Migration管理
+  Future<Migration> applyMigration(String name, int version, String upScript, String downScript) =>
+      _manager.createAndApplyMigration(name, version, upScript, downScript);
+
+  Future<List<Migration>> getPendingMigrations() async {
+    final engine = MemoryMigrationEngine(_repository);
+    return engine.getPendingMigrations();
   }
 
-  Future<void> closeConnection(String connectionId) async {
-    return manager.closeConnection(connectionId);
+  Future<List<Migration>> getAppliedMigrations() async {
+    final engine = MemoryMigrationEngine(_repository);
+    return engine.getAppliedMigrations();
   }
 
-  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel) async {
-    return manager.startTransaction(connectionId, isolationLevel);
+  // Backup管理
+  Future<Backup> createBackup(String name, BackupType type, int dataSize) => _manager.createDatabaseBackup(name, type, dataSize);
+
+  Future<List<Backup>> getBackupHistory() => _manager.getBackupHistory();
+
+  Future<List<Backup>> getValidBackups() async {
+    final engine = MemoryBackupEngine(_repository);
+    return engine.getValidBackups();
   }
 
-  Future<Transaction> commitTransaction(String transactionId) async {
-    return manager.commitTransaction(transactionId);
+  // Report
+  Future<DatabaseReport> generateReport() => _manager.generateDatabaseReport();
+
+  Future<DatabaseReport?> getLatestReport() => _repository.getLatestReport();
+
+  // Performance
+  Future<DatabasePerformanceStats?> getPerformanceStats() => _repository.getLatestStats();
+
+  Future<void> savePerformanceStats(DatabasePerformanceStats stats) => _repository.savePerformanceStats(stats);
+
+  // ConnectionPool
+  Future<void> createConnectionPool(String id, String name, int maxSize) async {
+    final pool = ConnectionPool(
+      poolId: id,
+      poolName: name,
+      maxSize: maxSize,
+      currentSize: 0,
+      availableConnections: maxSize,
+      busyConnections: 0,
+      createdAt: DateTime.now(),
+    );
+    await _repository.createConnectionPool(pool);
   }
 
-  Future<Transaction> rollbackTransaction(String transactionId) async {
-    return manager.rollbackTransaction(transactionId);
+  Future<ConnectionPool?> getConnectionPool(String id) => _repository.getConnectionPoolById(id);
+
+  // Schema
+  Future<void> createSchema(String id, String name, int version, List<String> tables, List<String> indexes) async {
+    final schema = DatabaseSchema(
+      schemaId: id,
+      schemaName: name,
+      version: version,
+      tables: tables,
+      indexes: indexes,
+      createdAt: DateTime.now(),
+    );
+    await _repository.createSchema(schema);
   }
 
-  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query) async {
-    return manager.executeQuery(transactionId, type, table, query);
+  Future<DatabaseSchema?> getSchema(String id) => _repository.getSchemaById(id);
+
+  Future<List<DatabaseSchema>> getAllSchemas() => _repository.getAllSchemas();
+
+  // RecoveryPoint
+  Future<void> createRecoveryPoint(String name, String backupId, int dataSize) async {
+    final point = RecoveryPoint(
+      recoveryId: 'recovery_${DateTime.now().millisecondsSinceEpoch}',
+      recoveryName: name,
+      timestamp: DateTime.now(),
+      backupId: backupId,
+      dataSize: dataSize,
+    );
+    await _repository.createRecoveryPoint(point);
   }
 
-  Future<DatabaseConnection?> getConnection(String connectionId) async {
-    return repository.getConnection(connectionId);
-  }
-
-  Future<List<DatabaseConnection>> getAllConnections() async {
-    return repository.getAllConnections();
-  }
-
-  Future<Transaction?> getTransaction(String transactionId) async {
-    return repository.getTransaction(transactionId);
-  }
-
-  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end) async {
-    return manager.generateReport(reportId, start, end);
-  }
-
-  Future<PersistenceStats> generateStats(DateTime start, DateTime end) async {
-    return manager.generateStats(start, end);
-  }
+  Future<List<RecoveryPoint>> getRecoveryPoints() => _repository.getAllRecoveryPoints();
 }
