@@ -1,629 +1,424 @@
-/// Phase 43: Database Schema Management データベーススキーマサービス実装
-///
-/// スキーマ操作、マイグレーション、リポジトリ、エンジン
+/// Phase 52: Database Persistence & Transaction Management Service
+/// データベース永続化・トランザクション管理サービス
 
-import 'package:project_040/models/database_models.dart';
+import '../models/database_models.dart';
 
-/// データベースリポジトリインターフェース
+/// データベースリポジトリ インターフェース
 abstract class DatabaseRepository {
-  /// テーブルを保存
-  Future<void> saveTable(Table table);
-
-  /// テーブルを取得
-  Future<Table?> getTable(String tableId);
-
-  /// すべてのテーブルを取得
-  Future<List<Table>> getAllTables();
-
-  /// テーブルを削除
-  Future<void> deleteTable(String tableId);
-
-  /// インデックスを保存
-  Future<void> saveIndex(Index index);
-
-  /// テーブルのインデックスを取得
-  Future<List<Index>> getIndexesByTable(String tableId);
-
-  /// インデックスを削除
-  Future<void> deleteIndex(String indexId);
-
-  /// 外部キーを保存
-  Future<void> saveForeignKey(ForeignKey foreignKey);
-
-  /// テーブルの外部キーを取得
-  Future<List<ForeignKey>> getForeignKeysByTable(String tableId);
-
-  /// マイグレーションを保存
-  Future<void> saveMigration(Migration migration);
-
-  /// すべてのマイグレーションを取得
-  Future<List<Migration>> getMigrations();
-
-  /// マイグレーションを取得
-  Future<Migration?> getMigration(String migrationId);
-
-  /// スキーマバージョンを保存
-  Future<void> saveSchemaVersion(SchemaVersion version);
-
-  /// スキーマバージョンを取得
-  Future<SchemaVersion?> getSchemaVersion(String versionId);
-
-  /// 最新のスキーマバージョンを取得
-  Future<SchemaVersion?> getLatestSchemaVersion();
+  Future<DatabaseConnection> addConnection(DatabaseConnection connection);
+  Future<DatabaseConnection?> getConnection(String connectionId);
+  Future<List<DatabaseConnection>> getAllConnections();
+  Future<void> closeConnection(String connectionId);
+  Future<Transaction> addTransaction(Transaction transaction);
+  Future<Transaction?> getTransaction(String transactionId);
+  Future<List<Transaction>> getTransactionsByState(TransactionState state);
+  Future<DatabaseOperation> addOperation(DatabaseOperation operation);
+  Future<DatabaseOperation?> getOperation(String operationId);
+  Future<List<DatabaseOperation>> getOperationsByTransaction(String transactionId);
+  Future<ConnectionPool> createPool(ConnectionPool pool);
+  Future<ConnectionPool?> getPool(String poolId);
+  Future<void> clearAll();
 }
 
-/// メモリ実装のデータベースリポジトリ
+/// メモリデータベースリポジトリ実装
 class MemoryDatabaseRepository implements DatabaseRepository {
-  final Map<String, Table> _tables = {};
-  final Map<String, Index> _indexes = {};
-  final Map<String, List<Index>> _indexesByTable = {};
-  final Map<String, ForeignKey> _foreignKeys = {};
-  final Map<String, List<ForeignKey>> _foreignKeysByTable = {};
-  final Map<String, Migration> _migrations = {};
-  final Map<String, SchemaVersion> _schemaVersions = {};
-  String? _latestSchemaVersionId;
+  final Map<String, DatabaseConnection> _connections = {};
+  final Map<String, Transaction> _transactions = {};
+  final Map<String, DatabaseOperation> _operations = {};
+  final Map<String, ConnectionPool> _pools = {};
 
   @override
-  Future<void> saveTable(Table table) async {
-    _tables[table.tableId] = table;
+  Future<DatabaseConnection> addConnection(DatabaseConnection connection) async {
+    _connections[connection.connectionId] = connection;
+    return connection;
   }
 
   @override
-  Future<Table?> getTable(String tableId) async => _tables[tableId];
-
-  @override
-  Future<List<Table>> getAllTables() async => _tables.values.toList();
-
-  @override
-  Future<void> deleteTable(String tableId) async {
-    _tables.remove(tableId);
-    _indexesByTable.remove(tableId);
-    _foreignKeysByTable.remove(tableId);
+  Future<DatabaseConnection?> getConnection(String connectionId) async {
+    return _connections[connectionId];
   }
 
   @override
-  Future<void> saveIndex(Index index) async {
-    _indexes[index.indexId] = index;
-    _indexesByTable.putIfAbsent(index.tableId, () => []).add(index);
+  Future<List<DatabaseConnection>> getAllConnections() async {
+    return _connections.values.toList();
   }
 
   @override
-  Future<List<Index>> getIndexesByTable(String tableId) async =>
-      _indexesByTable[tableId] ?? [];
-
-  @override
-  Future<void> deleteIndex(String indexId) async {
-    final index = _indexes.remove(indexId);
-    if (index != null) {
-      _indexesByTable[index.tableId]?.removeWhere((i) => i.indexId == indexId);
+  Future<void> closeConnection(String connectionId) async {
+    final conn = _connections[connectionId];
+    if (conn != null) {
+      final closedConn = DatabaseConnection(
+        connectionId: conn.connectionId,
+        host: conn.host,
+        port: conn.port,
+        database: conn.database,
+        createdAt: conn.createdAt,
+        closedAt: DateTime.now(),
+        isActive: false,
+      );
+      _connections[connectionId] = closedConn;
     }
   }
 
   @override
-  Future<void> saveForeignKey(ForeignKey foreignKey) async {
-    _foreignKeys[foreignKey.foreignKeyId] = foreignKey;
-    _foreignKeysByTable.putIfAbsent(foreignKey.tableId, () => []).add(foreignKey);
+  Future<Transaction> addTransaction(Transaction transaction) async {
+    _transactions[transaction.transactionId] = transaction;
+    return transaction;
   }
 
   @override
-  Future<List<ForeignKey>> getForeignKeysByTable(String tableId) async =>
-      _foreignKeysByTable[tableId] ?? [];
-
-  @override
-  Future<void> saveMigration(Migration migration) async {
-    _migrations[migration.migrationId] = migration;
+  Future<Transaction?> getTransaction(String transactionId) async {
+    return _transactions[transactionId];
   }
 
   @override
-  Future<List<Migration>> getMigrations() async => _migrations.values.toList();
-
-  @override
-  Future<Migration?> getMigration(String migrationId) async =>
-      _migrations[migrationId];
-
-  @override
-  Future<void> saveSchemaVersion(SchemaVersion version) async {
-    _schemaVersions[version.versionId] = version;
-    _latestSchemaVersionId = version.versionId;
+  Future<List<Transaction>> getTransactionsByState(TransactionState state) async {
+    return _transactions.values.where((t) => t.state == state).toList();
   }
 
   @override
-  Future<SchemaVersion?> getSchemaVersion(String versionId) async =>
-      _schemaVersions[versionId];
+  Future<DatabaseOperation> addOperation(DatabaseOperation operation) async {
+    _operations[operation.operationId] = operation;
+    return operation;
+  }
 
   @override
-  Future<SchemaVersion?> getLatestSchemaVersion() async {
-    if (_latestSchemaVersionId == null) return null;
-    return _schemaVersions[_latestSchemaVersionId];
+  Future<DatabaseOperation?> getOperation(String operationId) async {
+    return _operations[operationId];
+  }
+
+  @override
+  Future<List<DatabaseOperation>> getOperationsByTransaction(String transactionId) async {
+    return _operations.values.where((op) => op.transactionId == transactionId).toList();
+  }
+
+  @override
+  Future<ConnectionPool> createPool(ConnectionPool pool) async {
+    _pools[pool.poolId] = pool;
+    return pool;
+  }
+
+  @override
+  Future<ConnectionPool?> getPool(String poolId) async {
+    return _pools[poolId];
+  }
+
+  @override
+  Future<void> clearAll() async {
+    _connections.clear();
+    _transactions.clear();
+    _operations.clear();
+    _pools.clear();
   }
 }
 
-/// スキーマエンジンインターフェース
-abstract class SchemaEngine {
-  /// テーブルを作成
-  Future<void> createTable(Table table);
-
-  /// テーブルを削除
-  Future<void> dropTable(String tableId);
-
-  /// カラムを追加
-  Future<void> addColumn(String tableId, Column column);
-
-  /// カラムを削除
-  Future<void> dropColumn(String tableId, String columnName);
-
-  /// インデックスを作成
-  Future<void> createIndex(Index index);
-
-  /// インデックスを削除
-  Future<void> dropIndex(String indexId);
-
-  /// スキーマを取得
-  Future<List<Table>> getSchema();
-
-  /// メトリクスを計算
-  Future<DatabaseMetrics> calculateMetrics();
-
-  /// テーブルを取得
-  Future<Table?> getTable(String tableId);
+/// トランザクションエンジン インターフェース
+abstract class TransactionEngine {
+  Future<Transaction> beginTransaction(String connectionId, IsolationLevel isolationLevel, bool isReadOnly);
+  Future<Transaction> commitTransaction(String transactionId);
+  Future<Transaction> rollbackTransaction(String transactionId);
+  Future<DatabaseOperation> executeOperation(String transactionId, DatabaseOperationType type, String table, String? query, Map<String, dynamic>? parameters);
+  Future<PersistenceStats> calculateStats(List<Transaction> transactions, DateTime start, DateTime end);
 }
 
-/// メモリ実装のスキーマエンジン
-class MemorySchemaEngine implements SchemaEngine {
-  final DatabaseRepository _repository;
-  int _totalOperations = 0;
-
-  MemorySchemaEngine(this._repository);
+/// メモリトランザクションエンジン実装
+class MemoryTransactionEngine implements TransactionEngine {
+  final Map<String, Transaction> _transactions = {};
+  final Map<String, DatabaseOperation> _operations = {};
 
   @override
-  Future<void> createTable(Table table) async {
-    await _repository.saveTable(table);
-    _totalOperations++;
+  Future<Transaction> beginTransaction(String connectionId, IsolationLevel isolationLevel, bool isReadOnly) async {
+    final transaction = Transaction(
+      transactionId: 'txn_${DateTime.now().millisecondsSinceEpoch}',
+      connectionId: connectionId,
+      state: TransactionState.pending,
+      isolationLevel: isolationLevel,
+      startedAt: DateTime.now(),
+      operationIds: [],
+      isReadOnly: isReadOnly,
+    );
+    _transactions[transaction.transactionId] = transaction;
+    return transaction;
   }
 
   @override
-  Future<void> dropTable(String tableId) async {
-    await _repository.deleteTable(tableId);
-    _totalOperations++;
-  }
-
-  @override
-  Future<void> addColumn(String tableId, Column column) async {
-    final table = await _repository.getTable(tableId);
-    if (table != null) {
-      final updatedTable = Table(
-        tableId: table.tableId,
-        name: table.name,
-        columns: [...table.columns, column],
-        primaryKey: table.primaryKey,
-        createdAt: table.createdAt,
-        updatedAt: DateTime.now(),
+  Future<Transaction> commitTransaction(String transactionId) async {
+    final transaction = _transactions[transactionId];
+    if (transaction != null) {
+      final committed = Transaction(
+        transactionId: transaction.transactionId,
+        connectionId: transaction.connectionId,
+        state: TransactionState.committed,
+        isolationLevel: transaction.isolationLevel,
+        startedAt: transaction.startedAt,
+        committedAt: DateTime.now(),
+        operationIds: transaction.operationIds,
+        isReadOnly: transaction.isReadOnly,
       );
-      await _repository.saveTable(updatedTable);
-      _totalOperations++;
+      _transactions[transactionId] = committed;
+      return committed;
     }
+    return transaction!;
   }
 
   @override
-  Future<void> dropColumn(String tableId, String columnName) async {
-    final table = await _repository.getTable(tableId);
-    if (table != null) {
-      final updatedTable = Table(
-        tableId: table.tableId,
-        name: table.name,
-        columns: table.columns.where((c) => c.name != columnName).toList(),
-        primaryKey: table.primaryKey,
-        createdAt: table.createdAt,
-        updatedAt: DateTime.now(),
+  Future<Transaction> rollbackTransaction(String transactionId) async {
+    final transaction = _transactions[transactionId];
+    if (transaction != null) {
+      final rolledBack = Transaction(
+        transactionId: transaction.transactionId,
+        connectionId: transaction.connectionId,
+        state: TransactionState.rolledBack,
+        isolationLevel: transaction.isolationLevel,
+        startedAt: transaction.startedAt,
+        rolledBackAt: DateTime.now(),
+        operationIds: transaction.operationIds,
+        isReadOnly: transaction.isReadOnly,
       );
-      await _repository.saveTable(updatedTable);
-      _totalOperations++;
+      _transactions[transactionId] = rolledBack;
+      return rolledBack;
     }
+    return transaction!;
   }
 
   @override
-  Future<void> createIndex(Index index) async {
-    await _repository.saveIndex(index);
-    _totalOperations++;
-  }
+  Future<DatabaseOperation> executeOperation(String transactionId, DatabaseOperationType type, String table, String? query, Map<String, dynamic>? parameters) async {
+    final operation = DatabaseOperation(
+      operationId: 'op_${DateTime.now().millisecondsSinceEpoch}',
+      transactionId: transactionId,
+      type: type,
+      table: table,
+      query: query,
+      parameters: parameters,
+      executedAt: DateTime.now(),
+      executionTime: Duration(milliseconds: 10),
+      isSuccessful: true,
+    );
+    _operations[operation.operationId] = operation;
 
-  @override
-  Future<void> dropIndex(String indexId) async {
-    await _repository.deleteIndex(indexId);
-    _totalOperations++;
-  }
-
-  @override
-  Future<List<Table>> getSchema() async => _repository.getAllTables();
-
-  @override
-  Future<DatabaseMetrics> calculateMetrics() async {
-    final tables = await _repository.getAllTables();
-    final totalTables = tables.length;
-    final totalColumns = tables.fold(0, (sum, t) => sum + t.columnCount);
-
-    int totalIndexes = 0;
-    int totalForeignKeys = 0;
-    for (final table in tables) {
-      final indexes = await _repository.getIndexesByTable(table.tableId);
-      final foreignKeys = await _repository.getForeignKeysByTable(table.tableId);
-      totalIndexes += indexes.length;
-      totalForeignKeys += foreignKeys.length;
+    // Add operation to transaction
+    final transaction = _transactions[transactionId];
+    if (transaction != null) {
+      final updatedTransaction = Transaction(
+        transactionId: transaction.transactionId,
+        connectionId: transaction.connectionId,
+        state: transaction.state,
+        isolationLevel: transaction.isolationLevel,
+        startedAt: transaction.startedAt,
+        committedAt: transaction.committedAt,
+        rolledBackAt: transaction.rolledBackAt,
+        operationIds: [...transaction.operationIds, operation.operationId],
+        isReadOnly: transaction.isReadOnly,
+      );
+      _transactions[transactionId] = updatedTransaction;
     }
 
-    final avgColumnCount =
-        totalTables > 0 ? totalColumns / totalTables : 0.0;
-    final avgIndexCount =
-        totalTables > 0 ? totalIndexes / totalTables : 0.0;
+    return operation;
+  }
 
-    return DatabaseMetrics(
-      metricsId: 'metrics:${DateTime.now().millisecondsSinceEpoch}',
-      totalTables: totalTables,
-      totalColumns: totalColumns,
-      totalIndexes: totalIndexes,
-      totalForeignKeys: totalForeignKeys,
-      averageColumnCount: avgColumnCount,
-      averageIndexCount: avgIndexCount,
+  @override
+  Future<PersistenceStats> calculateStats(List<Transaction> transactions, DateTime start, DateTime end) async {
+    final filteredTransactions = transactions.where((t) => t.startedAt.isAfter(start) && t.startedAt.isBefore(end)).toList();
+    final successCount = filteredTransactions.where((t) => t.isSuccessful).length;
+    final failureCount = filteredTransactions.where((t) => t.isFailed).length;
+
+    final operationsByType = <DatabaseOperationType, int>{};
+    int totalOps = 0;
+    for (final txn in filteredTransactions) {
+      totalOps += txn.operationCount;
+    }
+
+    final totalTime = filteredTransactions.fold<int>(0, (sum, t) => sum + t.executionTime.inMilliseconds);
+    final avgTime = filteredTransactions.isEmpty ? 0.0 : totalTime / filteredTransactions.length;
+    final successRate = filteredTransactions.isEmpty ? 0.0 : successCount / filteredTransactions.length;
+
+    return PersistenceStats(
+      statsId: 'pstats_${DateTime.now().millisecondsSinceEpoch}',
+      periodStart: start,
+      periodEnd: end,
+      totalTransactions: filteredTransactions.length,
+      successfulTransactions: successCount,
+      failedTransactions: failureCount,
+      totalOperations: totalOps,
+      operationsByType: operationsByType,
+      averageTransactionTime: avgTime,
+      successRate: successRate,
+    );
+  }
+}
+
+/// データベースマネージャー インターフェース
+abstract class DatabaseManager {
+  Future<DatabaseConnection> createConnection(String host, int port, String database);
+  Future<void> closeConnection(String connectionId);
+  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel);
+  Future<Transaction> commitTransaction(String transactionId);
+  Future<Transaction> rollbackTransaction(String transactionId);
+  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query);
+  Future<PersistenceStats> generateStats(DateTime start, DateTime end);
+  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end);
+}
+
+/// メモリデータベースマネージャー実装
+class MemoryDatabaseManager implements DatabaseManager {
+  final DatabaseRepository repository;
+  final TransactionEngine engine;
+  final Map<String, TransactionLog> _transactionLogs = {};
+
+  MemoryDatabaseManager({
+    required this.repository,
+    required this.engine,
+  });
+
+  @override
+  Future<DatabaseConnection> createConnection(String host, int port, String database) async {
+    final connection = DatabaseConnection(
+      connectionId: 'conn_${DateTime.now().millisecondsSinceEpoch}',
+      host: host,
+      port: port,
+      database: database,
       createdAt: DateTime.now(),
     );
+    return repository.addConnection(connection);
   }
 
   @override
-  Future<Table?> getTable(String tableId) async =>
-      _repository.getTable(tableId);
-}
-
-/// マイグレーションエンジンインターフェース
-abstract class MigrationEngine {
-  /// マイグレーションを実行
-  Future<void> applyMigration(Migration migration);
-
-  /// マイグレーションをロールバック
-  Future<void> rollbackMigration(Migration migration);
-
-  /// ペンディングのマイグレーションを取得
-  Future<List<Migration>> getPendingMigrations();
-
-  /// 実行済みマイグレーションを取得
-  Future<List<Migration>> getAppliedMigrations();
-
-  /// 現在のバージョンを取得
-  Future<SchemaVersion?> getCurrentVersion();
-}
-
-/// メモリ実装のマイグレーションエンジン
-class MemoryMigrationEngine implements MigrationEngine {
-  final DatabaseRepository _repository;
-
-  MemoryMigrationEngine(this._repository);
+  Future<void> closeConnection(String connectionId) async {
+    return repository.closeConnection(connectionId);
+  }
 
   @override
-  Future<void> applyMigration(Migration migration) async {
-    final updatedMigration = Migration(
-      migrationId: migration.migrationId,
-      version: migration.version,
-      description: migration.description,
-      upScript: migration.upScript,
-      downScript: migration.downScript,
-      status: MigrationStatus.running,
-      createdAt: migration.createdAt,
+  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel) async {
+    return engine.beginTransaction(connectionId, isolationLevel, false);
+  }
+
+  @override
+  Future<Transaction> commitTransaction(String transactionId) async {
+    final transaction = await engine.commitTransaction(transactionId);
+    await repository.addTransaction(transaction);
+    return transaction;
+  }
+
+  @override
+  Future<Transaction> rollbackTransaction(String transactionId) async {
+    final transaction = await engine.rollbackTransaction(transactionId);
+    await repository.addTransaction(transaction);
+    return transaction;
+  }
+
+  @override
+  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query) async {
+    return engine.executeOperation(transactionId, type, table, query, null);
+  }
+
+  @override
+  Future<PersistenceStats> generateStats(DateTime start, DateTime end) async {
+    final allTransactions = await repository.getTransactionsByState(TransactionState.committed);
+    return engine.calculateStats(allTransactions, start, end);
+  }
+
+  @override
+  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end) async {
+    final stats = await generateStats(start, end);
+    final connections = await repository.getAllConnections();
+    final activeConnections = connections.where((c) => c.isOpen).length;
+
+    final transactionLog = TransactionLog(
+      logId: 'log_$reportId',
+      transactions: [],
+      createdAt: DateTime.now(),
     );
 
-    try {
-      updatedMigration.apply();
-      await _repository.saveMigration(updatedMigration);
-    } catch (e) {
-      updatedMigration.status = MigrationStatus.failed;
-      updatedMigration.errorMessage = e.toString();
-      await _repository.saveMigration(updatedMigration);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> rollbackMigration(Migration migration) async {
-    if (!migration.isRollbackable) {
-      throw Exception('Migration is not rollbackable');
-    }
-
-    final updatedMigration = Migration(
-      migrationId: migration.migrationId,
-      version: migration.version,
-      description: migration.description,
-      upScript: migration.upScript,
-      downScript: migration.downScript,
-      status: migration.status,
-      createdAt: migration.createdAt,
-      appliedAt: migration.appliedAt,
-    );
-
-    updatedMigration.rollback();
-    await _repository.saveMigration(updatedMigration);
-  }
-
-  @override
-  Future<List<Migration>> getPendingMigrations() async {
-    final migrations = await _repository.getMigrations();
-    return migrations
-        .where((m) => m.status == MigrationStatus.pending)
-        .toList();
-  }
-
-  @override
-  Future<List<Migration>> getAppliedMigrations() async {
-    final migrations = await _repository.getMigrations();
-    return migrations
-        .where((m) => m.status == MigrationStatus.completed)
-        .toList();
-  }
-
-  @override
-  Future<SchemaVersion?> getCurrentVersion() async {
-    return _repository.getLatestSchemaVersion();
-  }
-}
-
-/// データベースマネージャーインターフェース
-abstract class DatabaseManager {
-  /// スキーマを作成
-  Future<void> createSchema(SchemaVersion version);
-
-  /// スキーマをマイグレーション
-  Future<void> migrateSchema(String targetVersion);
-
-  /// マイグレーション履歴を取得
-  Future<List<Migration>> getMigrationHistory();
-
-  /// メトリクスを取得
-  Future<DatabaseMetrics?> getMetrics();
-
-  /// レポートを生成
-  Future<DatabaseReport> generateReport();
-}
-
-/// メモリ実装のデータベースマネージャー
-class MemoryDatabaseManager implements DatabaseManager {
-  final DatabaseRepository _repository;
-  final SchemaEngine _schemaEngine;
-  final MigrationEngine _migrationEngine;
-
-  MemoryDatabaseManager(
-    this._repository,
-    this._schemaEngine,
-    this._migrationEngine,
-  );
-
-  @override
-  Future<void> createSchema(SchemaVersion version) async {
-    for (final table in version.tables) {
-      await _schemaEngine.createTable(table);
-    }
-
-    if (version.indexes != null) {
-      for (final index in version.indexes!) {
-        await _schemaEngine.createIndex(index);
-      }
-    }
-
-    await _repository.saveSchemaVersion(version);
-  }
-
-  @override
-  Future<void> migrateSchema(String targetVersion) async {
-    final pendingMigrations = await _migrationEngine.getPendingMigrations();
-
-    for (final migration in pendingMigrations) {
-      if (migration.version == targetVersion) {
-        await _migrationEngine.applyMigration(migration);
-      }
-    }
-  }
-
-  @override
-  Future<List<Migration>> getMigrationHistory() async {
-    return _repository.getMigrations();
-  }
-
-  @override
-  Future<DatabaseMetrics?> getMetrics() async {
-    try {
-      return await _schemaEngine.calculateMetrics();
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<DatabaseReport> generateReport() async {
-    final currentVersion = await _migrationEngine.getCurrentVersion();
-    final metrics = await getMetrics();
-
-    if (currentVersion == null || metrics == null) {
-      return DatabaseReport(
-        reportId: 'report:${DateTime.now().millisecondsSinceEpoch}',
-        generatedAt: DateTime.now(),
-        schemaVersion: SchemaVersion(
-          versionId: 'empty',
-          version: '0.0.0',
-          tables: [],
-          appliedAt: DateTime.now(),
-        ),
-        metrics: DatabaseMetrics(
-          metricsId: 'empty',
-          totalTables: 0,
-          totalColumns: 0,
-          totalIndexes: 0,
-          totalForeignKeys: 0,
-          averageColumnCount: 0.0,
-          averageIndexCount: 0.0,
-          createdAt: DateTime.now(),
-        ),
-        recommendations: ['Initialize schema first'],
-      );
-    }
-
-    final recommendations = _generateRecommendations(metrics);
-
-    return DatabaseReport(
-      reportId: 'report:${DateTime.now().millisecondsSinceEpoch}',
+    return DatabasePersistenceReport(
+      reportId: reportId,
       generatedAt: DateTime.now(),
-      schemaVersion: currentVersion,
-      metrics: metrics,
-      recommendations: recommendations,
+      periodStart: start,
+      periodEnd: end,
+      activeConnections: activeConnections,
+      transactionLog: transactionLog,
+      stats: stats,
+      recommendations: _generateRecommendations(stats),
     );
   }
 
-  List<String> _generateRecommendations(DatabaseMetrics metrics) {
+  List<String> _generateRecommendations(PersistenceStats stats) {
     final recommendations = <String>[];
 
-    if (metrics.totalIndexes < metrics.totalTables) {
-      recommendations.add('Consider adding more indexes for better performance');
+    if (stats.successRate < 0.95) {
+      recommendations.add('Transaction success rate is below 95%');
+      recommendations.add('Review failed transactions for patterns');
     }
 
-    if (metrics.averageColumnCount > 20) {
-      recommendations.add('Tables have many columns; consider normalization');
+    if (stats.averageTransactionTime > 1000) {
+      recommendations.add('Average transaction time exceeds 1 second');
+      recommendations.add('Consider optimizing queries or increasing pool size');
     }
 
-    if (metrics.healthScore < 50) {
-      recommendations.add('Schema health score is low; review table structure');
-    }
-
-    if (recommendations.isEmpty) {
-      recommendations.add('Schema is well-designed');
+    if (stats.failureRate > 0.05) {
+      recommendations.add('High transaction failure rate detected');
+      recommendations.add('Review isolation level configuration');
     }
 
     return recommendations;
   }
 }
 
-/// データベースマネージャーファサード
-class DatabaseManagerFacade {
-  late DatabaseRepository _repository;
-  late SchemaEngine _schemaEngine;
-  late MigrationEngine _migrationEngine;
-  late DatabaseManager _manager;
+/// データベース管理ファサード
+class DatabaseFacade {
+  late final DatabaseRepository repository;
+  late final TransactionEngine engine;
+  late final MemoryDatabaseManager manager;
 
-  DatabaseManagerFacade({
-    DatabaseRepository? repository,
-    SchemaEngine? schemaEngine,
-    MigrationEngine? migrationEngine,
-    DatabaseManager? manager,
+  DatabaseFacade({
+    DatabaseRepository? customRepository,
+    TransactionEngine? customEngine,
   }) {
-    _repository = repository ?? MemoryDatabaseRepository();
-    _schemaEngine = schemaEngine ?? MemorySchemaEngine(_repository);
-    _migrationEngine = migrationEngine ?? MemoryMigrationEngine(_repository);
-    _manager = manager ??
-        MemoryDatabaseManager(_repository, _schemaEngine, _migrationEngine);
+    repository = customRepository ?? MemoryDatabaseRepository();
+    engine = customEngine ?? MemoryTransactionEngine();
+    manager = MemoryDatabaseManager(repository: repository, engine: engine);
   }
 
-  /// テーブルを作成
-  Future<void> createTable(Table table) => _schemaEngine.createTable(table);
+  Future<DatabaseConnection> createConnection(String host, int port, String database) async {
+    return manager.createConnection(host, port, database);
+  }
 
-  /// テーブルを削除
-  Future<void> dropTable(String tableId) => _schemaEngine.dropTable(tableId);
+  Future<void> closeConnection(String connectionId) async {
+    return manager.closeConnection(connectionId);
+  }
 
-  /// テーブルを取得
-  Future<Table?> getTable(String tableId) => _schemaEngine.getTable(tableId);
+  Future<Transaction> startTransaction(String connectionId, IsolationLevel isolationLevel) async {
+    return manager.startTransaction(connectionId, isolationLevel);
+  }
 
-  /// すべてのテーブルを取得
-  Future<List<Table>> getAllTables() => _schemaEngine.getSchema();
+  Future<Transaction> commitTransaction(String transactionId) async {
+    return manager.commitTransaction(transactionId);
+  }
 
-  /// カラムを追加
-  Future<void> addColumn(String tableId, Column column) =>
-      _schemaEngine.addColumn(tableId, column);
+  Future<Transaction> rollbackTransaction(String transactionId) async {
+    return manager.rollbackTransaction(transactionId);
+  }
 
-  /// カラムを削除
-  Future<void> dropColumn(String tableId, String columnName) =>
-      _schemaEngine.dropColumn(tableId, columnName);
+  Future<DatabaseOperation> executeQuery(String transactionId, DatabaseOperationType type, String table, String query) async {
+    return manager.executeQuery(transactionId, type, table, query);
+  }
 
-  /// インデックスを作成
-  Future<void> createIndex(Index index) => _schemaEngine.createIndex(index);
+  Future<DatabaseConnection?> getConnection(String connectionId) async {
+    return repository.getConnection(connectionId);
+  }
 
-  /// インデックスを削除
-  Future<void> dropIndex(String indexId) => _schemaEngine.dropIndex(indexId);
+  Future<List<DatabaseConnection>> getAllConnections() async {
+    return repository.getAllConnections();
+  }
 
-  /// テーブルのインデックスを取得
-  Future<List<Index>> getIndexesByTable(String tableId) =>
-      _repository.getIndexesByTable(tableId);
+  Future<Transaction?> getTransaction(String transactionId) async {
+    return repository.getTransaction(transactionId);
+  }
 
-  /// 外部キーを作成
-  Future<void> createForeignKey(ForeignKey foreignKey) =>
-      _repository.saveForeignKey(foreignKey);
+  Future<DatabasePersistenceReport> generateReport(String reportId, DateTime start, DateTime end) async {
+    return manager.generateReport(reportId, start, end);
+  }
 
-  /// テーブルの外部キーを取得
-  Future<List<ForeignKey>> getForeignKeysByTable(String tableId) =>
-      _repository.getForeignKeysByTable(tableId);
-
-  /// スキーマを作成
-  Future<void> createSchema(SchemaVersion version) =>
-      _manager.createSchema(version);
-
-  /// マイグレーションを実行
-  Future<void> applyMigration(Migration migration) =>
-      _migrationEngine.applyMigration(migration);
-
-  /// マイグレーションをロールバック
-  Future<void> rollbackMigration(Migration migration) =>
-      _migrationEngine.rollbackMigration(migration);
-
-  /// スキーマをマイグレーション
-  Future<void> migrateSchema(String targetVersion) =>
-      _manager.migrateSchema(targetVersion);
-
-  /// ペンディングマイグレーションを取得
-  Future<List<Migration>> getPendingMigrations() =>
-      _migrationEngine.getPendingMigrations();
-
-  /// 実行済みマイグレーションを取得
-  Future<List<Migration>> getAppliedMigrations() =>
-      _migrationEngine.getAppliedMigrations();
-
-  /// マイグレーション履歴を取得
-  Future<List<Migration>> getMigrationHistory() =>
-      _manager.getMigrationHistory();
-
-  /// 現在のスキーマバージョンを取得
-  Future<SchemaVersion?> getCurrentVersion() =>
-      _migrationEngine.getCurrentVersion();
-
-  /// メトリクスを取得
-  Future<DatabaseMetrics?> getMetrics() => _manager.getMetrics();
-
-  /// レポートを生成
-  Future<DatabaseReport> generateReport() => _manager.generateReport();
-
-  /// スキーマ操作を実行
-  Future<void> executeSchemaOperation(
-    DatabaseOperation operation,
-    dynamic data,
-  ) async {
-    switch (operation) {
-      case DatabaseOperation.create:
-        if (data is Table) {
-          await createTable(data);
-        } else if (data is Index) {
-          await createIndex(data);
-        } else if (data is ForeignKey) {
-          await createForeignKey(data);
-        }
-        break;
-      case DatabaseOperation.read:
-        // Read operations return values
-        break;
-      case DatabaseOperation.update:
-        // Update operations (e.g., alter table)
-        break;
-      case DatabaseOperation.delete:
-        if (data is String) {
-          // Assuming it's a table ID
-          await dropTable(data);
-        }
-        break;
-      case DatabaseOperation.migrate:
-        if (data is Migration) {
-          await applyMigration(data);
-        }
-        break;
-    }
+  Future<PersistenceStats> generateStats(DateTime start, DateTime end) async {
+    return manager.generateStats(start, end);
   }
 }
