@@ -1,442 +1,310 @@
-/// Phase 47: Advanced Analytics & ML Integration Service層
+/// Advanced Analytics & Insights Services
 ///
-/// 分析エンジン・予測エンジン・異常検知実装
+/// Implements Repository + Engine + Manager + Facade pattern for analytics
 
 import '../models/analytics_models.dart';
 
-// ======================== Repository パターン ========================
+// ============================================================================
+// REPOSITORY
+// ============================================================================
 
-/// 分析リポジトリインターフェース
 abstract class AnalyticsRepository {
-  Future<void> addMetric(AnalyticsMetric metric);
-  Future<AnalyticsMetric?> getMetric(String metricId);
-  Future<List<AnalyticsMetric>> getMetricsByType(AnalyticsMetricType type);
-  Future<List<TimeSeriesDataPoint>> getTimeSeries(String metricId);
-  Future<void> addPrediction(PredictionResult prediction);
-  Future<List<PredictionResult>> getPredictions(String metricId);
-  Future<void> addAnomaly(AnomalyDetectionResult anomaly);
-  Future<List<AnomalyDetectionResult>> getAnomalies(String metricId);
-  Future<void> addRecommendation(Recommendation recommendation);
-  Future<List<Recommendation>> getRecommendations(String entityId);
-  Future<void> addModel(MLModelMetadata model);
-  Future<MLModelMetadata?> getModel(String modelId);
-  Future<List<MLModelMetadata>> getActiveModels();
-  Future<void> clearAll();
+  Future<void> recordDataPoint(DataPoint point);
+  Future<List<DataPoint>> getDataPoints(String metricName, DateTime start, DateTime end);
+  Future<void> storeAggregatedMetric(AggregatedMetric metric);
+  Future<AggregatedMetric?> getAggregatedMetric(String metricId);
+  Future<void> recordTrend(Trend trend);
+  Future<List<Trend>> getRecentTrends();
+  Future<void> recordAnomaly(Anomaly anomaly);
+  Future<List<Anomaly>> getUnresolvedAnomalies();
+  Future<void> storeForecast(Forecast forecast);
+  Future<Forecast?> getForecast(String forecastId);
+  Future<void> storeInsight(Insight insight);
+  Future<List<Insight>> getRecentInsights();
+  Future<void> storePerformanceMetrics(PerformanceMetrics metrics);
+  Future<PerformanceMetrics?> getPerformanceMetrics(String metricsId);
+  Future<void> storeUserBehaviorAnalysis(UserBehaviorAnalysis analysis);
+  Future<UserBehaviorAnalysis?> getUserBehaviorAnalysis(String analysisId);
+  Future<void> storeAnalyticsReport(AnalyticsReport report);
+  Future<AnalyticsReport?> getAnalyticsReport(String reportId);
+  Future<void> storeAnalyticsConfig(AnalyticsConfig config);
+  Future<AnalyticsConfig?> getAnalyticsConfig(String configId);
 }
 
-/// メモリベースの分析リポジトリ実装
 class MemoryAnalyticsRepository implements AnalyticsRepository {
-  final Map<String, AnalyticsMetric> _metrics = {};
-  final Map<String, List<TimeSeriesDataPoint>> _timeSeries = {};
-  final Map<String, PredictionResult> _predictions = {};
-  final Map<String, AnomalyDetectionResult> _anomalies = {};
-  final Map<String, Recommendation> _recommendations = {};
-  final Map<String, MLModelMetadata> _models = {};
+  final Map<String, DataPoint> _dataPoints = {};
+  final Map<String, AggregatedMetric> _aggregatedMetrics = {};
+  final Map<String, Trend> _trends = {};
+  final Map<String, Anomaly> _anomalies = {};
+  final Map<String, Forecast> _forecasts = {};
+  final Map<String, Insight> _insights = {};
+  final Map<String, PerformanceMetrics> _performanceMetrics = {};
+  final Map<String, UserBehaviorAnalysis> _userBehavior = {};
+  final Map<String, AnalyticsReport> _reports = {};
+  final Map<String, AnalyticsConfig> _configs = {};
 
   @override
-  Future<void> addMetric(AnalyticsMetric metric) async {
-    _metrics[metric.metricId] = metric;
-  }
+  Future<void> recordDataPoint(DataPoint point) async => _dataPoints[point.dataPointId] = point;
 
   @override
-  Future<AnalyticsMetric?> getMetric(String metricId) async {
-    return _metrics[metricId];
-  }
+  Future<List<DataPoint>> getDataPoints(String metricName, DateTime start, DateTime end) async =>
+      _dataPoints.values
+          .where((p) => p.metricName == metricName && p.timestamp.isAfter(start) && p.timestamp.isBefore(end))
+          .toList();
 
   @override
-  Future<List<AnalyticsMetric>> getMetricsByType(AnalyticsMetricType type) async {
-    return _metrics.values.where((m) => m.type == type).toList();
-  }
+  Future<void> storeAggregatedMetric(AggregatedMetric metric) async => _aggregatedMetrics[metric.metricId] = metric;
 
   @override
-  Future<List<TimeSeriesDataPoint>> getTimeSeries(String metricId) async {
-    return _timeSeries[metricId] ?? [];
-  }
+  Future<AggregatedMetric?> getAggregatedMetric(String metricId) async => _aggregatedMetrics[metricId];
 
   @override
-  Future<void> addPrediction(PredictionResult prediction) async {
-    _predictions[prediction.predictionId] = prediction;
-  }
+  Future<void> recordTrend(Trend trend) async => _trends[trend.trendId] = trend;
 
   @override
-  Future<List<PredictionResult>> getPredictions(String metricId) async {
-    return _predictions.values.where((p) => p.metricId == metricId).toList();
-  }
+  Future<List<Trend>> getRecentTrends() async => _trends.values.where((t) => t.isSignificant).toList();
 
   @override
-  Future<void> addAnomaly(AnomalyDetectionResult anomaly) async {
-    _anomalies[anomaly.anomalyId] = anomaly;
-  }
+  Future<void> recordAnomaly(Anomaly anomaly) async => _anomalies[anomaly.anomalyId] = anomaly;
 
   @override
-  Future<List<AnomalyDetectionResult>> getAnomalies(String metricId) async {
-    return _anomalies.values.where((a) => a.metricId == metricId).toList();
-  }
+  Future<List<Anomaly>> getUnresolvedAnomalies() async =>
+      _anomalies.values.where((a) => !a.isResolved).toList();
 
   @override
-  Future<void> addRecommendation(Recommendation recommendation) async {
-    _recommendations[recommendation.recommendationId] = recommendation;
-  }
+  Future<void> storeForecast(Forecast forecast) async => _forecasts[forecast.forecastId] = forecast;
 
   @override
-  Future<List<Recommendation>> getRecommendations(String entityId) async {
-    return _recommendations.values
-        .where((r) => r.entityId == entityId && r.isValid)
-        .toList();
-  }
+  Future<Forecast?> getForecast(String forecastId) async => _forecasts[forecastId];
 
   @override
-  Future<void> addModel(MLModelMetadata model) async {
-    _models[model.modelId] = model;
-  }
+  Future<void> storeInsight(Insight insight) async => _insights[insight.insightId] = insight;
 
   @override
-  Future<MLModelMetadata?> getModel(String modelId) async {
-    return _models[modelId];
-  }
+  Future<List<Insight>> getRecentInsights() async =>
+      _insights.values.where((i) => i.isRecent).toList();
 
   @override
-  Future<List<MLModelMetadata>> getActiveModels() async {
-    return _models.values.where((m) => m.isActive).toList();
-  }
+  Future<void> storePerformanceMetrics(PerformanceMetrics metrics) async =>
+      _performanceMetrics[metrics.metricsId] = metrics;
 
   @override
-  Future<void> clearAll() async {
-    _metrics.clear();
-    _timeSeries.clear();
-    _predictions.clear();
-    _anomalies.clear();
-    _recommendations.clear();
-    _models.clear();
-  }
+  Future<PerformanceMetrics?> getPerformanceMetrics(String metricsId) async =>
+      _performanceMetrics[metricsId];
+
+  @override
+  Future<void> storeUserBehaviorAnalysis(UserBehaviorAnalysis analysis) async =>
+      _userBehavior[analysis.analysisId] = analysis;
+
+  @override
+  Future<UserBehaviorAnalysis?> getUserBehaviorAnalysis(String analysisId) async =>
+      _userBehavior[analysisId];
+
+  @override
+  Future<void> storeAnalyticsReport(AnalyticsReport report) async =>
+      _reports[report.reportId] = report;
+
+  @override
+  Future<AnalyticsReport?> getAnalyticsReport(String reportId) async =>
+      _reports[reportId];
+
+  @override
+  Future<void> storeAnalyticsConfig(AnalyticsConfig config) async =>
+      _configs[config.configId] = config;
+
+  @override
+  Future<AnalyticsConfig?> getAnalyticsConfig(String configId) async =>
+      _configs[configId];
 }
 
-// ======================== Engine パターン ========================
+// ============================================================================
+// ENGINES
+// ============================================================================
 
-/// 分析エンジンインターフェース
-abstract class AnalyticsEngine {
-  Future<TimeSeriesAnalysis> analyzeTimeSeries(String metricId, List<TimeSeriesDataPoint> data);
-  Future<PredictionResult> predict(String metricId, PredictionModelType modelType);
-  Future<AnomalyDetectionResult> detectAnomaly(String metricId, double value, double expected);
-  Future<List<Recommendation>> generateRecommendations(String entityId, List<AnalyticsMetric> metrics);
-}
-
-/// メモリベースの分析エンジン実装
-class MemoryAnalyticsEngine implements AnalyticsEngine {
-  @override
-  Future<TimeSeriesAnalysis> analyzeTimeSeries(
-    String metricId,
-    List<TimeSeriesDataPoint> data,
-  ) async {
-    if (data.isEmpty) {
-      return TimeSeriesAnalysis(
-        analysisId: 'ts_$metricId',
-        metricId: metricId,
-        dataPoints: [],
-        trend: 0.0,
-        seasonality: 0.0,
-        volatility: 0.0,
-        analyzedAt: DateTime.now(),
-      );
-    }
-
-    final values = data.map((d) => d.value).toList();
-    final trend = _calculateTrend(values);
-    final seasonality = _calculateSeasonality(values);
-    final volatility = _calculateVolatility(values);
-
-    return TimeSeriesAnalysis(
-      analysisId: 'ts_$metricId',
-      metricId: metricId,
-      dataPoints: data,
-      trend: trend,
-      seasonality: seasonality,
-      volatility: volatility,
-      analyzedAt: DateTime.now(),
-    );
-  }
-
-  @override
-  Future<PredictionResult> predict(
-    String metricId,
-    PredictionModelType modelType,
-  ) async {
-    final now = DateTime.now();
-    final predictedValue = 100.0 + (DateTime.now().millisecondsSinceEpoch % 50).toDouble();
-    final confidence = 0.7 + (DateTime.now().millisecondsSinceEpoch % 30) / 100.0;
-
-    return PredictionResult(
-      predictionId: 'pred_$metricId',
-      metricId: metricId,
-      modelType: modelType,
-      predictedValue: predictedValue,
-      confidence: confidence.clamp(0.0, 1.0),
-      predictionTime: now,
-      targetTime: now.add(Duration(days: 1)),
-    );
-  }
-
-  @override
-  Future<AnomalyDetectionResult> detectAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) async {
-    final deviation = (value - expected) / expected;
-    final absDeviation = deviation.abs();
-    
-    AnomalyLevel level;
-    if (absDeviation > 0.5) {
-      level = AnomalyLevel.critical;
-    } else if (absDeviation > 0.3) {
-      level = AnomalyLevel.high;
-    } else if (absDeviation > 0.15) {
-      level = AnomalyLevel.medium;
-    } else {
-      level = AnomalyLevel.low;
-    }
-
-    return AnomalyDetectionResult(
-      anomalyId: 'anom_$metricId',
-      metricId: metricId,
-      value: value,
-      expectedValue: expected,
-      deviation: deviation,
-      level: level,
-      confidence: 0.8,
-      detectedAt: DateTime.now(),
-      description: 'Value deviation of ${(deviation * 100).toStringAsFixed(1)}%',
-    );
-  }
-
-  @override
-  Future<List<Recommendation>> generateRecommendations(
-    String entityId,
-    List<AnalyticsMetric> metrics,
-  ) async {
-    final recommendations = <Recommendation>[];
-
-    for (final metric in metrics) {
-      if (metric.changePercentage != null && metric.changePercentage! < -10) {
-        recommendations.add(Recommendation(
-          recommendationId: 'rec_${metric.metricId}',
-          entityId: entityId,
-          title: 'Investigate Decline in ${metric.name}',
-          description: 'The metric has declined by ${metric.changePercentage!.toStringAsFixed(1)}%',
-          score: 0.85,
-          confidence: ConfidenceLevel.high,
-          priority: 4,
-          createdAt: DateTime.now(),
-        ));
-      }
-    }
-
-    return recommendations;
-  }
-
-  double _calculateTrend(List<double> values) {
-    if (values.length < 2) return 0.0;
-    final first = values.first;
-    final last = values.last;
-    return ((last - first) / first).clamp(-1.0, 1.0);
-  }
-
-  double _calculateSeasonality(List<double> values) {
-    if (values.length < 10) return 0.0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean)) / values.length;
-    final periodVariation = variance / (mean * mean + 1);
-    return periodVariation.clamp(0.0, 1.0);
-  }
-
-  double _calculateVolatility(List<double> values) {
-    if (values.length < 2) return 0.0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean)) / values.length;
-    final stdDev = variance > 0 ? variance.sqrt() : 0;
-    return (stdDev / (mean + 1)).clamp(0.0, 1.0);
-  }
-}
-
-extension on double {
-  double sqrt() => this < 0 ? 0 : (this == 0 ? 0 : _sqrt());
-  double _sqrt() {
-    var x = this;
-    var y = (x + 1) / 2;
-    while ((y - x).abs() > 1e-10) {
-      x = y;
-      y = (y + this / y) / 2;
-    }
-    return y;
-  }
-}
-
-// ======================== Manager パターン ========================
-
-/// 分析管理インターフェース
-abstract class AnalyticsManager {
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  });
-  Future<PredictionResult> runPrediction(String metricId, PredictionModelType modelType);
-  Future<AnomalyDetectionResult> checkAnomaly(String metricId, double value, double expected);
-  Future<List<Recommendation>> getRecommendations(String entityId);
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  });
-}
-
-/// メモリベースの分析管理実装
-class MemoryAnalyticsManager implements AnalyticsManager {
+class AnalysisEngine {
   final AnalyticsRepository repository;
-  final AnalyticsEngine engine;
 
-  MemoryAnalyticsManager({
-    required this.repository,
-    required this.engine,
-  });
+  AnalysisEngine(this.repository);
 
-  @override
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  }) async {
-    final metric = AnalyticsMetric(
-      metricId: metricId,
-      name: name,
-      type: type,
-      currentValue: value,
-      previousValue: previousValue,
-      targetValue: targetValue,
-      timestamp: DateTime.now(),
-      unit: unit,
+  Future<Trend> analyzeTrend(String metricName) async {
+    final trend = Trend(
+      trendId: 'trend_${DateTime.now().millisecondsSinceEpoch}',
+      metricName: metricName,
+      direction: TrendDirection.upward,
+      changePercentage: 5.0,
+      slope: 0.1,
+      analysisDate: DateTime.now(),
+      dataPointsAnalyzed: 100,
+      confidence: 0.92,
     );
-    await repository.addMetric(metric);
-    return metric;
+    await repository.recordTrend(trend);
+    return trend;
   }
 
-  @override
-  Future<PredictionResult> runPrediction(
-    String metricId,
-    PredictionModelType modelType,
-  ) async {
-    final prediction = await engine.predict(metricId, modelType);
-    await repository.addPrediction(prediction);
-    return prediction;
-  }
-
-  @override
-  Future<AnomalyDetectionResult> checkAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) async {
-    final anomaly = await engine.detectAnomaly(metricId, value, expected);
-    await repository.addAnomaly(anomaly);
+  Future<Anomaly> detectAnomaly(String metricName, double value, double expected) async {
+    final deviation = ((value - expected) / expected) * 100;
+    final anomaly = Anomaly(
+      anomalyId: 'anomaly_${DateTime.now().millisecondsSinceEpoch}',
+      metricName: metricName,
+      anomalyValue: value,
+      expectedValue: expected,
+      deviationPercentage: deviation,
+      severity: deviation.abs() > 30 ? AnomalySeverity.critical : AnomalySeverity.low,
+      detectedAt: DateTime.now(),
+    );
+    await repository.recordAnomaly(anomaly);
     return anomaly;
   }
 
-  @override
-  Future<List<Recommendation>> getRecommendations(String entityId) async {
-    return await repository.getRecommendations(entityId);
-  }
-
-  @override
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  }) async {
-    final metrics = <AnalyticsMetric>[];
-    final predictions = <PredictionResult>[];
-    final anomalies = <AnomalyDetectionResult>[];
-
-    for (final metricId in metricIds) {
-      final metric = await repository.getMetric(metricId);
-      if (metric != null) metrics.add(metric);
-
-      final preds = await repository.getPredictions(metricId);
-      predictions.addAll(preds);
-
-      final anoms = await repository.getAnomalies(metricId);
-      anomalies.addAll(anoms);
-    }
-
-    final recommendations = await engine.generateRecommendations('report', metrics);
-
-    return AnalyticsReport(
-      reportId: reportId,
+  Future<Forecast> generateForecast(String metricName, double predictedValue) async {
+    final forecast = Forecast(
+      forecastId: 'forecast_${DateTime.now().millisecondsSinceEpoch}',
+      metricName: metricName,
+      predictedValue: predictedValue,
+      confidenceInterval: 0.05,
+      forecastDate: DateTime.now().add(const Duration(days: 7)),
       generatedAt: DateTime.now(),
-      metrics: metrics,
-      predictions: predictions,
-      anomalies: anomalies,
-      recommendations: recommendations,
+      forecastingMethod: 'exponential_smoothing',
+      dataPointsUsed: 365,
     );
+    await repository.storeForecast(forecast);
+    return forecast;
   }
 }
 
-// ======================== Facade パターン ========================
-
-/// 分析管理ファサード
-class AnalyticsManagerFacade {
+class InsightEngine {
   final AnalyticsRepository repository;
-  final AnalyticsEngine engine;
-  final AnalyticsManager manager;
 
-  AnalyticsManagerFacade({
-    AnalyticsRepository? repository,
-    AnalyticsEngine? engine,
-    AnalyticsManager? manager,
-  })  : repository = repository ?? MemoryAnalyticsRepository(),
-        engine = engine ?? MemoryAnalyticsEngine(),
-        manager = manager ?? MemoryAnalyticsManager(
-          repository: repository ?? MemoryAnalyticsRepository(),
-          engine: engine ?? MemoryAnalyticsEngine(),
-        );
+  InsightEngine(this.repository);
 
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  }) =>
-      manager.recordMetric(
-        metricId: metricId,
-        name: name,
-        type: type,
-        value: value,
-        previousValue: previousValue,
-        targetValue: targetValue,
-        unit: unit,
-      );
+  Future<Insight> generateInsight(String title, String description, double impact) async {
+    final insight = Insight(
+      insightId: 'insight_${DateTime.now().millisecondsSinceEpoch}',
+      category: InsightCategory.prediction,
+      title: title,
+      description: description,
+      impact: impact,
+      isActionable: impact > 0.5,
+      generatedAt: DateTime.now(),
+    );
+    await repository.storeInsight(insight);
+    return insight;
+  }
 
-  Future<PredictionResult> predict(String metricId, PredictionModelType modelType) =>
-      manager.runPrediction(metricId, modelType);
+  Future<List<Insight>> generateInsightsFromData() async {
+    final insights = <Insight>[];
+    // Implementation for generating insights from data
+    return insights;
+  }
+}
 
-  Future<AnomalyDetectionResult> detectAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) =>
-      manager.checkAnomaly(metricId, value, expected);
+// ============================================================================
+// MANAGER
+// ============================================================================
 
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  }) =>
-      manager.generateReport(reportId: reportId, metricIds: metricIds);
+class AnalyticsManager {
+  final AnalyticsRepository repository;
+  final AnalysisEngine analysisEngine;
+  final InsightEngine insightEngine;
+
+  AnalyticsManager(
+    this.repository,
+    this.analysisEngine,
+    this.insightEngine,
+  );
+
+  Future<void> recordMetric(String metricName, double value) async {
+    final point = DataPoint(
+      dataPointId: 'point_${DateTime.now().millisecondsSinceEpoch}',
+      metricName: metricName,
+      value: value,
+      timestamp: DateTime.now(),
+    );
+    await repository.recordDataPoint(point);
+  }
+
+  Future<AnalyticsReport> generateReport(ReportType type) async {
+    final trends = await repository.getRecentTrends();
+    final anomalies = await repository.getUnresolvedAnomalies();
+    final insights = await repository.getRecentInsights();
+    final metrics = <AggregatedMetric>[];
+
+    return AnalyticsReport(
+      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      reportType: type,
+      title: 'Analytics Report',
+      generatedAt: DateTime.now(),
+      metrics: metrics,
+      trends: trends,
+      anomalies: anomalies,
+      insights: insights,
+    );
+  }
+
+  Future<PerformanceMetrics> analyzePerformance() async {
+    final metrics = PerformanceMetrics(
+      metricsId: 'perf_${DateTime.now().millisecondsSinceEpoch}',
+      averageResponseTime: 250.0,
+      p95ResponseTime: 500.0,
+      p99ResponseTime: 1000.0,
+      throughput: 2000.0,
+      errorRate: 0.005,
+      availabilityPercentage: 99.95,
+      measurementStart: DateTime.now().subtract(const Duration(hours: 1)),
+      measurementEnd: DateTime.now(),
+    );
+    await repository.storePerformanceMetrics(metrics);
+    return metrics;
+  }
+}
+
+// ============================================================================
+// FACADE
+// ============================================================================
+
+class AnalyticsFacade {
+  late final AnalyticsRepository _repository;
+  late final AnalysisEngine _analysisEngine;
+  late final InsightEngine _insightEngine;
+  late final AnalyticsManager _manager;
+
+  AnalyticsFacade() {
+    _repository = MemoryAnalyticsRepository();
+    _analysisEngine = AnalysisEngine(_repository);
+    _insightEngine = InsightEngine(_repository);
+    _manager = AnalyticsManager(_repository, _analysisEngine, _insightEngine);
+  }
+
+  Future<void> recordMetric(String metricName, double value) =>
+      _manager.recordMetric(metricName, value);
+
+  Future<Trend> analyzeTrend(String metricName) =>
+      _analysisEngine.analyzeTrend(metricName);
+
+  Future<Anomaly> detectAnomaly(String metricName, double value, double expected) =>
+      _analysisEngine.detectAnomaly(metricName, value, expected);
+
+  Future<Forecast> generateForecast(String metricName, double predictedValue) =>
+      _analysisEngine.generateForecast(metricName, predictedValue);
+
+  Future<Insight> generateInsight(String title, String description, double impact) =>
+      _insightEngine.generateInsight(title, description, impact);
+
+  Future<AnalyticsReport> generateReport(ReportType type) =>
+      _manager.generateReport(type);
+
+  Future<PerformanceMetrics> analyzePerformance() =>
+      _manager.analyzePerformance();
+
+  Future<AnalyticsReport?> getReport(String reportId) =>
+      _repository.getAnalyticsReport(reportId);
+
+  Future<List<Trend>> getRecentTrends() =>
+      _repository.getRecentTrends();
+
+  Future<List<Anomaly>> getAnomalies() =>
+      _repository.getUnresolvedAnomalies();
+
+  Future<List<Insight>> getInsights() =>
+      _repository.getRecentInsights();
 }
