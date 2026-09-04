@@ -1,388 +1,259 @@
-/// Phase 56: Data Export & Reporting データエクスポート・レポート
+/// Data Export & Reporting Models
 
-/// エクスポート形式
-enum ExportFormat {
-  csv('csv'),
-  json('json'),
-  xml('xml'),
-  pdf('pdf'),
-  xlsx('xlsx'),
-  markdown('markdown');
+enum ExportFormat { csv, json, xml, pdf }
+enum ReportStatus { pending, processing, completed, failed }
+enum ScheduleFrequency { daily, weekly, monthly, quarterly }
 
-  final String value;
-  const ExportFormat(this.value);
-}
-
-/// レポートタイプ
-enum ReportType {
-  jobSummary('job_summary'),
-  performanceAnalysis('performance_analysis'),
-  securityAudit('security_audit'),
-  apiUsage('api_usage'),
-  complianceReport('compliance_report'),
-  executiveSummary('executive_summary'),
-  detailedAnalysis('detailed_analysis');
-
-  final String value;
-  const ReportType(this.value);
-}
-
-/// データフィルタタイプ
-enum FilterType {
-  dateRange('date_range'),
-  status('status'),
-  category('category'),
-  priority('priority'),
-  user('user'),
-  resource('resource');
-
-  final String value;
-  const FilterType(this.value);
-}
-
-/// エクスポート設定
-class ExportConfiguration {
-  final String configId;
-  final String name;
-  final ExportFormat format;
-  final List<String> includeFields;
-  final List<String> excludeFields;
-  final bool includeHeaders;
-  final bool includeSummary;
-  final DateTime createdAt;
-  final bool isActive;
-
-  ExportConfiguration({
-    required this.configId,
-    required this.name,
-    required this.format,
-    required this.includeFields,
-    required this.excludeFields,
-    required this.includeHeaders,
-    required this.includeSummary,
-    required this.createdAt,
-    this.isActive = true,
-  });
-
-  /// 設定が有効か
-  bool get isEnabled => isActive;
-
-  /// フィールド数
-  int get totalFields => includeFields.length - excludeFields.length;
-
-  /// カスタマイズされているか
-  bool get isCustomized => excludeFields.isNotEmpty;
-}
-
-/// エクスポートジョブ
 class ExportJob {
   final String jobId;
-  final String exportConfigId;
+  final String dataSource;
   final ExportFormat format;
   final DateTime createdAt;
-  final DateTime? startedAt;
   final DateTime? completedAt;
-  final ExportJobStatus status;
-  final int totalRecords;
-  final int processedRecords;
   final String? filePath;
-  final String? errorMessage;
-  final int? fileSizeBytes;
+  final int recordCount;
+  final bool isCompleted;
 
   ExportJob({
     required this.jobId,
-    required this.exportConfigId,
+    required this.dataSource,
     required this.format,
     required this.createdAt,
-    this.startedAt,
     this.completedAt,
-    required this.status,
-    this.totalRecords = 0,
-    this.processedRecords = 0,
     this.filePath,
-    this.errorMessage,
-    this.fileSizeBytes,
+    this.recordCount = 0,
+    this.isCompleted = false,
   });
 
-  /// ジョブが完了したか
-  bool get isCompleted => completedAt != null;
-
-  /// ジョブが成功したか
-  bool get isSuccessful => status == ExportJobStatus.completed && filePath != null;
-
-  /// ジョブが失敗したか
-  bool get isFailed => status == ExportJobStatus.failed;
-
-  /// 処理進捗率
-  double get progressPercentage {
-    if (totalRecords == 0) return 0.0;
-    return (processedRecords / totalRecords) * 100;
-  }
-
-  /// 実行時間（秒）
-  int? get executionTimeSeconds {
-    if (startedAt == null || completedAt == null) return null;
-    return completedAt!.difference(startedAt!).inSeconds;
-  }
+  int get durationInSeconds => completedAt != null ? completedAt!.difference(createdAt).inSeconds : 0;
+  bool get isRecent => DateTime.now().difference(createdAt).inDays < 30;
 }
 
-/// エクスポートジョブステータス
-enum ExportJobStatus {
-  pending('pending'),
-  inProgress('in_progress'),
-  completed('completed'),
-  failed('failed'),
-  cancelled('cancelled');
-
-  final String value;
-  const ExportJobStatus(this.value);
-}
-
-/// レポート
 class Report {
   final String reportId;
   final String title;
-  final ReportType reportType;
+  final String description;
   final DateTime generatedAt;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final Map<String, dynamic> data;
-  final String? summary;
-  final List<String>? recommendations;
-  final String? generatedBy;
+  final ExportFormat format;
+  final String? fileLocation;
+  final int pageCount;
+  final bool isScheduled;
 
   Report({
     required this.reportId,
     required this.title,
-    required this.reportType,
+    required this.description,
     required this.generatedAt,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.data,
-    this.summary,
-    this.recommendations,
-    this.generatedBy,
+    required this.format,
+    this.fileLocation,
+    this.pageCount = 0,
+    this.isScheduled = false,
   });
 
-  /// レポートが最新か（7日以内）
-  bool get isRecent => DateTime.now().difference(generatedAt).inDays <= 7;
-
-  /// 推奨事項がある か
-  bool get hasRecommendations => recommendations != null && recommendations!.isNotEmpty;
-
-  /// Markdown形式で出力
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# $title');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('**Period**: ${periodStart.toIso8601String()} ~ ${periodEnd.toIso8601String()}');
-    buffer.writeln('');
-
-    if (summary != null) {
-      buffer.writeln('## Summary');
-      buffer.writeln('');
-      buffer.writeln(summary);
-      buffer.writeln('');
-    }
-
-    if (recommendations != null && recommendations!.isNotEmpty) {
-      buffer.writeln('## Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations!.take(5)) {
-        buffer.writeln('- $rec');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
-  }
+  bool get isRecent => DateTime.now().difference(generatedAt).inDays < 7;
+  int get ageInDays => DateTime.now().difference(generatedAt).inDays;
 }
 
-/// データフィルタ
-class DataFilter {
-  final String filterId;
-  final String filterName;
-  final FilterType filterType;
-  final dynamic filterValue;
-  final bool isActive;
-  final DateTime createdAt;
-
-  DataFilter({
-    required this.filterId,
-    required this.filterName,
-    required this.filterType,
-    required this.filterValue,
-    this.isActive = true,
-    required this.createdAt,
-  });
-
-  /// フィルタが有効か
-  bool get isEnabled => isActive;
-
-  /// フィルタが複雑か
-  bool get isComplex => filterValue is List || filterValue is Map;
-}
-
-/// スケジュール済みエクスポート
-class ScheduledExport {
+class ScheduledReport {
   final String scheduleId;
-  final String exportConfigId;
-  final String cronExpression; // "0 0 * * *" 形式
-  final DateTime createdAt;
-  final DateTime? lastExecutedAt;
-  final DateTime? nextExecutionAt;
-  final bool isActive;
-  final int maxRetries;
-  final List<String> emailRecipients;
-
-  ScheduledExport({
-    required this.scheduleId,
-    required this.exportConfigId,
-    required this.cronExpression,
-    required this.createdAt,
-    this.lastExecutedAt,
-    this.nextExecutionAt,
-    this.isActive = true,
-    this.maxRetries = 3,
-    required this.emailRecipients,
-  });
-
-  /// スケジュールが有効か
-  bool get isEnabled => isActive;
-
-  /// 実行予定がある か
-  bool get hasSchedule => nextExecutionAt != null;
-
-  /// 実行済みか
-  bool get hasExecuted => lastExecutedAt != null;
-
-  /// メール受信者数
-  int get recipientCount => emailRecipients.length;
-}
-
-/// エクスポートメトリクス
-class ExportMetrics {
-  final String metricsId;
-  final int totalExports;
-  final int successfulExports;
-  final int failedExports;
-  final double averageProcessingTimeSeconds;
-  final int totalDataRecords;
-  final int totalExportedRecords;
-  final double averageFileSizeMb;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-
-  ExportMetrics({
-    required this.metricsId,
-    required this.totalExports,
-    required this.successfulExports,
-    required this.failedExports,
-    required this.averageProcessingTimeSeconds,
-    required this.totalDataRecords,
-    required this.totalExportedRecords,
-    required this.averageFileSizeMb,
-    required this.periodStart,
-    required this.periodEnd,
-  });
-
-  /// 成功率
-  double get successRate {
-    if (totalExports == 0) return 0.0;
-    return successfulExports / totalExports;
-  }
-
-  /// エクスポート率
-  double get exportRate {
-    if (totalDataRecords == 0) return 0.0;
-    return totalExportedRecords / totalDataRecords;
-  }
-
-  /// メトリクスが良好か
-  bool get isHealthy => successRate > 0.95;
-}
-
-/// エクスポートレポート
-class ExportReport {
   final String reportId;
-  final DateTime generatedAt;
-  final List<ExportJob> jobs;
-  final ExportMetrics metrics;
-  final List<String>? recommendations;
-  final Map<String, int> formatDistribution; // 形式別の件数
+  final ScheduleFrequency frequency;
+  final DateTime? lastRun;
+  final DateTime? nextRun;
+  final bool isActive;
+  final List<String> recipients;
 
-  ExportReport({
+  ScheduledReport({
+    required this.scheduleId,
     required this.reportId,
-    required this.generatedAt,
-    required this.jobs,
-    required this.metrics,
-    this.recommendations,
-    required this.formatDistribution,
+    required this.frequency,
+    this.lastRun,
+    this.nextRun,
+    this.isActive = true,
+    this.recipients = const [],
   });
 
-  /// Markdown形式で出力
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# Export Report');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('');
-
-    buffer.writeln('## Summary');
-    buffer.writeln('');
-    buffer.writeln('- Total Exports: ${metrics.totalExports}');
-    buffer.writeln('- Success Rate: ${(metrics.successRate * 100).toStringAsFixed(1)}%');
-    buffer.writeln('- Total Records: ${metrics.totalDataRecords}');
-    buffer.writeln('- Exported Records: ${metrics.totalExportedRecords}');
-    buffer.writeln('- Avg Processing Time: ${metrics.averageProcessingTimeSeconds.toStringAsFixed(2)}s');
-    buffer.writeln('');
-
-    if (recommendations != null && recommendations!.isNotEmpty) {
-      buffer.writeln('## Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations!.take(5)) {
-        buffer.writeln('- $rec');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
-  }
+  bool get isDue => nextRun != null && DateTime.now().isAfter(nextRun!);
+  bool get hasRecipients => recipients.isNotEmpty;
 }
 
-/// テンプレート
+class ExportFormatConfig {
+  final String formatId;
+  final String formatName;
+  final String extension;
+  final Map<String, dynamic> options;
+  final bool isSupported;
+
+  ExportFormatConfig({
+    required this.formatId,
+    required this.formatName,
+    required this.extension,
+    required this.options,
+    this.isSupported = true,
+  });
+
+  bool get hasAllOptions => options.isNotEmpty;
+}
+
 class ReportTemplate {
   final String templateId;
   final String templateName;
-  final ReportType reportType;
-  final String htmlContent;
-  final Map<String, String> placeholders; // {{placeholder}}形式
+  final String description;
+  final Map<String, dynamic> configuration;
   final DateTime createdAt;
-  final bool isActive;
 
   ReportTemplate({
     required this.templateId,
     required this.templateName,
-    required this.reportType,
-    required this.htmlContent,
-    required this.placeholders,
+    required this.description,
+    required this.configuration,
     required this.createdAt,
-    this.isActive = true,
   });
 
-  /// テンプレートが有効か
-  bool get isEnabled => isActive;
+  bool get isRecent => DateTime.now().difference(createdAt).inDays < 30;
+}
 
-  /// プレースホルダ数
-  int get placeholderCount => placeholders.length;
+class ExportStatistics {
+  final String statsId;
+  final int totalExports;
+  final int successfulExports;
+  final int failedExports;
+  final double averageFileSize;
+  final DateTime periodStart;
+  final DateTime periodEnd;
 
-  /// データを使用してテンプレートをレンダリング
-  String render(Map<String, String> data) {
-    var result = htmlContent;
-    data.forEach((key, value) {
-      result = result.replaceAll('{{$key}}', value);
-    });
-    return result;
-  }
+  ExportStatistics({
+    required this.statsId,
+    required this.totalExports,
+    required this.successfulExports,
+    required this.failedExports,
+    required this.averageFileSize,
+    required this.periodStart,
+    required this.periodEnd,
+  });
+
+  double get successRate => totalExports > 0 ? (successfulExports / totalExports) * 100 : 0.0;
+  bool get isHealthy => successRate > 95.0;
+}
+
+class ExportTask {
+  final String taskId;
+  final String jobId;
+  final String status;
+  final int progress;
+  final DateTime startedAt;
+  final DateTime? finishedAt;
+  final String? errorMessage;
+
+  ExportTask({
+    required this.taskId,
+    required this.jobId,
+    required this.status,
+    required this.progress,
+    required this.startedAt,
+    this.finishedAt,
+    this.errorMessage,
+  });
+
+  bool get isCompleted => status == 'completed';
+  bool get hasError => errorMessage != null;
+  int get durationInSeconds => finishedAt != null ? finishedAt!.difference(startedAt).inSeconds : 0;
+}
+
+class ExportFilter {
+  final String filterId;
+  final List<String> fields;
+  final Map<String, dynamic> conditions;
+  final DateTime createdAt;
+
+  ExportFilter({
+    required this.filterId,
+    required this.fields,
+    required this.conditions,
+    required this.createdAt,
+  });
+
+  bool get hasFilters => conditions.isNotEmpty;
+  int get fieldCount => fields.length;
+}
+
+class ExportLog {
+  final String logId;
+  final String jobId;
+  final String event;
+  final DateTime timestamp;
+  final Map<String, dynamic> metadata;
+
+  ExportLog({
+    required this.logId,
+    required this.jobId,
+    required this.event,
+    required this.timestamp,
+    required this.metadata,
+  });
+
+  bool get isRecent => DateTime.now().difference(timestamp).inHours < 24;
+}
+
+class ReportData {
+  final String dataId;
+  final String reportId;
+  final List<Map<String, dynamic>> rows;
+  final List<String> columns;
+  final int totalRows;
+
+  ReportData({
+    required this.dataId,
+    required this.reportId,
+    required this.rows,
+    required this.columns,
+    required this.totalRows,
+  });
+
+  bool get hasData => rows.isNotEmpty;
+  double get completeness => totalRows > 0 ? (rows.length / totalRows) * 100 : 0.0;
+}
+
+class ExportSchedule {
+  final String scheduleId;
+  final String jobId;
+  final ScheduleFrequency frequency;
+  final DateTime? nextExecution;
+  final DateTime? lastExecution;
+  final bool isEnabled;
+  final int maxRetries;
+
+  ExportSchedule({
+    required this.scheduleId,
+    required this.jobId,
+    required this.frequency,
+    this.nextExecution,
+    this.lastExecution,
+    this.isEnabled = true,
+    this.maxRetries = 3,
+  });
+
+  bool get isDue => nextExecution != null && DateTime.now().isAfter(nextExecution!);
+  bool get hasExecuted => lastExecution != null;
+}
+
+class ExportNotification {
+  final String notificationId;
+  final String exportJobId;
+  final String recipient;
+  final String status;
+  final DateTime sentAt;
+  final String? error;
+
+  ExportNotification({
+    required this.notificationId,
+    required this.exportJobId,
+    required this.recipient,
+    required this.status,
+    required this.sentAt,
+    this.error,
+  });
+
+  bool get isDelivered => status == 'delivered';
+  bool get hasFailed => status == 'failed';
 }
