@@ -1,533 +1,264 @@
-/// Phase 59: Real-time Notifications & Alerts リアルタイム通知・アラート
-///
-/// 通知、アラート、チャネル、テンプレート、配信トラッキング機能
+/// Real-time Notification & Messaging Models
 
-/// 通知タイプ
-enum NotificationType {
-  info('info'),
-  warning('warning'),
-  error('error'),
-  success('success'),
-  alert('alert');
+enum NotificationChannel { email, sms, push, webhook, inApp, slack, teams }
+enum NotificationStatus { pending, sent, delivered, failed, expired, archived }
+enum NotificationPriority { critical, high, normal, low, minimal }
+enum MessageType { alert, update, reminder, confirmation, broadcast, scheduled }
+enum SubscriptionStatus { active, paused, unsubscribed, suspended, expired }
+enum NotificationTopic { incident, deployment, health, performance, security, audit }
 
-  final String value;
-  const NotificationType(this.value);
-}
-
-/// 配信チャネル
-enum DeliveryChannel {
-  inApp('in_app'),
-  email('email'),
-  sms('sms'),
-  pushNotification('push'),
-  slack('slack'),
-  webhook('webhook');
-
-  final String value;
-  const DeliveryChannel(this.value);
-}
-
-/// 通知ステータス
-enum NotificationStatus {
-  pending('pending'),
-  sent('sent'),
-  delivered('delivered'),
-  read('read'),
-  failed('failed'),
-  bounced('bounced');
-
-  final String value;
-  const NotificationStatus(this.value);
-}
-
-/// 優先度レベル
-enum PriorityLevel {
-  low('low'),
-  normal('normal'),
-  high('high'),
-  critical('critical');
-
-  final String value;
-  const PriorityLevel(this.value);
-}
-
-/// アラートタイプ
-enum AlertType {
-  threshold('threshold'),
-  anomaly('anomaly'),
-  errorRate('error_rate'),
-  performanceDegradation('performance_degradation'),
-  securityEvent('security_event'),
-  custom('custom');
-
-  final String value;
-  const AlertType(this.value);
-}
-
-/// アラートステータス
-enum AlertStatus {
-  active('active'),
-  acknowledged('acknowledged'),
-  resolved('resolved'),
-  silenced('silenced');
-
-  final String value;
-  const AlertStatus(this.value);
-}
-
-/// 基本通知
 class Notification {
   final String notificationId;
-  final String userId;
+  final String recipientId;
   final String title;
   final String message;
-  final NotificationType notificationType;
-  final PriorityLevel priority;
-  final DateTime createdAt;
-  final DateTime? readAt;
+  final NotificationChannel channel;
   final NotificationStatus status;
-  final Map<String, dynamic>? metadata;
-  final String? actionUrl;
+  final NotificationPriority priority;
+  final DateTime createdAt;
+  final DateTime? sentAt;
+  final DateTime? deliveredAt;
+  final String? relatedEntityId;
+  final Map<String, dynamic> metadata;
 
   Notification({
     required this.notificationId,
-    required this.userId,
+    required this.recipientId,
     required this.title,
     required this.message,
-    required this.notificationType,
-    this.priority = PriorityLevel.normal,
+    required this.channel,
+    required this.status,
+    required this.priority,
+    required this.createdAt,
+    this.sentAt,
+    this.deliveredAt,
+    this.relatedEntityId,
+    required this.metadata,
+  });
+
+  bool get isPending => status == NotificationStatus.pending;
+  bool get isDelivered => status == NotificationStatus.delivered;
+  bool get isFailed => status == NotificationStatus.failed;
+  bool get isUrgent => priority == NotificationPriority.critical || priority == NotificationPriority.high;
+  int get ageInMinutes => DateTime.now().difference(createdAt).inMinutes;
+  int get deliveryTimeMs => deliveredAt != null ? deliveredAt!.difference(createdAt).inMilliseconds : -1;
+}
+
+class Message {
+  final String messageId;
+  final String senderId;
+  final String recipientId;
+  final String content;
+  final MessageType type;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  final List<String> attachmentIds;
+  final Map<String, dynamic> context;
+  final bool isArchived;
+
+  Message({
+    required this.messageId,
+    required this.senderId,
+    required this.recipientId,
+    required this.content,
+    required this.type,
     required this.createdAt,
     this.readAt,
-    this.status = NotificationStatus.pending,
-    this.metadata,
-    this.actionUrl,
+    required this.attachmentIds,
+    required this.context,
+    this.isArchived = false,
   });
 
-  /// 通知が配信されたか
-  bool get isDelivered => status == NotificationStatus.delivered || status == NotificationStatus.read;
-
-  /// 通知が読まれたか
   bool get isRead => readAt != null;
-
-  /// 通知が失敗したか
-  bool get hasFailed => status == NotificationStatus.failed || status == NotificationStatus.bounced;
-
-  /// 優先度は高いか
-  bool get isHighPriority => priority == PriorityLevel.high || priority == PriorityLevel.critical;
-
-  /// 通知年齢（時間）
-  int get ageInHours => DateTime.now().difference(createdAt).inHours;
-
-  /// 通知が古いか（24時間以上）
-  bool get isOld => ageInHours > 24;
+  bool get isUnread => readAt == null;
+  int get ageInMinutes => DateTime.now().difference(createdAt).inMinutes;
+  int get attachmentCount => attachmentIds.length;
 }
 
-/// 配信ログ
-class DeliveryLog {
-  final String logId;
-  final String notificationId;
-  final DeliveryChannel channel;
-  final DateTime sentAt;
-  final DateTime? deliveredAt;
-  final NotificationStatus status;
-  final String? errorMessage;
-  final int retryCount;
-  final String? recipientIdentifier;
+class Subscription {
+  final String subscriptionId;
+  final String userId;
+  final NotificationTopic topic;
+  final List<NotificationChannel> channels;
+  final SubscriptionStatus status;
+  final DateTime createdAt;
+  final DateTime? modifiedAt;
+  final bool muteNotifications;
+  final int? dailyLimitCount;
 
-  DeliveryLog({
-    required this.logId,
-    required this.notificationId,
-    required this.channel,
-    required this.sentAt,
-    this.deliveredAt,
-    this.status = NotificationStatus.pending,
-    this.errorMessage,
-    this.retryCount = 0,
-    this.recipientIdentifier,
+  Subscription({
+    required this.subscriptionId,
+    required this.userId,
+    required this.topic,
+    required this.channels,
+    required this.status,
+    required this.createdAt,
+    this.modifiedAt,
+    this.muteNotifications = false,
+    this.dailyLimitCount,
   });
 
-  /// 配信が成功したか
-  bool get isSuccessful => status == NotificationStatus.delivered || status == NotificationStatus.read;
-
-  /// 配信が失敗したか
-  bool get hasFailed => status == NotificationStatus.failed || status == NotificationStatus.bounced;
-
-  /// 配信時間（秒）
-  int? get deliveryTimeInSeconds {
-    if (deliveredAt == null) return null;
-    return deliveredAt!.difference(sentAt).inSeconds;
-  }
-
-  /// 配信待機中か
-  bool get isPending => status == NotificationStatus.pending;
+  bool get isActive => status == SubscriptionStatus.active;
+  bool get isPaused => status == SubscriptionStatus.paused;
+  bool get isUnsubscribed => status == SubscriptionStatus.unsubscribed;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+  int get channelCount => channels.length;
 }
 
-/// 通知テンプレート
 class NotificationTemplate {
   final String templateId;
-  final String templateName;
-  final String titleTemplate;
+  final String name;
+  final String title;
   final String messageTemplate;
-  final NotificationType notificationType;
-  final PriorityLevel defaultPriority;
-  final List<DeliveryChannel> channels;
+  final NotificationTopic topic;
+  final NotificationPriority defaultPriority;
+  final List<NotificationChannel> supportedChannels;
   final DateTime createdAt;
-  final DateTime? updatedAt;
   final bool isActive;
-  final int usageCount;
+  final Map<String, String> placeholders;
 
   NotificationTemplate({
     required this.templateId,
-    required this.templateName,
-    required this.titleTemplate,
+    required this.name,
+    required this.title,
     required this.messageTemplate,
-    required this.notificationType,
-    this.defaultPriority = PriorityLevel.normal,
-    required this.channels,
+    required this.topic,
+    required this.defaultPriority,
+    required this.supportedChannels,
     required this.createdAt,
-    this.updatedAt,
     this.isActive = true,
-    this.usageCount = 0,
+    required this.placeholders,
   });
 
-  /// テンプレートが有効か
-  bool get isEnabled => isActive;
-
-  /// チャネル数
-  int get channelCount => channels.length;
-
-  /// テンプレートはよく使われているか（10回以上）
-  bool get isPopular => usageCount >= 10;
+  bool get isUsable => isActive && supportedChannels.isNotEmpty;
+  int get placeholderCount => placeholders.length;
 }
 
-/// 通知パラメータ
-class NotificationParameter {
-  final String parameterId;
-  final String templateId;
-  final String parameterName;
-  final String defaultValue;
-  final bool isRequired;
-  final String? description;
+class NotificationSchedule {
+  final String scheduleId;
+  final String notificationId;
+  final DateTime scheduledTime;
+  final bool isRecurring;
+  final String? recurringPattern;
+  final DateTime? expiresAt;
+  final DateTime? executedAt;
+  final bool isActive;
 
-  NotificationParameter({
-    required this.parameterId,
-    required this.templateId,
-    required this.parameterName,
-    required this.defaultValue,
-    this.isRequired = false,
-    this.description,
+  NotificationSchedule({
+    required this.scheduleId,
+    required this.notificationId,
+    required this.scheduledTime,
+    this.isRecurring = false,
+    this.recurringPattern,
+    this.expiresAt,
+    this.executedAt,
+    this.isActive = true,
   });
 
-  /// パラメータが必須か
-  bool get isMandatory => isRequired;
+  bool get isPending => executedAt == null;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isDue => DateTime.now().isAfter(scheduledTime) && !isPending;
+  int get minutesUntilExecution => scheduledTime.difference(DateTime.now()).inMinutes;
 }
 
-/// ユーザー通知設定
 class NotificationPreference {
   final String preferenceId;
   final String userId;
-  final Map<DeliveryChannel, bool> channelPreferences;
-  final Map<NotificationType, bool> typePreferences;
-  final bool emailNotifications;
-  final bool smsNotifications;
-  final bool pushNotifications;
-  final bool inAppNotifications;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final bool isEnabled;
+  final Map<NotificationChannel, bool> channelPreferences;
+  final Map<NotificationTopic, bool> topicPreferences;
+  final int? quietHourStart;
+  final int? quietHourEnd;
+  final NotificationPriority? minimumPriority;
+  final DateTime lastModified;
 
   NotificationPreference({
     required this.preferenceId,
     required this.userId,
     required this.channelPreferences,
-    required this.typePreferences,
-    this.emailNotifications = true,
-    this.smsNotifications = false,
-    this.pushNotifications = true,
-    this.inAppNotifications = true,
-    required this.createdAt,
-    this.updatedAt,
-    this.isActive = true,
+    required this.topicPreferences,
+    this.quietHourStart,
+    this.quietHourEnd,
+    this.minimumPriority,
+    required this.lastModified,
   });
 
-  bool isActive;
-
-  /// 設定が有効か
-  bool get isEnabled => isActive;
-
-  /// 通知が完全に無効か
-  bool get isCompletelyDisabled => !emailNotifications && !smsNotifications && !pushNotifications && !inAppNotifications;
-
-  /// 有効なチャネル数
-  int get enabledChannelCount => [emailNotifications, smsNotifications, pushNotifications, inAppNotifications].where((e) => e).length;
+  bool get hasQuietHours => quietHourStart != null && quietHourEnd != null;
+  int get enabledChannels => channelPreferences.values.where((v) => v).length;
+  int get enabledTopics => topicPreferences.values.where((v) => v).length;
 }
 
-/// アラート定義
-class Alert {
-  final String alertId;
-  final String alertName;
-  final AlertType alertType;
-  final String condition;
-  final PriorityLevel severity;
-  final List<String> recipients;
-  final List<DeliveryChannel> notificationChannels;
+class NotificationBatch {
+  final String batchId;
+  final List<String> notificationIds;
+  final int totalCount;
+  final int successCount;
+  final int failureCount;
   final DateTime createdAt;
-  final DateTime? lastTriggeredAt;
-  final AlertStatus status;
-  final bool isEnabled;
-  final int triggerCount;
+  final DateTime? completedAt;
+  final String status;
 
-  Alert({
-    required this.alertId,
-    required this.alertName,
-    required this.alertType,
-    required this.condition,
-    required this.severity,
-    required this.recipients,
-    required this.notificationChannels,
+  NotificationBatch({
+    required this.batchId,
+    required this.notificationIds,
+    required this.totalCount,
+    required this.successCount,
+    required this.failureCount,
     required this.createdAt,
-    this.lastTriggeredAt,
-    this.status = AlertStatus.active,
-    this.isEnabled = true,
-    this.triggerCount = 0,
+    this.completedAt,
+    required this.status,
   });
 
-  /// アラートが有効か
-  bool get isActive => isEnabled && status != AlertStatus.silenced;
-
-  /// アラートは最近トリガーされたか（1時間以内）
-  bool get wasRecentlyTriggered {
-    if (lastTriggeredAt == null) return false;
-    return DateTime.now().difference(lastTriggeredAt!).inMinutes < 60;
-  }
-
-  /// アラートはよくトリガーされているか（10回以上）
-  bool get isFrequent => triggerCount >= 10;
-
-  /// 最後のトリガーからの経過時間（時間）
-  int? get hoursSinceLastTrigger {
-    if (lastTriggeredAt == null) return null;
-    return DateTime.now().difference(lastTriggeredAt!).inHours;
-  }
+  double get successRate => totalCount > 0 ? (successCount / totalCount) * 100 : 0.0;
+  bool get isComplete => completedAt != null;
+  int get processingTimeMs => completedAt != null ? completedAt!.difference(createdAt).inMilliseconds : -1;
 }
 
-/// アラートイベント
-class AlertEvent {
-  final String eventId;
-  final String alertId;
-  final DateTime occurredAt;
-  final String message;
-  final Map<String, dynamic>? details;
-  final String severity;
-  final bool isAcknowledged;
-  final DateTime? acknowledgedAt;
-  final String? acknowledgedBy;
-
-  AlertEvent({
-    required this.eventId,
-    required this.alertId,
-    required this.occurredAt,
-    required this.message,
-    this.details,
-    this.severity = 'warning',
-    this.isAcknowledged = false,
-    this.acknowledgedAt,
-    this.acknowledgedBy,
-  });
-
-  /// イベントが確認されたか
-  bool get isConfirmed => isAcknowledged;
-
-  /// イベント年齢（分）
-  int get ageInMinutes => DateTime.now().difference(occurredAt).inMinutes;
-
-  /// イベントは最近か（30分以内）
-  bool get isRecent => ageInMinutes < 30;
-}
-
-/// 通知統計
-class NotificationStats {
-  final String statsId;
-  final int totalNotifications;
-  final int sentNotifications;
-  final int deliveredNotifications;
-  final int readNotifications;
-  final int failedNotifications;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final double deliveryRate; // 0.0-1.0
-  final double readRate; // 0.0-1.0
-  final int averageDeliveryTimeSeconds;
-
-  NotificationStats({
-    required this.statsId,
-    required this.totalNotifications,
-    required this.sentNotifications,
-    required this.deliveredNotifications,
-    required this.readNotifications,
-    required this.failedNotifications,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.deliveryRate,
-    required this.readRate,
-    required this.averageDeliveryTimeSeconds,
-  });
-
-  /// 統計が良好か
-  bool get isHealthy => deliveryRate > 0.95 && readRate > 0.5;
-
-  /// 配信率はパーセンテージ
-  double get deliveryRatePercentage => deliveryRate * 100;
-
-  /// 開封率はパーセンテージ
-  double get readRatePercentage => readRate * 100;
-
-  /// 失敗率
-  double get failureRate {
-    if (totalNotifications == 0) return 0.0;
-    return failedNotifications / totalNotifications;
-  }
-}
-
-/// 通知レポート
-class NotificationReport {
-  final String reportId;
-  final DateTime generatedAt;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final NotificationStats stats;
-  final List<String> topNotificationTypes;
-  final List<String> topChannels;
-  final List<String>? recommendations;
-
-  NotificationReport({
-    required this.reportId,
-    required this.generatedAt,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.stats,
-    required this.topNotificationTypes,
-    required this.topChannels,
-    this.recommendations,
-  });
-
-  /// レポートが良好か
-  bool get isHealthy => stats.isHealthy;
-
-  /// Markdown形式で出力
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# Notification Report');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('');
-
-    buffer.writeln('## Summary');
-    buffer.writeln('');
-    buffer.writeln('- Total Notifications: ${stats.totalNotifications}');
-    buffer.writeln('- Delivery Rate: ${stats.deliveryRatePercentage.toStringAsFixed(1)}%');
-    buffer.writeln('- Read Rate: ${stats.readRatePercentage.toStringAsFixed(1)}%');
-    buffer.writeln('- Failed: ${stats.failedNotifications}');
-    buffer.writeln('- Average Delivery Time: ${stats.averageDeliveryTimeSeconds}s');
-    buffer.writeln('');
-
-    if (topNotificationTypes.isNotEmpty) {
-      buffer.writeln('## Top Notification Types');
-      buffer.writeln('');
-      for (final type in topNotificationTypes.take(5)) {
-        buffer.writeln('- $type');
-      }
-      buffer.writeln('');
-    }
-
-    if (topChannels.isNotEmpty) {
-      buffer.writeln('## Top Channels');
-      buffer.writeln('');
-      for (final channel in topChannels.take(5)) {
-        buffer.writeln('- $channel');
-      }
-      buffer.writeln('');
-    }
-
-    if (recommendations != null && recommendations!.isNotEmpty) {
-      buffer.writeln('## Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations!.take(5)) {
-        buffer.writeln('- $rec');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
-  }
-}
-
-/// 通知キューエントリ
-class QueueEntry {
-  final String entryId;
+class NotificationLog {
+  final String logId;
   final String notificationId;
-  final DeliveryChannel channel;
-  final DateTime enqueuedAt;
-  final DateTime? processedAt;
-  final String status; // queued, processing, completed, failed
-  final int priority;
-  final int retryCount;
-  final String? lastError;
+  final DateTime timestamp;
+  final String eventType;
+  final String? errorMessage;
+  final Map<String, dynamic> details;
 
-  QueueEntry({
-    required this.entryId,
+  NotificationLog({
+    required this.logId,
     required this.notificationId,
-    required this.channel,
-    required this.enqueuedAt,
-    this.processedAt,
-    this.status = 'queued',
-    this.priority = 0,
-    this.retryCount = 0,
-    this.lastError,
+    required this.timestamp,
+    required this.eventType,
+    this.errorMessage,
+    required this.details,
   });
 
-  /// エントリが処理中か
-  bool get isProcessing => status == 'processing';
-
-  /// エントリが完了したか
-  bool get isCompleted => status == 'completed';
-
-  /// エントリが失敗したか
-  bool get hasFailed => status == 'failed';
-
-  /// 待機時間（秒）
-  int? get queuedTimeInSeconds {
-    if (processedAt == null) return null;
-    return processedAt!.difference(enqueuedAt).inSeconds;
-  }
-
-  /// 再試行が必要か
-  bool get needsRetry => retryCount < 3 && hasFailed;
+  bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
+  int get ageInMinutes => DateTime.now().difference(timestamp).inMinutes;
 }
 
-/// チャネル設定
-class ChannelConfiguration {
-  final String configId;
-  final DeliveryChannel channel;
-  final bool isEnabled;
-  final Map<String, dynamic> settings;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final bool isVerified;
+class NotificationAnalytics {
+  final String analyticsId;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final int totalSent;
+  final int totalDelivered;
+  final int totalFailed;
+  final double deliveryRate;
+  final Map<NotificationChannel, int> channelBreakdown;
+  final Map<NotificationTopic, int> topicBreakdown;
+  final double averageDeliveryTimeMs;
 
-  ChannelConfiguration({
-    required this.configId,
-    required this.channel,
-    required this.isEnabled,
-    required this.settings,
-    required this.createdAt,
-    this.updatedAt,
-    this.isVerified = false,
+  NotificationAnalytics({
+    required this.analyticsId,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.totalSent,
+    required this.totalDelivered,
+    required this.totalFailed,
+    required this.deliveryRate,
+    required this.channelBreakdown,
+    required this.topicBreakdown,
+    required this.averageDeliveryTimeMs,
   });
 
-  /// チャネルが有効か
-  bool get isActive => isEnabled && isVerified;
-
-  /// チャネルが検証済みか
-  bool get isReady => isVerified;
+  double get failureRate => totalSent > 0 ? ((totalSent - totalDelivered) / totalSent) * 100 : 0.0;
+  int get periodInDays => periodEnd.difference(periodStart).inDays;
 }
