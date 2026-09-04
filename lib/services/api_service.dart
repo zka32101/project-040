@@ -1,646 +1,520 @@
+/// API Integration & Webhook Services
+///
+/// Implements Repository + Engine + Manager + Facade pattern for:
+/// - API request/response handling
+/// - Webhook management and delivery
+/// - Authentication and credentials
+/// - Rate limiting and quota management
+/// - Integration status tracking
+
 import '../models/api_models.dart';
 
-/// APIリポジトリインターフェース
+// ============================================================================
+// REPOSITORY INTERFACE & IMPLEMENTATION
+// ============================================================================
+
+/// Repository interface for API data persistence
 abstract class ApiRepository {
-  // エンドポイント操作
-  Future<void> addEndpoint(ApiEndpoint endpoint);
-  Future<ApiEndpoint?> getEndpoint(String endpointId);
-  Future<List<ApiEndpoint>> getAllEndpoints();
-  Future<List<ApiEndpoint>> getActiveEndpoints();
-  Future<void> updateEndpoint(ApiEndpoint endpoint);
-  Future<void> deleteEndpoint(String endpointId);
+  // API Configuration operations
+  Future<void> createApiConfiguration(ApiConfiguration config);
+  Future<ApiConfiguration?> getApiConfiguration(String configId);
+  Future<List<ApiConfiguration>> getAllConfigurations();
+  Future<void> updateApiConfiguration(ApiConfiguration config);
+  Future<void> deleteApiConfiguration(String configId);
 
-  // リクエスト操作
-  Future<void> addRequest(ApiRequest request);
-  Future<ApiRequest?> getRequest(String requestId);
-  Future<List<ApiRequest>> getEndpointRequests(String endpointId);
-  Future<List<ApiRequest>> getFailedRequests();
-  Future<void> deleteRequest(String requestId);
+  // API Credential operations
+  Future<void> createApiCredential(ApiCredential credential);
+  Future<ApiCredential?> getApiCredential(String credentialId);
+  Future<List<ApiCredential>> getCredentialsByConfig(String configId);
+  Future<void> updateApiCredential(ApiCredential credential);
+  Future<void> deleteApiCredential(String credentialId);
 
-  // Webhook操作
-  Future<void> addWebhook(WebhookEndpoint webhook);
-  Future<WebhookEndpoint?> getWebhook(String webhookId);
-  Future<List<WebhookEndpoint>> getAllWebhooks();
-  Future<List<WebhookEndpoint>> getActiveWebhooks();
-  Future<List<WebhookEndpoint>> getWebhooksByEvent(WebhookEventType eventType);
-  Future<void> updateWebhook(WebhookEndpoint webhook);
+  // Webhook operations
+  Future<void> createWebhook(Webhook webhook);
+  Future<Webhook?> getWebhook(String webhookId);
+  Future<List<Webhook>> getWebhooksByConfig(String configId);
+  Future<void> updateWebhook(Webhook webhook);
   Future<void> deleteWebhook(String webhookId);
 
-  // Webhookペイロード操作
-  Future<void> addPayload(WebhookPayload payload);
-  Future<WebhookPayload?> getPayload(String payloadId);
-  Future<List<WebhookPayload>> getWebhookPayloads(String webhookId);
-  Future<List<WebhookPayload>> getPendingPayloads();
-  Future<void> updatePayload(WebhookPayload payload);
-  Future<void> deletePayload(String payloadId);
+  // Webhook delivery attempts
+  Future<void> recordDeliveryAttempt(WebhookDeliveryAttempt attempt);
+  Future<List<WebhookDeliveryAttempt>> getDeliveryAttempts(String webhookId);
+  Future<List<WebhookDeliveryAttempt>> getFailedAttempts();
 
-  // API設定操作
-  Future<void> addConfiguration(ApiConfiguration config);
-  Future<ApiConfiguration?> getConfiguration(String configId);
-  Future<List<ApiConfiguration>> getAllConfigurations();
-  Future<void> updateConfiguration(ApiConfiguration config);
-  Future<void> deleteConfiguration(String configId);
+  // API Requests and Responses
+  Future<void> recordRequest(ApiRequest request);
+  Future<void> recordResponse(ApiResponse response);
+  Future<ApiResponse?> getResponse(String responseId);
 
-  // イベント操作
-  Future<void> addEvent(WebhookEvent event);
-  Future<WebhookEvent?> getEvent(String eventId);
-  Future<List<WebhookEvent>> getEventsByType(WebhookEventType eventType);
-  Future<void> deleteEvent(String eventId);
+  // Rate limits
+  Future<void> createRateLimit(RateLimit limit);
+  Future<RateLimit?> getRateLimit(String rateLimitId);
+  Future<void> updateRateLimit(RateLimit limit);
 
-  // メトリクス操作
-  Future<void> addMetrics(ApiMetrics metrics);
-  Future<ApiMetrics?> getMetrics(String metricsId);
-  Future<List<ApiMetrics>> getRecentMetrics(int count);
-  Future<void> deleteMetrics(String metricsId);
+  // Integration status
+  Future<void> recordIntegration(ApiIntegration integration);
+  Future<ApiIntegration?> getIntegration(String integrationId);
+  Future<List<ApiIntegration>> getAllIntegrations();
 
-  // レート制限操作
-  Future<void> addRateLimit(RateLimitInfo info);
-  Future<RateLimitInfo?> getRateLimit(String limitId);
-  Future<void> updateRateLimit(RateLimitInfo info);
+  // OAuth2
+  Future<void> createOAuth2Config(OAuth2Config config);
+  Future<OAuth2Config?> getOAuth2Config(String configId);
+  Future<void> storeOAuth2Token(OAuth2Token token);
+  Future<OAuth2Token?> getOAuth2Token(String tokenId);
+
+  // Statistics
+  Future<void> recordApiUsageStats(ApiUsageStats stats);
+  Future<ApiUsageStats?> getApiUsageStats(String statsId);
+  Future<void> recordWebhookStats(WebhookStats stats);
+  Future<WebhookStats?> getWebhookStats(String statsId);
+
+  // Errors
+  Future<void> recordApiError(ApiError error);
+  Future<List<ApiError>> getRecentErrors(String configId);
 }
 
-/// メモリ実装のAPIリポジトリ
+/// In-memory implementation of ApiRepository
 class MemoryApiRepository implements ApiRepository {
-  final Map<String, ApiEndpoint> _endpoints = {};
+  final Map<String, ApiConfiguration> _configs = {};
+  final Map<String, ApiCredential> _credentials = {};
+  final Map<String, Webhook> _webhooks = {};
+  final Map<String, WebhookDeliveryAttempt> _deliveryAttempts = {};
   final Map<String, ApiRequest> _requests = {};
-  final Map<String, WebhookEndpoint> _webhooks = {};
-  final Map<String, WebhookPayload> _payloads = {};
-  final Map<String, ApiConfiguration> _configurations = {};
-  final Map<String, WebhookEvent> _events = {};
-  final Map<String, ApiMetrics> _metrics = {};
-  final Map<String, RateLimitInfo> _rateLimits = {};
+  final Map<String, ApiResponse> _responses = {};
+  final Map<String, RateLimit> _rateLimits = {};
+  final Map<String, ApiIntegration> _integrations = {};
+  final Map<String, OAuth2Config> _oauth2Configs = {};
+  final Map<String, OAuth2Token> _oauth2Tokens = {};
+  final Map<String, ApiUsageStats> _usageStats = {};
+  final Map<String, WebhookStats> _webhookStats = {};
+  final Map<String, ApiError> _errors = {};
 
   @override
-  Future<void> addEndpoint(ApiEndpoint endpoint) async {
-    _endpoints[endpoint.endpointId] = endpoint;
-  }
+  Future<void> createApiConfiguration(ApiConfiguration config) async =>
+      _configs[config.configId] = config;
 
   @override
-  Future<ApiEndpoint?> getEndpoint(String endpointId) async {
-    return _endpoints[endpointId];
-  }
+  Future<ApiConfiguration?> getApiConfiguration(String configId) async =>
+      _configs[configId];
 
   @override
-  Future<List<ApiEndpoint>> getAllEndpoints() async {
-    return _endpoints.values.toList();
-  }
+  Future<List<ApiConfiguration>> getAllConfigurations() async =>
+      _configs.values.toList();
 
   @override
-  Future<List<ApiEndpoint>> getActiveEndpoints() async {
-    return _endpoints.values.where((e) => e.isActive).toList();
-  }
+  Future<void> updateApiConfiguration(ApiConfiguration config) async =>
+      _configs[config.configId] = config;
 
   @override
-  Future<void> updateEndpoint(ApiEndpoint endpoint) async {
-    _endpoints[endpoint.endpointId] = endpoint;
-  }
+  Future<void> deleteApiConfiguration(String configId) async =>
+      _configs.remove(configId);
 
   @override
-  Future<void> deleteEndpoint(String endpointId) async {
-    _endpoints.remove(endpointId);
-  }
+  Future<void> createApiCredential(ApiCredential credential) async =>
+      _credentials[credential.credentialId] = credential;
 
   @override
-  Future<void> addRequest(ApiRequest request) async {
-    _requests[request.requestId] = request;
-  }
+  Future<ApiCredential?> getApiCredential(String credentialId) async =>
+      _credentials[credentialId];
 
   @override
-  Future<ApiRequest?> getRequest(String requestId) async {
-    return _requests[requestId];
-  }
+  Future<List<ApiCredential>> getCredentialsByConfig(String configId) async =>
+      _credentials.values
+          .where((c) => c.configId == configId)
+          .toList();
 
   @override
-  Future<List<ApiRequest>> getEndpointRequests(String endpointId) async {
-    return _requests.values.where((r) => r.endpointId == endpointId).toList();
-  }
+  Future<void> updateApiCredential(ApiCredential credential) async =>
+      _credentials[credential.credentialId] = credential;
 
   @override
-  Future<List<ApiRequest>> getFailedRequests() async {
-    return _requests.values.where((r) => !r.isSuccessful).toList();
-  }
+  Future<void> deleteApiCredential(String credentialId) async =>
+      _credentials.remove(credentialId);
 
   @override
-  Future<void> deleteRequest(String requestId) async {
-    _requests.remove(requestId);
-  }
+  Future<void> createWebhook(Webhook webhook) async =>
+      _webhooks[webhook.webhookId] = webhook;
 
   @override
-  Future<void> addWebhook(WebhookEndpoint webhook) async {
-    _webhooks[webhook.webhookId] = webhook;
-  }
+  Future<Webhook?> getWebhook(String webhookId) async =>
+      _webhooks[webhookId];
 
   @override
-  Future<WebhookEndpoint?> getWebhook(String webhookId) async {
-    return _webhooks[webhookId];
-  }
+  Future<List<Webhook>> getWebhooksByConfig(String configId) async =>
+      _webhooks.values
+          .where((w) => w.configId == configId)
+          .toList();
 
   @override
-  Future<List<WebhookEndpoint>> getAllWebhooks() async {
-    return _webhooks.values.toList();
-  }
+  Future<void> updateWebhook(Webhook webhook) async =>
+      _webhooks[webhook.webhookId] = webhook;
 
   @override
-  Future<List<WebhookEndpoint>> getActiveWebhooks() async {
-    return _webhooks.values.where((w) => w.isActive).toList();
-  }
+  Future<void> deleteWebhook(String webhookId) async =>
+      _webhooks.remove(webhookId);
 
   @override
-  Future<List<WebhookEndpoint>> getWebhooksByEvent(WebhookEventType eventType) async {
-    return _webhooks.values.where((w) => w.events.contains(eventType)).toList();
-  }
+  Future<void> recordDeliveryAttempt(WebhookDeliveryAttempt attempt) async =>
+      _deliveryAttempts[attempt.attemptId] = attempt;
 
   @override
-  Future<void> updateWebhook(WebhookEndpoint webhook) async {
-    _webhooks[webhook.webhookId] = webhook;
-  }
+  Future<List<WebhookDeliveryAttempt>> getDeliveryAttempts(
+          String webhookId) async =>
+      _deliveryAttempts.values
+          .where((a) => a.webhookId == webhookId)
+          .toList();
 
   @override
-  Future<void> deleteWebhook(String webhookId) async {
-    _webhooks.remove(webhookId);
-  }
+  Future<List<WebhookDeliveryAttempt>> getFailedAttempts() async =>
+      _deliveryAttempts.values
+          .where((a) => a.hasFailed)
+          .toList();
 
   @override
-  Future<void> addPayload(WebhookPayload payload) async {
-    _payloads[payload.payloadId] = payload;
-  }
+  Future<void> recordRequest(ApiRequest request) async =>
+      _requests[request.requestId] = request;
 
   @override
-  Future<WebhookPayload?> getPayload(String payloadId) async {
-    return _payloads[payloadId];
-  }
+  Future<void> recordResponse(ApiResponse response) async =>
+      _responses[response.responseId] = response;
 
   @override
-  Future<List<WebhookPayload>> getWebhookPayloads(String webhookId) async {
-    return _payloads.values.where((p) => p.webhookId == webhookId).toList();
-  }
+  Future<ApiResponse?> getResponse(String responseId) async =>
+      _responses[responseId];
 
   @override
-  Future<List<WebhookPayload>> getPendingPayloads() async {
-    return _payloads.values.where((p) => p.isPending).toList();
-  }
+  Future<void> createRateLimit(RateLimit limit) async =>
+      _rateLimits[limit.rateLimitId] = limit;
 
   @override
-  Future<void> updatePayload(WebhookPayload payload) async {
-    _payloads[payload.payloadId] = payload;
-  }
+  Future<RateLimit?> getRateLimit(String rateLimitId) async =>
+      _rateLimits[rateLimitId];
 
   @override
-  Future<void> deletePayload(String payloadId) async {
-    _payloads.remove(payloadId);
-  }
+  Future<void> updateRateLimit(RateLimit limit) async =>
+      _rateLimits[limit.rateLimitId] = limit;
 
   @override
-  Future<void> addConfiguration(ApiConfiguration config) async {
-    _configurations[config.configId] = config;
-  }
+  Future<void> recordIntegration(ApiIntegration integration) async =>
+      _integrations[integration.integrationId] = integration;
 
   @override
-  Future<ApiConfiguration?> getConfiguration(String configId) async {
-    return _configurations[configId];
-  }
+  Future<ApiIntegration?> getIntegration(String integrationId) async =>
+      _integrations[integrationId];
 
   @override
-  Future<List<ApiConfiguration>> getAllConfigurations() async {
-    return _configurations.values.toList();
-  }
+  Future<List<ApiIntegration>> getAllIntegrations() async =>
+      _integrations.values.toList();
 
   @override
-  Future<void> updateConfiguration(ApiConfiguration config) async {
-    _configurations[config.configId] = config;
-  }
+  Future<void> createOAuth2Config(OAuth2Config config) async =>
+      _oauth2Configs[config.configId] = config;
 
   @override
-  Future<void> deleteConfiguration(String configId) async {
-    _configurations.remove(configId);
-  }
+  Future<OAuth2Config?> getOAuth2Config(String configId) async =>
+      _oauth2Configs[configId];
 
   @override
-  Future<void> addEvent(WebhookEvent event) async {
-    _events[event.eventId] = event;
-  }
+  Future<void> storeOAuth2Token(OAuth2Token token) async =>
+      _oauth2Tokens[token.tokenId] = token;
 
   @override
-  Future<WebhookEvent?> getEvent(String eventId) async {
-    return _events[eventId];
-  }
+  Future<OAuth2Token?> getOAuth2Token(String tokenId) async =>
+      _oauth2Tokens[tokenId];
 
   @override
-  Future<List<WebhookEvent>> getEventsByType(WebhookEventType eventType) async {
-    return _events.values.where((e) => e.eventType == eventType).toList();
-  }
+  Future<void> recordApiUsageStats(ApiUsageStats stats) async =>
+      _usageStats[stats.statsId] = stats;
 
   @override
-  Future<void> deleteEvent(String eventId) async {
-    _events.remove(eventId);
-  }
+  Future<ApiUsageStats?> getApiUsageStats(String statsId) async =>
+      _usageStats[statsId];
 
   @override
-  Future<void> addMetrics(ApiMetrics metrics) async {
-    _metrics[metrics.metricsId] = metrics;
-  }
+  Future<void> recordWebhookStats(WebhookStats stats) async =>
+      _webhookStats[stats.statsId] = stats;
 
   @override
-  Future<ApiMetrics?> getMetrics(String metricsId) async {
-    return _metrics[metricsId];
-  }
+  Future<WebhookStats?> getWebhookStats(String statsId) async =>
+      _webhookStats[statsId];
 
   @override
-  Future<List<ApiMetrics>> getRecentMetrics(int count) async {
-    return _metrics.values.toList().reversed.take(count).toList();
-  }
+  Future<void> recordApiError(ApiError error) async =>
+      _errors[error.errorId] = error;
 
   @override
-  Future<void> deleteMetrics(String metricsId) async {
-    _metrics.remove(metricsId);
-  }
-
-  @override
-  Future<void> addRateLimit(RateLimitInfo info) async {
-    _rateLimits[info.limitId] = info;
-  }
-
-  @override
-  Future<RateLimitInfo?> getRateLimit(String limitId) async {
-    return _rateLimits[limitId];
-  }
-
-  @override
-  Future<void> updateRateLimit(RateLimitInfo info) async {
-    _rateLimits[info.limitId] = info;
-  }
+  Future<List<ApiError>> getRecentErrors(String configId) async =>
+      _errors.values
+          .where((e) => e.configId == configId && e.isRecent)
+          .toList();
 }
 
-/// HTTPエンジンインターフェース
-abstract class HttpEngine {
-  Future<ApiRequest> executeRequest(ApiEndpoint endpoint, {dynamic body});
-  Future<ApiRequest> retryRequest(ApiRequest request, int retryCount);
-  Future<bool> validateEndpoint(ApiEndpoint endpoint);
-  Future<Map<String, dynamic>> buildRequestPayload(dynamic data);
-  Future<int> calculateRetryDelay(int attemptNumber, RetryPolicy policy);
-}
+// ============================================================================
+// ENGINES
+// ============================================================================
 
-/// メモリ実装のHTTPエンジン
-class MemoryHttpEngine implements HttpEngine {
-  final ApiRepository _repository;
+/// API Request Engine - handles request sending and response processing
+class ApiRequestEngine {
+  final ApiRepository repository;
 
-  MemoryHttpEngine(this._repository);
+  ApiRequestEngine(this.repository);
 
-  @override
-  Future<ApiRequest> executeRequest(ApiEndpoint endpoint, {dynamic body}) async {
-    final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
-    final sentAt = DateTime.now();
-
-    // シミュレーション: ランダムに成功/失敗
-    await Future.delayed(Duration(milliseconds: 100));
+  Future<ApiResponse> sendRequest(ApiRequest request) async {
+    await repository.recordRequest(request);
     
-    final isSuccess = DateTime.now().millisecond % 3 != 0; // 66%成功率
-    final statusCode = isSuccess ? 200 : 500;
-    final responseBody = isSuccess ? '{"status":"success"}' : '{"error":"Internal Server Error"}';
-    final receivedAt = DateTime.now();
-
-    final request = ApiRequest(
-      requestId: requestId,
-      endpointId: endpoint.endpointId,
-      method: endpoint.httpMethod,
-      url: endpoint.fullUrl,
-      headers: endpoint.headers,
-      body: body,
-      sentAt: sentAt,
-      responseStatusCode: statusCode,
-      responseBody: responseBody,
-      receivedAt: receivedAt,
-      isSuccessful: isSuccess,
-      errorMessage: isSuccess ? null : 'Server error',
+    final response = ApiResponse(
+      responseId: 'resp_${DateTime.now().millisecondsSinceEpoch}',
+      requestId: request.requestId,
+      statusCode: 200,
+      headers: {'content-type': 'application/json'},
+      body: {'status': 'success'},
+      contentLength: 20,
+      receivedAt: DateTime.now(),
     );
 
-    await _repository.addRequest(request);
-    return request;
+    await repository.recordResponse(response);
+    return response;
   }
 
-  @override
-  Future<ApiRequest> retryRequest(ApiRequest request, int retryCount) async {
-    final updatedRequest = ApiRequest(
-      requestId: 'req_${DateTime.now().millisecondsSinceEpoch}',
-      endpointId: request.endpointId,
-      method: request.method,
-      url: request.url,
-      headers: request.headers,
-      body: request.body,
-      sentAt: DateTime.now(),
-      responseStatusCode: 200,
-      responseBody: '{"status":"success"}',
-      receivedAt: DateTime.now().add(Duration(milliseconds: 50)),
-      isSuccessful: true,
-    );
-
-    await _repository.addRequest(updatedRequest);
-    return updatedRequest;
+  Future<void> retryFailedRequests() async {
+    // Implement retry logic
   }
 
-  @override
-  Future<bool> validateEndpoint(ApiEndpoint endpoint) async {
-    return endpoint.isValid && endpoint.timeoutSeconds > 0;
-  }
-
-  @override
-  Future<Map<String, dynamic>> buildRequestPayload(dynamic data) async {
-    if (data is Map<String, dynamic>) {
-      return data;
+  Future<ApiIntegrationStatus> checkIntegrationStatus(
+      String configId) async {
+    final config = await repository.getApiConfiguration(configId);
+    if (config == null || !config.isEnabled) {
+      return ApiIntegrationStatus.disconnected;
     }
-    return {'data': data};
-  }
-
-  @override
-  Future<int> calculateRetryDelay(int attemptNumber, RetryPolicy policy) async {
-    switch (policy) {
-      case RetryPolicy.noRetry:
-        return 0;
-      case RetryPolicy.exponential:
-        return 100 * (1 << attemptNumber);
-      case RetryPolicy.linear:
-        return 100 * attemptNumber;
-      case RetryPolicy.fibonacci:
-        return _fibonacci(attemptNumber) * 100;
-    }
-  }
-
-  int _fibonacci(int n) {
-    if (n <= 1) return n;
-    int a = 0, b = 1;
-    for (int i = 2; i <= n; i++) {
-      final temp = a + b;
-      a = b;
-      b = temp;
-    }
-    return b;
+    return ApiIntegrationStatus.connected;
   }
 }
 
-/// Webhookエンジンインターフェース
-abstract class WebhookEngine {
-  Future<void> triggerWebhook(WebhookEndpoint webhook, WebhookPayload payload);
-  Future<void> retryFailedPayloads(String webhookId);
-  Future<bool> validateSignature(String payload, String signature, String secret);
-  Future<String> generateSignature(String payload, String secret);
-  Future<List<WebhookEndpoint>> getWebhooksForEvent(WebhookEventType eventType);
-}
+/// Webhook Delivery Engine - manages webhook event delivery
+class WebhookDeliveryEngine {
+  final ApiRepository repository;
 
-/// メモリ実装のWebhookエンジン
-class MemoryWebhookEngine implements WebhookEngine {
-  final ApiRepository _repository;
+  WebhookDeliveryEngine(this.repository);
 
-  MemoryWebhookEngine(this._repository);
+  Future<void> deliverWebhookEvent(
+      Webhook webhook, WebhookEventType eventType) async {
+    if (!webhook.isActive) return;
 
-  @override
-  Future<void> triggerWebhook(WebhookEndpoint webhook, WebhookPayload payload) async {
-    // シミュレーション
-    await Future.delayed(Duration(milliseconds: 50));
-    
-    final isSuccess = DateTime.now().millisecond % 2 == 0; // 50%成功率
-    final status = isSuccess 
-      ? WebhookPayloadStatus.delivered 
-      : WebhookPayloadStatus.failed;
-
-    final updatedPayload = WebhookPayload(
-      payloadId: payload.payloadId,
-      webhookId: payload.webhookId,
-      eventType: payload.eventType,
-      triggeredAt: payload.triggeredAt,
-      data: payload.data,
-      signature: payload.signature,
-      attemptCount: payload.attemptCount + 1,
-      status: status,
-      lastError: isSuccess ? null : 'Connection timeout',
+    final attempt = WebhookDeliveryAttempt(
+      attemptId: 'attempt_${DateTime.now().millisecondsSinceEpoch}',
+      webhookId: webhook.webhookId,
+      eventType: eventType,
+      status: DeliveryAttemptStatus.succeeded,
+      statusCode: 200,
+      retryCount: 0,
+      attemptedAt: DateTime.now(),
+      completedAt: DateTime.now(),
     );
 
-    await _repository.updatePayload(updatedPayload);
+    await repository.recordDeliveryAttempt(attempt);
   }
 
-  @override
-  Future<void> retryFailedPayloads(String webhookId) async {
-    final payloads = await _repository.getWebhookPayloads(webhookId);
-    for (final payload in payloads.where((p) => p.isFailed && p.attemptCount < 3)) {
-      final webhook = await _repository.getWebhook(webhookId);
-      if (webhook != null) {
-        await triggerWebhook(webhook, payload);
+  Future<void> retryFailedDeliveries() async {
+    final failed = await repository.getFailedAttempts();
+    for (final attempt in failed) {
+      if (attempt.retryCount < 3) {
+        // Implement retry logic
       }
     }
   }
 
-  @override
-  Future<bool> validateSignature(String payload, String signature, String secret) async {
-    final computed = await generateSignature(payload, secret);
-    return computed == signature;
-  }
-
-  @override
-  Future<String> generateSignature(String payload, String secret) async {
-    // シミュレーション: SHA256署名
-    return 'sha256=${payload.hashCode}_${secret.hashCode}';
-  }
-
-  @override
-  Future<List<WebhookEndpoint>> getWebhooksForEvent(WebhookEventType eventType) async {
-    return await _repository.getWebhooksByEvent(eventType);
+  Future<double> getWebhookDeliveryRate(String webhookId) async {
+    final attempts = await repository.getDeliveryAttempts(webhookId);
+    if (attempts.isEmpty) return 0.0;
+    final successful = attempts.where((a) => a.isSuccessful).length;
+    return (successful / attempts.length) * 100;
   }
 }
 
-/// APIマネージャーインターフェース
-abstract class ApiManager {
-  Future<void> createEndpoint(String name, String baseUrl, HttpMethod method, String path);
-  Future<void> registerWebhook(String targetUrl, List<WebhookEventType> events);
-  Future<ApiRequest> callEndpoint(String endpointId, {dynamic body});
-  Future<void> triggerWebhookEvent(WebhookEventType eventType, Map<String, dynamic> payload);
-  Future<ApiMetrics> calculateMetrics(DateTime start, DateTime end);
-  Future<ApiReport> generateReport(DateTime start, DateTime end);
-  Future<void> setupRateLimit(String configId, int requestsPerMinute);
-  Future<bool> checkRateLimit(String configId);
-}
+/// Rate Limit Engine - manages API rate limiting
+class RateLimitEngine {
+  final ApiRepository repository;
 
-/// メモリ実装のAPIマネージャー
-class MemoryApiManager implements ApiManager {
-  final ApiRepository _repository;
-  final HttpEngine _httpEngine;
-  final WebhookEngine _webhookEngine;
+  RateLimitEngine(this.repository);
 
-  MemoryApiManager(this._repository, this._httpEngine, this._webhookEngine);
-
-  @override
-  Future<void> createEndpoint(String name, String baseUrl, HttpMethod method, String path) async {
-    final endpointId = 'ep_${DateTime.now().millisecondsSinceEpoch}';
-    final endpoint = ApiEndpoint(
-      endpointId: endpointId,
-      name: name,
-      baseUrl: baseUrl,
-      httpMethod: method,
-      path: path,
-      headers: {'Content-Type': 'application/json'},
-      timeoutSeconds: 30,
-      createdAt: DateTime.now(),
-    );
-    await _repository.addEndpoint(endpoint);
+  Future<bool> isRateLimited(String configId) async {
+    final limit = await repository.getRateLimit(configId);
+    return limit?.isExceeded ?? false;
   }
 
-  @override
-  Future<void> registerWebhook(String targetUrl, List<WebhookEventType> events) async {
-    final webhookId = 'wh_${DateTime.now().millisecondsSinceEpoch}';
-    final webhook = WebhookEndpoint(
-      webhookId: webhookId,
-      targetUrl: targetUrl,
-      events: events,
-      retryPolicy: RetryPolicy.exponential,
-      maxRetries: 3,
-      createdAt: DateTime.now(),
-    );
-    await _repository.addWebhook(webhook);
-  }
-
-  @override
-  Future<ApiRequest> callEndpoint(String endpointId, {dynamic body}) async {
-    final endpoint = await _repository.getEndpoint(endpointId);
-    if (endpoint == null) {
-      throw Exception('Endpoint not found: $endpointId');
-    }
-    return await _httpEngine.executeRequest(endpoint, body: body);
-  }
-
-  @override
-  Future<void> triggerWebhookEvent(WebhookEventType eventType, Map<String, dynamic> payload) async {
-    final webhooks = await _webhookEngine.getWebhooksForEvent(eventType);
-    for (final webhook in webhooks) {
-      final payloadId = 'pl_${DateTime.now().millisecondsSinceEpoch}';
-      final webhookPayload = WebhookPayload(
-        payloadId: payloadId,
-        webhookId: webhook.webhookId,
-        eventType: eventType,
-        triggeredAt: DateTime.now(),
-        data: payload,
+  Future<void> updateQuota(String rateLimitId) async {
+    final limit = await repository.getRateLimit(rateLimitId);
+    if (limit != null) {
+      final updated = RateLimit(
+        rateLimitId: limit.rateLimitId,
+        configId: limit.configId,
+        requestsPerWindow: limit.requestsPerWindow,
+        windowSizeSeconds: limit.windowSizeSeconds,
+        strategy: limit.strategy,
+        resetAt: limit.resetAt,
+        remainingRequests: limit.remainingRequests - 1,
+        isActive: limit.isActive,
       );
-      await _repository.addPayload(webhookPayload);
-      await _webhookEngine.triggerWebhook(webhook, webhookPayload);
+      await repository.updateRateLimit(updated);
     }
   }
 
-  @override
-  Future<ApiMetrics> calculateMetrics(DateTime start, DateTime end) async {
-    final requests = await _repository.getAllEndpoints()
-        .then((_) => _repository.getFailedRequests());
-    final successful = await _repository.getAllEndpoints()
-        .then((_) async {
-          final all = <ApiRequest>[];
-          for (final ep in await _repository.getAllEndpoints()) {
-            all.addAll(await _repository.getEndpointRequests(ep.endpointId));
-          }
-          return all.where((r) => r.isSuccessful).length;
-        });
+  Future<int?> getSecondsUntilReset(String rateLimitId) async {
+    final limit = await repository.getRateLimit(rateLimitId);
+    return limit?.secondsUntilReset;
+  }
+}
 
-    return ApiMetrics(
-      metricsId: 'metrics_${DateTime.now().millisecondsSinceEpoch}',
-      totalRequests: 0,
-      successfulRequests: 0,
-      failedRequests: 0,
-      averageResponseTimeMs: 150.0,
-      totalWebhooks: 0,
-      successfulWebhooks: 0,
-      failedWebhooks: 0,
-      periodStart: start,
-      periodEnd: end,
+// ============================================================================
+// MANAGER
+// ============================================================================
+
+/// API Manager - coordinates operations
+class ApiManager {
+  final ApiRepository repository;
+  final ApiRequestEngine requestEngine;
+  final WebhookDeliveryEngine webhookEngine;
+  final RateLimitEngine rateLimitEngine;
+
+  ApiManager(
+    this.repository,
+    this.requestEngine,
+    this.webhookEngine,
+    this.rateLimitEngine,
+  );
+
+  Future<ApiConfiguration> registerApiConfig(
+    String apiName,
+    String baseUrl,
+    AuthType authType,
+  ) async {
+    final config = ApiConfiguration(
+      configId: 'config_${DateTime.now().millisecondsSinceEpoch}',
+      apiName: apiName,
+      baseUrl: baseUrl,
+      defaultMethod: HttpMethod.get,
+      contentType: ContentType.json,
+      authType: authType,
+      headers: {},
+      createdAt: DateTime.now(),
     );
+    await repository.createApiConfiguration(config);
+    return config;
   }
 
-  @override
-  Future<ApiReport> generateReport(DateTime start, DateTime end) async {
-    final endpoints = await _repository.getAllEndpoints();
-    final requests = <ApiRequest>[];
-    for (final ep in endpoints) {
-      requests.addAll(await _repository.getEndpointRequests(ep.endpointId));
+  Future<Webhook> registerWebhook(
+    String configId,
+    String url,
+    List<WebhookEventType> events,
+  ) async {
+    final webhook = Webhook(
+      webhookId: 'webhook_${DateTime.now().millisecondsSinceEpoch}',
+      configId: configId,
+      url: url,
+      events: events,
+      status: WebhookStatus.active,
+      createdAt: DateTime.now(),
+    );
+    await repository.createWebhook(webhook);
+    return webhook;
+  }
+
+  Future<void> triggerWebhook(
+    String webhookId,
+    WebhookEventType eventType,
+  ) async {
+    final webhook = await repository.getWebhook(webhookId);
+    if (webhook != null) {
+      await webhookEngine.deliverWebhookEvent(webhook, eventType);
     }
-    final payloads = <WebhookPayload>[];
-    for (final wh in await _repository.getAllWebhooks()) {
-      payloads.addAll(await _repository.getWebhookPayloads(wh.webhookId));
-    }
-    final metrics = await calculateMetrics(start, end);
+  }
+
+  Future<ApiReport> generateReport() async {
+    final integrations = await repository.getAllIntegrations();
+    final webhookStatsList = <WebhookStats>[];
+    final usageStatsList = <ApiUsageStats>[];
 
     return ApiReport(
       reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
       generatedAt: DateTime.now(),
-      periodStart: start,
-      periodEnd: end,
-      endpoints: endpoints,
-      requests: requests,
-      webhookPayloads: payloads,
-      metrics: metrics,
+      integrations: integrations,
+      webhookStats: webhookStatsList,
+      usageStats: usageStatsList,
     );
-  }
-
-  @override
-  Future<void> setupRateLimit(String configId, int requestsPerMinute) async {
-    final limitId = 'limit_${DateTime.now().millisecondsSinceEpoch}';
-    final info = RateLimitInfo(
-      limitId: limitId,
-      configId: configId,
-      requestLimit: requestsPerMinute,
-      currentCount: 0,
-      windowStart: DateTime.now(),
-      windowEnd: DateTime.now().add(Duration(minutes: 1)),
-    );
-    await _repository.addRateLimit(info);
-  }
-
-  @override
-  Future<bool> checkRateLimit(String configId) async {
-    // レート制限チェック実装
-    return true;
   }
 }
 
-/// APIファサード
+// ============================================================================
+// FACADE
+// ============================================================================
+
+/// API Facade - unified interface for API operations
 class ApiFacade {
-  final ApiManager _manager;
-  final ApiRepository _repository;
-  final HttpEngine _httpEngine;
-  final WebhookEngine _webhookEngine;
+  late final ApiRepository _repository;
+  late final ApiRequestEngine _requestEngine;
+  late final WebhookDeliveryEngine _webhookEngine;
+  late final RateLimitEngine _rateLimitEngine;
+  late final ApiManager _manager;
 
-  ApiFacade(this._manager, this._repository, this._httpEngine, this._webhookEngine);
+  ApiFacade() {
+    _repository = MemoryApiRepository();
+    _requestEngine = ApiRequestEngine(_repository);
+    _webhookEngine = WebhookDeliveryEngine(_repository);
+    _rateLimitEngine = RateLimitEngine(_repository);
+    _manager = ApiManager(
+      _repository,
+      _requestEngine,
+      _webhookEngine,
+      _rateLimitEngine,
+    );
+  }
 
-  /// エンドポイント作成
-  Future<void> createEndpoint(String name, String baseUrl, HttpMethod method, String path) =>
-      _manager.createEndpoint(name, baseUrl, method, path);
+  // API Configuration
+  Future<ApiConfiguration> registerApiConfig(
+    String apiName,
+    String baseUrl,
+    AuthType authType,
+  ) => _manager.registerApiConfig(apiName, baseUrl, authType);
 
-  /// Webhook登録
-  Future<void> registerWebhook(String targetUrl, List<WebhookEventType> events) =>
-      _manager.registerWebhook(targetUrl, events);
+  Future<ApiConfiguration?> getApiConfig(String configId) =>
+      _repository.getApiConfiguration(configId);
 
-  /// エンドポイント呼び出し
-  Future<ApiRequest> callEndpoint(String endpointId, {dynamic body}) =>
-      _manager.callEndpoint(endpointId, body: body);
+  Future<List<ApiConfiguration>> getAllApiConfigs() =>
+      _repository.getAllConfigurations();
 
-  /// Webhookイベント発火
-  Future<void> triggerEvent(WebhookEventType eventType, Map<String, dynamic> payload) =>
-      _manager.triggerWebhookEvent(eventType, payload);
+  // Webhooks
+  Future<Webhook> registerWebhook(
+    String configId,
+    String url,
+    List<WebhookEventType> events,
+  ) => _manager.registerWebhook(configId, url, events);
 
-  /// メトリクス計算
-  Future<ApiMetrics> calculateMetrics(DateTime start, DateTime end) =>
-      _manager.calculateMetrics(start, end);
+  Future<Webhook?> getWebhook(String webhookId) =>
+      _repository.getWebhook(webhookId);
 
-  /// レポート生成
-  Future<ApiReport> generateReport(DateTime start, DateTime end) =>
-      _manager.generateReport(start, end);
+  Future<void> triggerWebhook(
+    String webhookId,
+    WebhookEventType eventType,
+  ) => _manager.triggerWebhook(webhookId, eventType);
 
-  /// 全エンドポイント取得
-  Future<List<ApiEndpoint>> getAllEndpoints() =>
-      _repository.getAllEndpoints();
+  // API Credentials
+  Future<void> storeCredential(ApiCredential credential) =>
+      _repository.createApiCredential(credential);
 
-  /// アクティブなWebhook取得
-  Future<List<WebhookEndpoint>> getActiveWebhooks() =>
-      _repository.getActiveWebhooks();
+  Future<ApiCredential?> getCredential(String credentialId) =>
+      _repository.getApiCredential(credentialId);
 
-  /// 保留中のペイロード取得
-  Future<List<WebhookPayload>> getPendingPayloads() =>
-      _repository.getPendingPayloads();
+  // Rate Limiting
+  Future<bool> isRateLimited(String configId) =>
+      _rateLimitEngine.isRateLimited(configId);
 
-  /// 失敗リクエスト取得
-  Future<List<ApiRequest>> getFailedRequests() =>
-      _repository.getFailedRequests();
+  Future<int?> getSecondsUntilReset(String rateLimitId) =>
+      _rateLimitEngine.getSecondsUntilReset(rateLimitId);
+
+  // Reporting
+  Future<ApiReport> generateReport() => _manager.generateReport();
+
+  // Integration Status
+  Future<ApiIntegrationStatus> checkStatus(String configId) =>
+      _requestEngine.checkIntegrationStatus(configId);
 }
