@@ -1,441 +1,319 @@
-/// Advanced Analytics & Insights Models
-///
-/// Comprehensive data models for:
-/// - Data aggregation and summarization
-/// - Trend analysis and forecasting
-/// - Anomaly detection
-/// - Performance analytics
-/// - User behavior analysis
-/// - Custom insights generation
+/// Performance Analytics & Insights Models
 
-// ============================================================================
-// ENUMS
-// ============================================================================
+enum MetricType { latency, throughput, errorRate, cpuUsage, memoryUsage, diskUsage, networkUsage }
+enum AnomalyType { spike, drop, trend, outlier, pattern, cyclic }
+enum InsightCategory { performance, reliability, efficiency, security, cost }
+enum TrendDirection { upward, downward, stable, cyclic }
+enum AlertPriority { low, medium, high, critical }
+enum ReportFrequency { hourly, daily, weekly, monthly, quarterly, yearly }
 
-/// Metric aggregation types
-enum AggregationType {
-  sum('sum'),
-  average('average'),
-  minimum('minimum'),
-  maximum('maximum'),
-  count('count'),
-  stdDeviation('std_deviation'),
-  percentile('percentile');
-
-  final String value;
-  const AggregationType(this.value);
-}
-
-/// Time period granularity
-enum TimePeriod {
-  minute('minute'),
-  hour('hour'),
-  day('day'),
-  week('week'),
-  month('month'),
-  quarter('quarter'),
-  year('year');
-
-  final String value;
-  const TimePeriod(this.value);
-}
-
-/// Trend direction
-enum TrendDirection {
-  upward('upward'),
-  downward('downward'),
-  stable('stable'),
-  volatile('volatile');
-
-  final String value;
-  const TrendDirection(this.value);
-}
-
-/// Anomaly severity level
-enum AnomalySeverity {
-  low('low'),
-  medium('medium'),
-  high('high'),
-  critical('critical');
-
-  final String value;
-  const AnomalySeverity(this.value);
-}
-
-/// Report type classification
-enum ReportType {
-  summary('summary'),
-  detailed('detailed'),
-  executive('executive'),
-  technical('technical'),
-  custom('custom');
-
-  final String value;
-  const ReportType(this.value);
-}
-
-/// Insight category
-enum InsightCategory {
-  performance('performance'),
-  behavior('behavior'),
-  trend('trend'),
-  anomaly('anomaly'),
-  prediction('prediction'),
-  recommendation('recommendation');
-
-  final String value;
-  const InsightCategory(this.value);
-}
-
-// ============================================================================
-// MODELS
-// ============================================================================
-
-/// Represents a data point for analytics
-class DataPoint {
-  final String dataPointId;
-  final String metricName;
-  final double value;
-  final DateTime timestamp;
-  final Map<String, dynamic>? metadata;
-  final String? category;
-
-  DataPoint({
-    required this.dataPointId,
-    required this.metricName,
-    required this.value,
-    required this.timestamp,
-    this.metadata,
-    this.category,
-  });
-
-  bool get isRecent => DateTime.now().difference(timestamp).inHours < 24;
-  int get ageInHours => DateTime.now().difference(timestamp).inHours;
-}
-
-/// Represents aggregated metric data
-class AggregatedMetric {
+class PerformanceMetric {
   final String metricId;
+  final String resourceId;
   final String metricName;
-  final AggregationType aggregationType;
-  final double aggregatedValue;
-  final int dataPointCount;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final TimePeriod period;
+  final MetricType metricType;
+  final double value;
+  final String unit;
+  final DateTime recordedAt;
+  final Map<String, dynamic> tags;
+  final double? threshold;
 
-  AggregatedMetric({
+  PerformanceMetric({
     required this.metricId,
+    required this.resourceId,
     required this.metricName,
-    required this.aggregationType,
-    required this.aggregatedValue,
-    required this.dataPointCount,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.period,
+    required this.metricType,
+    required this.value,
+    required this.unit,
+    required this.recordedAt,
+    this.tags = const {},
+    this.threshold,
   });
 
-  bool get isRecent => DateTime.now().difference(periodEnd).inDays < 7;
-  int get periodLengthInDays => periodEnd.difference(periodStart).inDays;
-  bool get hasSignificantData => dataPointCount > 100;
+  bool get isAnomalous => threshold != null && value > threshold!;
+  bool get isCritical => isAnomalous;
+  int get ageInSeconds => DateTime.now().difference(recordedAt).inSeconds;
+  bool get isRecent => ageInSeconds < 300;
 }
 
-/// Represents a trend in data
-class Trend {
-  final String trendId;
-  final String metricName;
-  final TrendDirection direction;
-  final double changePercentage;
-  final double slope;
-  final DateTime analysisDate;
-  final int dataPointsAnalyzed;
-  final double confidence;
+class PerformanceTimeSeries {
+  final String seriesId;
+  final String resourceId;
+  final MetricType metricType;
+  final List<PerformanceMetric> dataPoints;
+  final DateTime createdAt;
+  final DateTime? lastUpdatedAt;
+  final int intervalSeconds;
 
-  Trend({
-    required this.trendId,
-    required this.metricName,
-    required this.direction,
-    required this.changePercentage,
-    required this.slope,
-    required this.analysisDate,
-    required this.dataPointsAnalyzed,
-    required this.confidence,
+  PerformanceTimeSeries({
+    required this.seriesId,
+    required this.resourceId,
+    required this.metricType,
+    required this.dataPoints,
+    required this.createdAt,
+    this.lastUpdatedAt,
+    required this.intervalSeconds,
   });
 
-  bool get isSignificant => confidence > 0.85;
-  bool get isHighConfidence => confidence > 0.95;
-  bool get isIncreasing => direction == TrendDirection.upward;
-  bool get isDecreasing => direction == TrendDirection.downward;
+  bool get hasData => dataPoints.isNotEmpty;
+  double get average => hasData ? dataPoints.map((p) => p.value).reduce((a, b) => a + b) / dataPoints.length : 0.0;
+  double get maxValue => hasData ? dataPoints.map((p) => p.value).reduce((a, b) => a > b ? a : b) : 0.0;
+  double get minValue => hasData ? dataPoints.map((p) => p.value).reduce((a, b) => a < b ? a : b) : 0.0;
+  int get dataPointCount => dataPoints.length;
 }
 
-/// Represents an anomaly in data
-class Anomaly {
+class PerformanceAnomaly {
   final String anomalyId;
-  final String metricName;
-  final double anomalyValue;
-  final double expectedValue;
-  final double deviationPercentage;
-  final AnomalySeverity severity;
+  final String resourceId;
+  final String seriesId;
+  final AnomalyType anomalyType;
+  final double severity;
   final DateTime detectedAt;
   final String? description;
+  final Map<String, dynamic> context;
   final bool isResolved;
 
-  Anomaly({
+  PerformanceAnomaly({
     required this.anomalyId,
-    required this.metricName,
-    required this.anomalyValue,
-    required this.expectedValue,
-    required this.deviationPercentage,
+    required this.resourceId,
+    required this.seriesId,
+    required this.anomalyType,
     required this.severity,
     required this.detectedAt,
     this.description,
+    required this.context,
     this.isResolved = false,
   });
 
-  bool get isRecent => DateTime.now().difference(detectedAt).inHours < 24;
-  bool get isCritical => severity == AnomalySeverity.critical;
+  bool get isCritical => severity > 0.8;
+  bool get isPending => !isResolved;
   int get ageInHours => DateTime.now().difference(detectedAt).inHours;
+  bool get isRecent => ageInHours < 24;
 }
 
-/// Represents a forecast/prediction
-class Forecast {
-  final String forecastId;
-  final String metricName;
-  final double predictedValue;
-  final double confidenceInterval;
-  final DateTime forecastDate;
-  final DateTime generatedAt;
-  final String forecastingMethod;
-  final int dataPointsUsed;
-
-  Forecast({
-    required this.forecastId,
-    required this.metricName,
-    required this.predictedValue,
-    required this.confidenceInterval,
-    required this.forecastDate,
-    required this.generatedAt,
-    required this.forecastingMethod,
-    required this.dataPointsUsed,
-  });
-
-  bool get hasHighConfidence => confidenceInterval < 0.1;
-  int get daysUntilForecast => forecastDate.difference(DateTime.now()).inDays;
-  bool get isFuture => forecastDate.isAfter(DateTime.now());
-}
-
-/// Represents an insight from analysis
-class Insight {
+class PerformanceInsight {
   final String insightId;
+  final String resourceId;
   final InsightCategory category;
   final String title;
   final String description;
-  final double impact;
-  final bool isActionable;
-  final DateTime generatedAt;
+  final double confidenceScore;
+  final DateTime discoveredAt;
+  final DateTime? actionTakenAt;
   final String? recommendation;
-  final Map<String, dynamic>? metadata;
 
-  Insight({
+  PerformanceInsight({
     required this.insightId,
+    required this.resourceId,
     required this.category,
     required this.title,
     required this.description,
-    required this.impact,
-    required this.isActionable,
-    required this.generatedAt,
+    required this.confidenceScore,
+    required this.discoveredAt,
+    this.actionTakenAt,
     this.recommendation,
-    this.metadata,
   });
 
-  bool get isHighImpact => impact > 0.75;
-  bool get isRecent => DateTime.now().difference(generatedAt).inDays < 7;
-  int get ageInDays => DateTime.now().difference(generatedAt).inDays;
+  bool get isHighConfidence => confidenceScore > 0.9;
+  bool get isActionable => recommendation != null;
+  bool get hasAction => actionTakenAt != null;
+  int get ageInDays => DateTime.now().difference(discoveredAt).inDays;
 }
 
-/// Represents performance metrics
-class PerformanceMetrics {
-  final String metricsId;
-  final double averageResponseTime;
-  final double p95ResponseTime;
-  final double p99ResponseTime;
-  final double throughput;
-  final double errorRate;
-  final double availabilityPercentage;
-  final DateTime measurementStart;
-  final DateTime measurementEnd;
+class PerformanceTrend {
+  final String trendId;
+  final String resourceId;
+  final MetricType metricType;
+  final TrendDirection direction;
+  final double slope;
+  final DateTime startDate;
+  final DateTime endDate;
+  final int dataPoints;
+  final double rSquared;
 
-  PerformanceMetrics({
-    required this.metricsId,
-    required this.averageResponseTime,
-    required this.p95ResponseTime,
-    required this.p99ResponseTime,
-    required this.throughput,
-    required this.errorRate,
-    required this.availabilityPercentage,
-    required this.measurementStart,
-    required this.measurementEnd,
+  PerformanceTrend({
+    required this.trendId,
+    required this.resourceId,
+    required this.metricType,
+    required this.direction,
+    required this.slope,
+    required this.startDate,
+    required this.endDate,
+    required this.dataPoints,
+    required this.rSquared,
   });
 
-  bool get isHealthy => errorRate < 0.01 && availabilityPercentage > 99.5;
-  bool get hasAcceptablePerformance => averageResponseTime < 500;
-  bool get hasHighThroughput => throughput > 1000;
-  int get measurementDurationInHours => measurementEnd.difference(measurementStart).inHours;
+  bool get isSignificant => rSquared > 0.7;
+  bool get isGrowing => direction == TrendDirection.upward;
+  bool get isDecreasing => direction == TrendDirection.downward;
+  int get durationInDays => endDate.difference(startDate).inDays;
 }
 
-/// Represents user behavior analysis
-class UserBehaviorAnalysis {
-  final String analysisId;
-  final int totalUsers;
-  final int activeUsers;
-  final double engagementRate;
-  final double conversionRate;
-  final double churnRate;
-  final double averageSessionDuration;
-  final int totalSessions;
-  final DateTime analysisDate;
+class PerformanceAlert {
+  final String alertId;
+  final String resourceId;
+  final String metricName;
+  final AlertPriority priority;
+  final double thresholdValue;
+  final double actualValue;
+  final DateTime triggeredAt;
+  final DateTime? resolvedAt;
+  final String? message;
 
-  UserBehaviorAnalysis({
-    required this.analysisId,
-    required this.totalUsers,
-    required this.activeUsers,
-    required this.engagementRate,
-    required this.conversionRate,
-    required this.churnRate,
-    required this.averageSessionDuration,
-    required this.totalSessions,
-    required this.analysisDate,
+  PerformanceAlert({
+    required this.alertId,
+    required this.resourceId,
+    required this.metricName,
+    required this.priority,
+    required this.thresholdValue,
+    required this.actualValue,
+    required this.triggeredAt,
+    this.resolvedAt,
+    this.message,
   });
 
-  bool get hasHighEngagement => engagementRate > 0.6;
-  bool get hasAcceptableChurn => churnRate < 0.05;
-  double get activeUserPercentage => (activeUsers / totalUsers) * 100;
-  bool get isRecent => DateTime.now().difference(analysisDate).inDays < 7;
+  bool get isResolved => resolvedAt != null;
+  bool get isPending => !isResolved;
+  bool get isCritical => priority == AlertPriority.critical;
+  int get ageInMinutes => DateTime.now().difference(triggeredAt).inMinutes;
 }
 
-/// Represents a custom analysis result
-class CustomAnalysis {
-  final String analysisId;
-  final String analysisName;
-  final String description;
-  final Map<String, dynamic> results;
-  final DateTime createdAt;
-  final DateTime completedAt;
-  final String status;
-
-  CustomAnalysis({
-    required this.analysisId,
-    required this.analysisName,
-    required this.description,
-    required this.results,
-    required this.createdAt,
-    required this.completedAt,
-    required this.status,
-  });
-
-  bool get isCompleted => status == 'completed';
-  int get durationInSeconds => completedAt.difference(createdAt).inSeconds;
-  bool get isRecent => DateTime.now().difference(completedAt).inDays < 7;
-}
-
-/// Represents analytics report
-class AnalyticsReport {
+class PerformanceReport {
   final String reportId;
-  final ReportType reportType;
-  final String title;
-  final DateTime generatedAt;
-  final List<AggregatedMetric> metrics;
-  final List<Trend> trends;
-  final List<Anomaly> anomalies;
-  final List<Insight> insights;
-  final Map<String, dynamic>? customData;
+  final String resourceId;
+  final ReportFrequency frequency;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final Map<String, double> metrics;
+  final int anomalyCount;
+  final int insightCount;
+  final double averageHealthScore;
 
-  AnalyticsReport({
+  PerformanceReport({
     required this.reportId,
-    required this.reportType,
-    required this.title,
-    required this.generatedAt,
+    required this.resourceId,
+    required this.frequency,
+    required this.periodStart,
+    required this.periodEnd,
     required this.metrics,
-    required this.trends,
-    required this.anomalies,
-    required this.insights,
-    this.customData,
+    required this.anomalyCount,
+    required this.insightCount,
+    required this.averageHealthScore,
   });
 
-  bool get hasAnomalies => anomalies.isNotEmpty;
-  bool get hasCriticalAnomalies => anomalies.any((a) => a.isCritical);
-  int get totalInsights => insights.length;
-  bool get hasActionableInsights => insights.any((i) => i.isActionable);
-
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# $title');
-    buffer.writeln('Generated: ${generatedAt.toIso8601String()}\n');
-
-    buffer.writeln('## Summary');
-    buffer.writeln('- Metrics: ${metrics.length}');
-    buffer.writeln('- Trends: ${trends.length}');
-    buffer.writeln('- Anomalies: ${anomalies.length}');
-    buffer.writeln('- Insights: ${insights.length}\n');
-
-    if (anomalies.isNotEmpty) {
-      buffer.writeln('## Anomalies');
-      for (final anomaly in anomalies) {
-        buffer.writeln('- ${anomaly.metricName}: ${anomaly.deviationPercentage.toStringAsFixed(2)}% deviation');
-      }
-      buffer.writeln();
-    }
-
-    return buffer.toString();
-  }
+  bool get isHealthy => averageHealthScore > 90.0;
+  bool get hasAnomalies => anomalyCount > 0;
+  bool get hasInsights => insightCount > 0;
+  int get durationInDays => periodEnd.difference(periodStart).inDays;
 }
 
-/// Represents dashboard data
-class DashboardData {
-  final String dashboardId;
-  final String dashboardName;
-  final DateTime lastUpdated;
-  final List<AggregatedMetric> keyMetrics;
-  final List<Trend> recentTrends;
-  final List<Insight> topInsights;
-  final PerformanceMetrics? performanceMetrics;
+class PerformanceBaseline {
+  final String baselineId;
+  final String resourceId;
+  final MetricType metricType;
+  final double normalMin;
+  final double normalMax;
+  final double mean;
+  final double standardDeviation;
+  final DateTime createdAt;
+  final DateTime? lastUpdatedAt;
 
-  DashboardData({
-    required this.dashboardId,
-    required this.dashboardName,
-    required this.lastUpdated,
-    required this.keyMetrics,
-    required this.recentTrends,
-    required this.topInsights,
-    this.performanceMetrics,
+  PerformanceBaseline({
+    required this.baselineId,
+    required this.resourceId,
+    required this.metricType,
+    required this.normalMin,
+    required this.normalMax,
+    required this.mean,
+    required this.standardDeviation,
+    required this.createdAt,
+    this.lastUpdatedAt,
   });
 
-  bool get isStale => DateTime.now().difference(lastUpdated).inMinutes > 60;
-  bool get isRecent => DateTime.now().difference(lastUpdated).inMinutes < 5;
-  int get minutesSinceUpdate => DateTime.now().difference(lastUpdated).inMinutes;
+  bool get isRecent => lastUpdatedAt != null && DateTime.now().difference(lastUpdatedAt!).inDays < 7;
+  double get rangeWidth => normalMax - normalMin;
+  int get ageInDays => lastUpdatedAt != null ? DateTime.now().difference(lastUpdatedAt!).inDays : DateTime.now().difference(createdAt).inDays;
 }
 
-/// Represents analytics configuration
-class AnalyticsConfig {
+class PerformanceComparison {
+  final String comparisonId;
+  final String resourceId;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final DateTime previousPeriodStart;
+  final DateTime previousPeriodEnd;
+  final Map<String, double> currentMetrics;
+  final Map<String, double> previousMetrics;
+  final Map<String, double> percentageChange;
+
+  PerformanceComparison({
+    required this.comparisonId,
+    required this.resourceId,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.previousPeriodStart,
+    required this.previousPeriodEnd,
+    required this.currentMetrics,
+    required this.previousMetrics,
+    required this.percentageChange,
+  });
+
+  bool get hasImprovement => percentageChange.values.any((v) => v < 0);
+  bool get hasRegression => percentageChange.values.any((v) => v > 10);
+  int get currentDurationInDays => periodEnd.difference(periodStart).inDays;
+  int get previousDurationInDays => previousPeriodEnd.difference(previousPeriodStart).inDays;
+}
+
+class AnalyticsConfiguration {
   final String configId;
+  final String resourceId;
+  final List<MetricType> trackedMetrics;
+  final int metricsRetentionDays;
+  final int anomalyDetectionSensitivity;
+  final int trendAnalysisWindow;
   final bool isEnabled;
-  final List<String> trackedMetrics;
-  final TimePeriod defaultPeriod;
-  final int retentionDays;
-  final double anomalyThreshold;
   final DateTime createdAt;
 
-  AnalyticsConfig({
+  AnalyticsConfiguration({
     required this.configId,
-    required this.isEnabled,
+    required this.resourceId,
     required this.trackedMetrics,
-    required this.defaultPeriod,
-    required this.retentionDays,
-    required this.anomalyThreshold,
+    required this.metricsRetentionDays,
+    required this.anomalyDetectionSensitivity,
+    required this.trendAnalysisWindow,
+    required this.isEnabled,
     required this.createdAt,
   });
 
-  bool get isConfigured => trackedMetrics.isNotEmpty && anomalyThreshold > 0;
+  bool get hasMetrics => trackedMetrics.isNotEmpty;
   int get metricCount => trackedMetrics.length;
-  bool get isRecent => DateTime.now().difference(createdAt).inDays < 30;
+  bool get isLongRetention => metricsRetentionDays >= 365;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+}
+
+class PerformanceCorrelation {
+  final String correlationId;
+  final String resourceId;
+  final String metricA;
+  final String metricB;
+  final double correlationCoefficient;
+  final int sampleCount;
+  final DateTime calculatedAt;
+  final String? interpretation;
+
+  PerformanceCorrelation({
+    required this.correlationId,
+    required this.resourceId,
+    required this.metricA,
+    required this.metricB,
+    required this.correlationCoefficient,
+    required this.sampleCount,
+    required this.calculatedAt,
+    this.interpretation,
+  });
+
+  bool get hasStrongCorrelation => correlationCoefficient.abs() > 0.7;
+  bool get isPositive => correlationCoefficient > 0;
+  bool get isNegative => correlationCoefficient < 0;
+  int get ageInDays => DateTime.now().difference(calculatedAt).inDays;
 }
