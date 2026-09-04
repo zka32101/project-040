@@ -1,457 +1,522 @@
-/// Phase 48: Audit & Compliance Service 監査・コンプライアンスサービス
-
 import '../models/audit_models.dart';
 
-/// 監査リポジトリ インターフェース
 abstract class AuditRepository {
-  Future<AuditEvent> addEvent(AuditEvent event);
-  Future<AuditEvent?> getEvent(String eventId);
-  Future<List<AuditEvent>> getEventsByUser(String userId);
-  Future<List<AuditEvent>> getEventsByResource(ResourceType type, String resourceId);
-  Future<List<AuditEvent>> getEventsByType(AuditEventType type);
-  Future<List<AuditEvent>> getEventsBySeverity(AuditSeverity severity);
-  Future<List<AuditEvent>> getEventsByDateRange(DateTime start, DateTime end);
-  Future<AuditLog> createLog(String logId, List<AuditEvent> events);
-  Future<AuditLog?> getLog(String logId);
-  Future<List<AuditLog>> getAllLogs();
-  Future<void> clearAll();
+  Future<void> createAuditLog(AuditLog log);
+  Future<AuditLog?> getAuditLog(String logId);
+  Future<List<AuditLog>> getAllAuditLogs();
+  Future<List<AuditLog>> getAuditLogsByUser(String userId);
+  Future<List<AuditLog>> getAuditLogsByResource(String resourceId);
+  Future<List<AuditLog>> getAuditLogsByDateRange(DateTime start, DateTime end);
+
+  Future<void> createComplianceRule(ComplianceRule rule);
+  Future<ComplianceRule?> getComplianceRule(String ruleId);
+  Future<List<ComplianceRule>> getAllComplianceRules();
+  Future<void> updateComplianceRule(ComplianceRule rule);
+  Future<void> deleteComplianceRule(String ruleId);
+
+  Future<void> createAuditTrail(AuditTrail trail);
+  Future<AuditTrail?> getAuditTrail(String trailId);
+  Future<List<AuditTrail>> getAuditTrailsByEntity(String entityId);
+
+  Future<void> createDataClassificationPolicy(DataClassificationPolicy policy);
+  Future<DataClassificationPolicy?> getDataClassificationPolicy(String policyId);
+  Future<List<DataClassificationPolicy>> getAllPolicies();
+
+  Future<void> createRetentionRule(RetentionRule rule);
+  Future<RetentionRule?> getRetentionRule(String ruleId);
+  Future<List<RetentionRule>> getAllRetentionRules();
+
+  Future<void> saveComplianceCheck(ComplianceCheck check);
+  Future<ComplianceCheck?> getComplianceCheck(String checkId);
+  Future<List<ComplianceCheck>> getComplianceChecksByDateRange(DateTime start, DateTime end);
+
+  Future<void> saveAuditReport(AuditReport report);
+  Future<AuditReport?> getAuditReport(String reportId);
+  Future<List<AuditReport>> getRecentAuditReports(int limit);
+
+  Future<void> createUserAccessLog(UserAccessLog log);
+  Future<List<UserAccessLog>> getUserAccessLogs(String userId);
+  Future<List<UserAccessLog>> getAccessLogsByDateRange(DateTime start, DateTime end);
+
+  Future<void> createChangeLog(ChangeLog log);
+  Future<List<ChangeLog>> getChangeLogsByResource(String resourceId);
+  Future<List<ChangeLog>> getChangeLogsByUser(String userId);
+
+  Future<void> saveComplianceMetrics(ComplianceMetrics metrics);
+  Future<ComplianceMetrics?> getComplianceMetrics(String metricsId);
+  Future<List<ComplianceMetrics>> getRecentMetrics(int limit);
+
+  Future<void> createAuditFilter(AuditFilter filter);
+  Future<AuditFilter?> getAuditFilter(String filterId);
+  Future<List<AuditFilter>> getAllFilters();
 }
 
-/// メモリ監査リポジトリ実装
 class MemoryAuditRepository implements AuditRepository {
-  final Map<String, AuditEvent> _events = {};
-  final Map<String, AuditLog> _logs = {};
+  final Map<String, AuditLog> _auditLogs = {};
+  final Map<String, ComplianceRule> _complianceRules = {};
+  final Map<String, AuditTrail> _auditTrails = {};
+  final Map<String, DataClassificationPolicy> _policies = {};
+  final Map<String, RetentionRule> _retentionRules = {};
+  final Map<String, ComplianceCheck> _complianceChecks = {};
+  final Map<String, AuditReport> _auditReports = {};
+  final List<UserAccessLog> _accessLogs = [];
+  final List<ChangeLog> _changeLogs = [];
+  final Map<String, ComplianceMetrics> _metrics = {};
+  final Map<String, AuditFilter> _filters = {};
 
   @override
-  Future<AuditEvent> addEvent(AuditEvent event) async {
-    _events[event.eventId] = event;
-    return event;
-  }
+  Future<void> createAuditLog(AuditLog log) async => _auditLogs[log.logId] = log;
 
   @override
-  Future<AuditEvent?> getEvent(String eventId) async {
-    return _events[eventId];
-  }
+  Future<AuditLog?> getAuditLog(String logId) async => _auditLogs[logId];
 
   @override
-  Future<List<AuditEvent>> getEventsByUser(String userId) async {
-    return _events.values.where((e) => e.userId == userId).toList();
-  }
+  Future<List<AuditLog>> getAllAuditLogs() async => _auditLogs.values.toList();
 
   @override
-  Future<List<AuditEvent>> getEventsByResource(ResourceType type, String resourceId) async {
-    return _events.values.where((e) => e.resourceType == type && e.resourceId == resourceId).toList();
-  }
+  Future<List<AuditLog>> getAuditLogsByUser(String userId) async =>
+      _auditLogs.values.where((log) => log.userId == userId).toList();
 
   @override
-  Future<List<AuditEvent>> getEventsByType(AuditEventType type) async {
-    return _events.values.where((e) => e.action == type).toList();
-  }
+  Future<List<AuditLog>> getAuditLogsByResource(String resourceId) async =>
+      _auditLogs.values.where((log) => log.resourceId == resourceId).toList();
 
   @override
-  Future<List<AuditEvent>> getEventsBySeverity(AuditSeverity severity) async {
-    return _events.values.where((e) => e.severity == severity).toList();
-  }
+  Future<List<AuditLog>> getAuditLogsByDateRange(DateTime start, DateTime end) async =>
+      _auditLogs.values.where((log) => log.timestamp.isAfter(start) && log.timestamp.isBefore(end)).toList();
 
   @override
-  Future<List<AuditEvent>> getEventsByDateRange(DateTime start, DateTime end) async {
-    return _events.values.where((e) => e.timestamp.isAfter(start) && e.timestamp.isBefore(end)).toList();
-  }
+  Future<void> createComplianceRule(ComplianceRule rule) async =>
+      _complianceRules[rule.ruleId] = rule;
 
   @override
-  Future<AuditLog> createLog(String logId, List<AuditEvent> events) async {
+  Future<ComplianceRule?> getComplianceRule(String ruleId) async => _complianceRules[ruleId];
+
+  @override
+  Future<List<ComplianceRule>> getAllComplianceRules() async => _complianceRules.values.toList();
+
+  @override
+  Future<void> updateComplianceRule(ComplianceRule rule) async =>
+      _complianceRules[rule.ruleId] = rule;
+
+  @override
+  Future<void> deleteComplianceRule(String ruleId) async => _complianceRules.remove(ruleId);
+
+  @override
+  Future<void> createAuditTrail(AuditTrail trail) async => _auditTrails[trail.trailId] = trail;
+
+  @override
+  Future<AuditTrail?> getAuditTrail(String trailId) async => _auditTrails[trailId];
+
+  @override
+  Future<List<AuditTrail>> getAuditTrailsByEntity(String entityId) async =>
+      _auditTrails.values.where((trail) => trail.entityId == entityId).toList();
+
+  @override
+  Future<void> createDataClassificationPolicy(DataClassificationPolicy policy) async =>
+      _policies[policy.policyId] = policy;
+
+  @override
+  Future<DataClassificationPolicy?> getDataClassificationPolicy(String policyId) async =>
+      _policies[policyId];
+
+  @override
+  Future<List<DataClassificationPolicy>> getAllPolicies() async => _policies.values.toList();
+
+  @override
+  Future<void> createRetentionRule(RetentionRule rule) async =>
+      _retentionRules[rule.ruleId] = rule;
+
+  @override
+  Future<RetentionRule?> getRetentionRule(String ruleId) async => _retentionRules[ruleId];
+
+  @override
+  Future<List<RetentionRule>> getAllRetentionRules() async => _retentionRules.values.toList();
+
+  @override
+  Future<void> saveComplianceCheck(ComplianceCheck check) async =>
+      _complianceChecks[check.checkId] = check;
+
+  @override
+  Future<ComplianceCheck?> getComplianceCheck(String checkId) async =>
+      _complianceChecks[checkId];
+
+  @override
+  Future<List<ComplianceCheck>> getComplianceChecksByDateRange(DateTime start, DateTime end) async =>
+      _complianceChecks.values
+          .where((check) => check.executedAt.isAfter(start) && check.executedAt.isBefore(end))
+          .toList();
+
+  @override
+  Future<void> saveAuditReport(AuditReport report) async =>
+      _auditReports[report.reportId] = report;
+
+  @override
+  Future<AuditReport?> getAuditReport(String reportId) async => _auditReports[reportId];
+
+  @override
+  Future<List<AuditReport>> getRecentAuditReports(int limit) async =>
+      _auditReports.values.toList()..sort((a, b) => b.generatedAt.compareTo(a.generatedAt))
+          ..take(limit).toList();
+
+  @override
+  Future<void> createUserAccessLog(UserAccessLog log) async => _accessLogs.add(log);
+
+  @override
+  Future<List<UserAccessLog>> getUserAccessLogs(String userId) async =>
+      _accessLogs.where((log) => log.userId == userId).toList();
+
+  @override
+  Future<List<UserAccessLog>> getAccessLogsByDateRange(DateTime start, DateTime end) async =>
+      _accessLogs.where((log) => log.accessTime.isAfter(start) && log.accessTime.isBefore(end)).toList();
+
+  @override
+  Future<void> createChangeLog(ChangeLog log) async => _changeLogs.add(log);
+
+  @override
+  Future<List<ChangeLog>> getChangeLogsByResource(String resourceId) async =>
+      _changeLogs.where((log) => log.resourceId == resourceId).toList();
+
+  @override
+  Future<List<ChangeLog>> getChangeLogsByUser(String userId) async =>
+      _changeLogs.where((log) => log.modifiedBy == userId).toList();
+
+  @override
+  Future<void> saveComplianceMetrics(ComplianceMetrics metrics) async =>
+      _metrics[metrics.metricsId] = metrics;
+
+  @override
+  Future<ComplianceMetrics?> getComplianceMetrics(String metricsId) async =>
+      _metrics[metricsId];
+
+  @override
+  Future<List<ComplianceMetrics>> getRecentMetrics(int limit) async =>
+      _metrics.values.toList()..sort((a, b) => b.calculatedAt.compareTo(a.calculatedAt))
+          ..take(limit).toList();
+
+  @override
+  Future<void> createAuditFilter(AuditFilter filter) async =>
+      _filters[filter.filterId] = filter;
+
+  @override
+  Future<AuditFilter?> getAuditFilter(String filterId) async => _filters[filterId];
+
+  @override
+  Future<List<AuditFilter>> getAllFilters() async => _filters.values.toList();
+}
+
+class AuditEngine {
+  final AuditRepository repository;
+
+  AuditEngine({required this.repository});
+
+  Future<AuditLog> logEvent(
+    String userId,
+    String action,
+    AuditEventType eventType,
+    String resourceId,
+    String resourceType,
+    AuditActionStatus status,
+    AuditSeverity severity, {
+    Map<String, dynamic>? details,
+  }) async {
     final log = AuditLog(
-      logId: logId,
-      events: events,
-      createdAt: DateTime.now(),
+      logId: 'audit_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      action: action,
+      eventType: eventType,
+      timestamp: DateTime.now(),
+      resourceId: resourceId,
+      resourceType: resourceType,
+      details: details ?? {},
+      status: status,
+      severity: severity,
     );
-    _logs[logId] = log;
+    await repository.createAuditLog(log);
     return log;
   }
 
-  @override
-  Future<AuditLog?> getLog(String logId) async {
-    return _logs[logId];
+  Future<List<AuditLog>> getFailedEvents(DateTime since) async {
+    final allLogs = await repository.getAllAuditLogs();
+    return allLogs
+        .where((log) => log.isFailed && log.timestamp.isAfter(since))
+        .toList();
   }
 
-  @override
-  Future<List<AuditLog>> getAllLogs() async {
-    return _logs.values.toList();
-  }
-
-  @override
-  Future<void> clearAll() async {
-    _events.clear();
-    _logs.clear();
+  Future<List<AuditLog>> getHighSeverityEvents(DateTime since) async {
+    final allLogs = await repository.getAllAuditLogs();
+    return allLogs
+        .where((log) => log.isHighSeverity && log.timestamp.isAfter(since))
+        .toList();
   }
 }
 
-/// コンプライアンスエンジン インターフェース
-abstract class ComplianceEngine {
-  Future<CompliancePolicy> createPolicy(String policyId, String name, String description, List<String> rules);
-  Future<ComplianceViolation> detectViolation(String violationId, String policyId, AuditEvent event);
-  Future<List<ComplianceViolation>> checkEventCompliance(AuditEvent event, List<CompliancePolicy> policies);
-  Future<ComplianceStats> calculateStats(List<CompliancePolicy> policies, List<ComplianceViolation> violations, DateTime start, DateTime end);
-  Future<List<String>> generateRecommendations(List<ComplianceViolation> violations);
-  Future<ComplianceReport> generateReport(String reportId, List<CompliancePolicy> policies, List<ComplianceViolation> violations, DateTime start, DateTime end);
-}
+class ComplianceEngine {
+  final AuditRepository repository;
 
-/// メモリコンプライアンスエンジン実装
-class MemoryComplianceEngine implements ComplianceEngine {
-  final Map<String, CompliancePolicy> _policies = {};
-  final Map<String, ComplianceViolation> _violations = {};
+  ComplianceEngine({required this.repository});
 
-  @override
-  Future<CompliancePolicy> createPolicy(String policyId, String name, String description, List<String> rules) async {
-    final policy = CompliancePolicy(
-      policyId: policyId,
-      name: name,
-      description: description,
-      rules: rules,
-      createdAt: DateTime.now(),
-    );
-    _policies[policyId] = policy;
-    return policy;
-  }
+  Future<ComplianceCheck> executeComplianceCheck(
+    String checkName,
+    String description,
+    List<String> rulesToCheck,
+  ) async {
+    final rules = await repository.getAllComplianceRules();
+    final applicableRules = rules.where((r) => rulesToCheck.contains(r.ruleId)).toList();
 
-  @override
-  Future<ComplianceViolation> detectViolation(String violationId, String policyId, AuditEvent event) async {
-    final violation = ComplianceViolation(
-      violationId: violationId,
-      policyId: policyId,
-      severity: event.severity,
-      description: 'Compliance violation detected for event: ${event.eventId}',
-      detectedAt: DateTime.now(),
-      affectedEvents: [event.eventId],
-    );
-    _violations[violationId] = violation;
-    return violation;
-  }
-
-  @override
-  Future<List<ComplianceViolation>> checkEventCompliance(AuditEvent event, List<CompliancePolicy> policies) async {
-    final violations = <ComplianceViolation>[];
-
-    // 重大イベントを常に違反と見なす
-    if (event.isCritical) {
-      final violation = await detectViolation(
-        'v_${event.eventId}',
-        policies.isNotEmpty ? policies.first.policyId : 'default',
-        event,
-      );
-      violations.add(violation);
-    }
-
-    // 失敗したイベントもチェック
-    if (event.isFailed) {
-      for (final policy in policies) {
-        if (policy.isActive && policy.rules.contains('NO_FAILURES')) {
-          final violation = await detectViolation(
-            'v_fail_${event.eventId}',
-            policy.policyId,
-            event,
-          );
-          violations.add(violation);
-        }
+    final failedRules = <String>[];
+    for (final rule in applicableRules) {
+      if (!rule.isEnabled) {
+        failedRules.add(rule.ruleId);
       }
     }
 
-    return violations;
-  }
-
-  @override
-  Future<ComplianceStats> calculateStats(List<CompliancePolicy> policies, List<ComplianceViolation> violations, DateTime start, DateTime end) async {
-    final filteredViolations = violations.where((v) => v.detectedAt.isAfter(start) && v.detectedAt.isBefore(end)).toList();
-    final severityCounts = <AuditSeverity, int>{};
-
-    for (final violation in filteredViolations) {
-      severityCounts[violation.severity] = (severityCounts[violation.severity] ?? 0) + 1;
-    }
-
-    final criticalCount = filteredViolations.where((v) => v.isCritical).length;
-    final resolvedCount = filteredViolations.where((v) => v.isResolved).length;
-
-    // コンプライアンススコア計算
-    double complianceScore = 1.0;
-    if (filteredViolations.isNotEmpty) {
-      final unresolvedRate = (filteredViolations.length - resolvedCount) / filteredViolations.length;
-      final criticalPenalty = (criticalCount / filteredViolations.length) * 0.5;
-      complianceScore = (1.0 - unresolvedRate) - criticalPenalty;
-      complianceScore = complianceScore.clamp(0.0, 1.0);
-    }
-
-    return ComplianceStats(
-      statsId: 'stats_${DateTime.now().millisecondsSinceEpoch}',
-      periodStart: start,
-      periodEnd: end,
-      totalPolicies: policies.length,
-      activePolicies: policies.where((p) => p.isActive).length,
-      totalViolations: filteredViolations.length,
-      criticalViolations: criticalCount,
-      resolvedViolations: resolvedCount,
-      violationsBySeverity: severityCounts,
-      complianceScore: complianceScore,
+    final check = ComplianceCheck(
+      checkId: 'check_${DateTime.now().millisecondsSinceEpoch}',
+      checkName: checkName,
+      description: description,
+      executedAt: DateTime.now(),
+      status: failedRules.isEmpty ? ComplianceStatus.compliant : ComplianceStatus.noncompliant,
+      failedRules: failedRules,
+      passedRules: applicableRules.length - failedRules.length,
+      totalRules: applicableRules.length,
     );
+    await repository.saveComplianceCheck(check);
+    return check;
   }
 
-  @override
-  Future<List<String>> generateRecommendations(List<ComplianceViolation> violations) async {
-    final recommendations = <String>[];
+  Future<ComplianceMetrics> calculateMetrics() async {
+    final checks = await repository.getAllAuditLogs();
+    final rules = await repository.getAllComplianceRules();
 
-    if (violations.isEmpty) {
-      return recommendations;
-    }
+    final compliantRules = rules.where((r) => r.isEnabled).length;
+    final total = rules.length;
 
-    final criticalCount = violations.where((v) => v.isCritical).length;
-    final unresolvedCount = violations.where((v) => !v.isResolved).length;
-
-    if (criticalCount > 0) {
-      recommendations.add('Critical violations detected: Immediate action required');
-      recommendations.add('Review and address critical compliance violations within 24 hours');
-    }
-
-    if (unresolvedCount > 0) {
-      recommendations.add('${unresolvedCount} unresolved violations remain');
-      recommendations.add('Establish resolution timeline for pending violations');
-    }
-
-    if (violations.where((v) => v.severity == AuditSeverity.error).length > 5) {
-      recommendations.add('High number of error-level violations');
-      recommendations.add('Implement additional monitoring and controls');
-    }
-
-    return recommendations;
-  }
-
-  Future<ComplianceReport> _performFullAnalysis(
-    String reportId,
-    List<CompliancePolicy> policies,
-    List<ComplianceViolation> violations,
-    DateTime start,
-    DateTime end,
-  ) async {
-    final stats = await calculateStats(policies, violations, start, end);
-    final recommendations = await generateRecommendations(violations);
-
-    return ComplianceReport(
-      reportId: reportId,
-      generatedAt: DateTime.now(),
-      periodStart: start,
-      periodEnd: end,
-      policies: policies,
-      violations: violations,
-      stats: stats,
-      recommendations: recommendations,
+    final metrics = ComplianceMetrics(
+      metricsId: 'metrics_${DateTime.now().millisecondsSinceEpoch}',
+      calculatedAt: DateTime.now(),
+      overallScore: total > 0 ? (compliantRules / total) * 100 : 0.0,
+      totalRulesChecked: total,
+      rulesCompliant: compliantRules,
+      rulesNonCompliant: total - compliantRules,
+      categoryScores: {},
     );
-  }
-
-  @override
-  Future<ComplianceReport> generateReport(String reportId, List<CompliancePolicy> policies, List<ComplianceViolation> violations, DateTime start, DateTime end) async {
-    return _performFullAnalysis(reportId, policies, violations, start, end);
+    await repository.saveComplianceMetrics(metrics);
+    return metrics;
   }
 }
 
-/// 監査マネージャー インターフェース
-abstract class AuditManager {
-  Future<AuditEvent> recordEvent(
-    String eventId,
-    String userId,
-    ResourceType resourceType,
-    String resourceId,
-    AuditEventType action,
-    AuditSeverity severity,
-    AuditStatus status, {
-    Map<String, dynamic>? details,
-    String? ipAddress,
-    String? userAgent,
-  });
-  Future<AuditLog> generateLog(String logId, DateTime start, DateTime end);
-  Future<AuditTrail> generateTrail(String trailId, String userId, DateTime start, DateTime end);
-  Future<ComplianceReport> generateComplianceReport(
-    String reportId,
-    DateTime start,
-    DateTime end,
-  );
-  Future<List<AuditEvent>> getEventsByDateRange(DateTime start, DateTime end);
-}
-
-/// メモリ監査マネージャー実装
-class MemoryAuditManager implements AuditManager {
+class AuditManager {
   final AuditRepository repository;
+  final AuditEngine auditEngine;
   final ComplianceEngine complianceEngine;
-  final Map<String, CompliancePolicy> _policies = {};
-  final Map<String, ComplianceViolation> _violations = {};
 
-  MemoryAuditManager({
+  AuditManager({
     required this.repository,
+    required this.auditEngine,
     required this.complianceEngine,
   });
 
-  @override
-  Future<AuditEvent> recordEvent(
-    String eventId,
+  Future<AuditLog> recordEvent(
     String userId,
-    ResourceType resourceType,
+    String action,
+    AuditEventType eventType,
     String resourceId,
-    AuditEventType action,
-    AuditSeverity severity,
-    AuditStatus status, {
+    String resourceType,
+    AuditActionStatus status,
+    AuditSeverity severity, {
     Map<String, dynamic>? details,
-    String? ipAddress,
-    String? userAgent,
   }) async {
-    final event = AuditEvent(
-      eventId: eventId,
-      userId: userId,
-      resourceType: resourceType,
-      resourceId: resourceId,
-      action: action,
-      severity: severity,
-      status: status,
-      timestamp: DateTime.now(),
+    return await auditEngine.logEvent(
+      userId,
+      action,
+      eventType,
+      resourceId,
+      resourceType,
+      status,
+      severity,
       details: details,
-      ipAddress: ipAddress,
-      userAgent: userAgent,
     );
+  }
 
-    await repository.addEvent(event);
+  Future<void> createComplianceRule(String ruleName, String description,
+      List<String> resources, List<String> roles) async {
+    final rule = ComplianceRule(
+      ruleId: 'rule_${DateTime.now().millisecondsSinceEpoch}',
+      ruleName: ruleName,
+      description: description,
+      applicableResources: resources,
+      applicableRoles: roles,
+      isEnabled: true,
+      createdAt: DateTime.now(),
+    );
+    await repository.createComplianceRule(rule);
+  }
 
-    // コンプライアンスチェック
-    final violations = await complianceEngine.checkEventCompliance(event, _policies.values.toList());
-    for (final violation in violations) {
-      _violations[violation.violationId] = violation;
+  Future<AuditReport> generateAuditReport(DateTime start, DateTime end) async {
+    final logs = await repository.getAuditLogsByDateRange(start, end);
+    final failureCount = logs.where((l) => l.isFailed).length;
+    final criticalEvents = logs.where((l) => l.isHighSeverity).map((l) => l.logId).toList();
+
+    final eventsByType = <String, int>{};
+    for (final log in logs) {
+      eventsByType.update(log.eventType.toString(), (v) => v + 1, ifAbsent: () => 1);
     }
 
-    return event;
-  }
-
-  @override
-  Future<AuditLog> generateLog(String logId, DateTime start, DateTime end) async {
-    final events = await repository.getEventsByDateRange(start, end);
-    return repository.createLog(logId, events);
-  }
-
-  @override
-  Future<AuditTrail> generateTrail(String trailId, String userId, DateTime start, DateTime end) async {
-    final userEvents = await repository.getEventsByUser(userId);
-    final filteredEvents = userEvents
-        .where((e) => e.timestamp.isAfter(start) && e.timestamp.isBefore(end))
-        .toList();
-
-    return AuditTrail(
-      trailId: trailId,
-      userId: userId,
-      events: filteredEvents,
-      startTime: start,
-      endTime: end,
-      summary: 'User activity trail for $userId from $start to $end',
+    final report = AuditReport(
+      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      generatedAt: DateTime.now(),
+      periodStart: start,
+      periodEnd: end,
+      totalEvents: logs.length,
+      failureCount: failureCount,
+      criticalEvents: criticalEvents,
+      eventsByType: eventsByType,
     );
-  }
-
-  @override
-  Future<ComplianceReport> generateComplianceReport(
-    String reportId,
-    DateTime start,
-    DateTime end,
-  ) async {
-    return complianceEngine.generateReport(
-      reportId,
-      _policies.values.toList(),
-      _violations.values.toList(),
-      start,
-      end,
-    );
-  }
-
-  @override
-  Future<List<AuditEvent>> getEventsByDateRange(DateTime start, DateTime end) async {
-    return repository.getEventsByDateRange(start, end);
-  }
-
-  Future<CompliancePolicy> addPolicy(CompliancePolicy policy) async {
-    _policies[policy.policyId] = policy;
-    return policy;
+    await repository.saveAuditReport(report);
+    return report;
   }
 }
 
-/// 監査ファサード
-class AuditManagerFacade {
-  late final AuditRepository repository;
-  late final ComplianceEngine engine;
-  late final MemoryAuditManager manager;
+class AuditFacade {
+  final AuditManager manager;
 
-  AuditManagerFacade({
-    AuditRepository? customRepository,
-    ComplianceEngine? customEngine,
-  }) {
-    repository = customRepository ?? MemoryAuditRepository();
-    engine = customEngine ?? MemoryComplianceEngine();
-    manager = MemoryAuditManager(repository: repository, complianceEngine: engine);
-  }
+  AuditFacade({required AuditManager? manager})
+      : manager = manager ??
+            AuditManager(
+              repository: MemoryAuditRepository(),
+              auditEngine: AuditEngine(repository: MemoryAuditRepository()),
+              complianceEngine: ComplianceEngine(repository: MemoryAuditRepository()),
+            );
 
-  Future<AuditEvent> recordEvent(
-    String eventId,
+  Future<AuditLog> logUserAction(
     String userId,
-    ResourceType resourceType,
+    String action,
+    AuditEventType eventType,
     String resourceId,
-    AuditEventType action,
-    AuditSeverity severity,
-    AuditStatus status, {
+    String resourceType,
+    AuditActionStatus status,
+    AuditSeverity severity, {
     Map<String, dynamic>? details,
-    String? ipAddress,
-    String? userAgent,
   }) async {
-    return manager.recordEvent(
-      eventId,
+    return await manager.recordEvent(
       userId,
-      resourceType,
-      resourceId,
       action,
-      severity,
+      eventType,
+      resourceId,
+      resourceType,
       status,
+      severity,
       details: details,
-      ipAddress: ipAddress,
-      userAgent: userAgent,
     );
   }
 
-  Future<CompliancePolicy> createPolicy(
-    String policyId,
-    String name,
+  Future<List<AuditLog>> getAuditLogs(String userId) async {
+    return await manager.repository.getAuditLogsByUser(userId);
+  }
+
+  Future<List<AuditLog>> getResourceAuditLogs(String resourceId) async {
+    return await manager.repository.getAuditLogsByResource(resourceId);
+  }
+
+  Future<void> createRule(String ruleName, String description,
+      List<String> resources, List<String> roles) async {
+    await manager.createComplianceRule(ruleName, description, resources, roles);
+  }
+
+  Future<List<ComplianceRule>> listComplianceRules() async {
+    return await manager.repository.getAllComplianceRules();
+  }
+
+  Future<void> createDataPolicy(String policyName, DataClassification classification,
+      List<String> roles, List<String> dataTypes) async {
+    final policy = DataClassificationPolicy(
+      policyId: 'policy_${DateTime.now().millisecondsSinceEpoch}',
+      policyName: policyName,
+      classification: classification,
+      allowedRoles: roles,
+      applicableDataTypes: dataTypes,
+      createdAt: DateTime.now(),
+    );
+    await manager.repository.createDataClassificationPolicy(policy);
+  }
+
+  Future<List<DataClassificationPolicy>> listDataPolicies() async {
+    return await manager.repository.getAllPolicies();
+  }
+
+  Future<void> createRetentionPolicy(String policyName, RetentionPolicy retention,
+      List<String> logTypes) async {
+    final rule = RetentionRule(
+      ruleId: 'retention_${DateTime.now().millisecondsSinceEpoch}',
+      ruleName: policyName,
+      retentionPeriod: retention,
+      applicableLogTypes: logTypes,
+      createdAt: DateTime.now(),
+    );
+    await manager.repository.createRetentionRule(rule);
+  }
+
+  Future<ComplianceCheck> runComplianceCheck(
+    String checkName,
     String description,
-    List<String> rules,
+    List<String> rulesToCheck,
   ) async {
-    final policy = await engine.createPolicy(policyId, name, description, rules);
-    await manager.addPolicy(policy);
-    return policy;
+    return await manager.complianceEngine.executeComplianceCheck(
+      checkName,
+      description,
+      rulesToCheck,
+    );
   }
 
-  Future<AuditLog> generateLog(
-    String logId,
-    DateTime start,
-    DateTime end,
-  ) async {
-    return manager.generateLog(logId, start, end);
+  Future<AuditReport> generateReport(DateTime start, DateTime end) async {
+    return await manager.generateAuditReport(start, end);
   }
 
-  Future<AuditTrail> generateTrail(
-    String trailId,
-    String userId,
-    DateTime start,
-    DateTime end,
-  ) async {
-    return manager.generateTrail(trailId, userId, start, end);
+  Future<ComplianceMetrics> getComplianceMetrics() async {
+    return await manager.complianceEngine.calculateMetrics();
   }
 
-  Future<ComplianceReport> generateReport(
-    String reportId,
-    DateTime start,
-    DateTime end,
-  ) async {
-    return manager.generateComplianceReport(reportId, start, end);
+  Future<void> recordUserAccess(String userId, String action, String ipAddress,
+      {String? deviceInfo, String? userAgent}) async {
+    final log = UserAccessLog(
+      logId: 'access_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      action: action,
+      accessTime: DateTime.now(),
+      ipAddress: ipAddress,
+      deviceInfo: deviceInfo,
+      userAgent: userAgent,
+    );
+    await manager.repository.createUserAccessLog(log);
   }
 
-  Future<List<AuditEvent>> getEventsByDateRange(DateTime start, DateTime end) async {
-    return manager.getEventsByDateRange(start, end);
+  Future<List<UserAccessLog>> getUserAccessHistory(String userId) async {
+    return await manager.repository.getUserAccessLogs(userId);
+  }
+
+  Future<void> recordResourceChange(
+    String resourceId,
+    String resourceType,
+    String fieldName,
+    dynamic oldValue,
+    dynamic newValue,
+    String modifiedBy,
+  ) async {
+    final log = ChangeLog(
+      logId: 'change_${DateTime.now().millisecondsSinceEpoch}',
+      resourceId: resourceId,
+      resourceType: resourceType,
+      fieldName: fieldName,
+      oldValue: oldValue,
+      newValue: newValue,
+      modifiedBy: modifiedBy,
+      modifiedAt: DateTime.now(),
+    );
+    await manager.repository.createChangeLog(log);
+  }
+
+  Future<List<ChangeLog>> getResourceChangeHistory(String resourceId) async {
+    return await manager.repository.getChangeLogsByResource(resourceId);
   }
 }
