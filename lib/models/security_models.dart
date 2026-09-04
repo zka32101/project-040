@@ -1,135 +1,127 @@
 /// Security & Access Control Models
 
-enum SecurityLevel { public, internal, confidential, restricted, secret }
-enum AccessType { read, write, delete, execute, admin, custom }
-enum AuthenticationMethod { password, mfa, oauth, saml, certificate, biometric }
-enum EncryptionMethod { aes256, rsa2048, tls13, custom, none }
-enum PermissionScope { global, organization, project, resource, custom }
-enum AuditAction { allow, deny, attempt, revoke, grant, modify }
+enum AuthenticationMethod { basic, oauth2, jwt, apiKey, mfa, saml, ldap }
+enum AccessLevel { admin, supervisor, operator, viewer, restricted, guest }
+enum PermissionType { read, write, delete, execute, manage, override }
+enum ResourceType { job, deployment, config, incident, analytics, audit }
+enum RoleStatus { active, suspended, archived, pending, expired }
+enum AuditAction { create, read, update, delete, login, logout, export, configuration }
 
-class SecurityPolicy {
-  final String policyId;
-  final String policyName;
-  final String description;
-  final SecurityLevel minSecurityLevel;
-  final List<AuthenticationMethod> requiredAuthMethods;
-  final int passwordMinLength;
-  final int mfaMaxAgeInDays;
-  final bool enforceEncryption;
+class User {
+  final String userId;
+  final String username;
+  final String email;
+  final AccessLevel accessLevel;
+  final List<String> roleIds;
   final DateTime createdAt;
+  final DateTime? lastLoginAt;
   final bool isActive;
+  final String? department;
+  final List<String> permissionIds;
 
-  SecurityPolicy({
-    required this.policyId,
-    required this.policyName,
-    required this.description,
-    required this.minSecurityLevel,
-    required this.requiredAuthMethods,
-    required this.passwordMinLength,
-    required this.mfaMaxAgeInDays,
-    required this.enforceEncryption,
+  User({
+    required this.userId,
+    required this.username,
+    required this.email,
+    required this.accessLevel,
+    required this.roleIds,
     required this.createdAt,
+    this.lastLoginAt,
     this.isActive = true,
+    this.department,
+    required this.permissionIds,
   });
 
-  bool get isMFARequired => requiredAuthMethods.length > 1;
-  bool get isStrict => minSecurityLevel == SecurityLevel.restricted || minSecurityLevel == SecurityLevel.secret;
+  bool get isAdmin => accessLevel == AccessLevel.admin;
+  bool get canManage => accessLevel == AccessLevel.admin || accessLevel == AccessLevel.supervisor;
   int get ageInDays => DateTime.now().difference(createdAt).inDays;
-  int get authMethodCount => requiredAuthMethods.length;
+  int get roleCount => roleIds.length;
 }
 
 class Role {
   final String roleId;
   final String roleName;
   final String description;
+  final AccessLevel accessLevel;
   final List<String> permissionIds;
-  final PermissionScope scope;
   final DateTime createdAt;
-  final DateTime? modifiedAt;
-  final bool isSystem;
+  final RoleStatus status;
+  final bool isDynamic;
 
   Role({
     required this.roleId,
     required this.roleName,
     required this.description,
+    required this.accessLevel,
     required this.permissionIds,
-    required this.scope,
     required this.createdAt,
-    this.modifiedAt,
-    this.isSystem = false,
+    required this.status,
+    this.isDynamic = false,
   });
 
-  bool get hasPermissions => permissionIds.isNotEmpty;
+  bool get isActive => status == RoleStatus.active;
   int get permissionCount => permissionIds.length;
-  int get ageInDays => DateTime.now().difference(createdAt).inDays;
-  bool get isCustom => !isSystem;
 }
 
 class Permission {
   final String permissionId;
   final String permissionName;
+  final PermissionType type;
+  final ResourceType resource;
   final String description;
-  final AccessType accessType;
-  final String resourceType;
-  final PermissionScope scope;
   final DateTime createdAt;
-  final bool isDangerous;
+  final bool isGlobal;
+  final Map<String, dynamic> constraints;
 
   Permission({
     required this.permissionId,
     required this.permissionName,
+    required this.type,
+    required this.resource,
     required this.description,
-    required this.accessType,
-    required this.resourceType,
-    required this.scope,
     required this.createdAt,
-    this.isDangerous = false,
+    this.isGlobal = false,
+    required this.constraints,
   });
 
-  bool get requiresApproval => isDangerous || accessType == AccessType.admin;
-  int get ageInDays => DateTime.now().difference(createdAt).inDays;
-  bool get isAdmin => accessType == AccessType.admin;
-  bool get isWrite => accessType == AccessType.write || accessType == AccessType.delete;
+  bool get hasConstraints => constraints.isNotEmpty;
+  int get constraintCount => constraints.length;
 }
 
-class User {
+class AuthenticationSession {
+  final String sessionId;
   final String userId;
-  final String username;
-  final String email;
-  final List<String> roleIds;
-  final SecurityLevel securityLevel;
   final DateTime createdAt;
-  final DateTime? lastLoginAt;
-  final DateTime? passwordChangedAt;
-  final bool isActive;
-  final bool isMFAEnabled;
+  final DateTime? expiresAt;
+  final String ipAddress;
+  final String userAgent;
+  final AuthenticationMethod method;
+  final bool isValid;
+  final List<String> mfaFactors;
 
-  User({
+  AuthenticationSession({
+    required this.sessionId,
     required this.userId,
-    required this.username,
-    required this.email,
-    required this.roleIds,
-    required this.securityLevel,
     required this.createdAt,
-    this.lastLoginAt,
-    this.passwordChangedAt,
-    this.isActive = true,
-    this.isMFAEnabled = false,
+    this.expiresAt,
+    required this.ipAddress,
+    required this.userAgent,
+    required this.method,
+    this.isValid = true,
+    required this.mfaFactors,
   });
 
-  bool get hasRoles => roleIds.isNotEmpty;
-  bool get hasAdmin => roleIds.contains('admin');
-  int get roleCount => roleIds.length;
-  int get daysSinceLogin => lastLoginAt != null ? DateTime.now().difference(lastLoginAt!).inDays : -1;
-  bool get passwordNeedsChange => passwordChangedAt == null || DateTime.now().difference(passwordChangedAt!).inDays > 90;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isActive => isValid && !isExpired;
+  int get ageInMinutes => DateTime.now().difference(createdAt).inMinutes;
 }
 
 class AccessControl {
   final String controlId;
   final String userId;
+  final ResourceType resource;
   final String resourceId;
-  final String resourceType;
-  final List<AccessType> allowedAccess;
+  final List<PermissionType> grantedPermissions;
   final DateTime grantedAt;
   final DateTime? expiresAt;
   final String? grantedBy;
@@ -138,195 +130,160 @@ class AccessControl {
   AccessControl({
     required this.controlId,
     required this.userId,
+    required this.resource,
     required this.resourceId,
-    required this.resourceType,
-    required this.allowedAccess,
+    required this.grantedPermissions,
     required this.grantedAt,
     this.expiresAt,
     this.grantedBy,
     this.reason,
   });
 
-  bool get isActive => expiresAt == null || DateTime.now().isBefore(expiresAt!);
-  bool get hasExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
-  bool get canRead => allowedAccess.contains(AccessType.read);
-  bool get canWrite => allowedAccess.contains(AccessType.write);
-  bool get canDelete => allowedAccess.contains(AccessType.delete);
-  bool get isAdmin => allowedAccess.contains(AccessType.admin);
-  int get daysUntilExpiry => expiresAt != null ? expiresAt!.difference(DateTime.now()).inDays : -1;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isActive => !isExpired;
+  bool get canRead => grantedPermissions.contains(PermissionType.read);
+  bool get canWrite => grantedPermissions.contains(PermissionType.write);
+  int get permissionCount => grantedPermissions.length;
 }
 
-class SecretManagement {
-  final String secretId;
-  final String secretName;
-  final String secretType;
-  final EncryptionMethod encryptionMethod;
+class PasswordPolicy {
+  final String policyId;
+  final int minLength;
+  final bool requireUppercase;
+  final bool requireLowercase;
+  final bool requireNumbers;
+  final bool requireSpecialChars;
+  final int expirationDays;
+  final int historyCount;
   final DateTime createdAt;
-  final DateTime? rotatedAt;
-  final int rotationIntervalDays;
-  final List<String> accessorIds;
   final bool isActive;
 
-  SecretManagement({
-    required this.secretId,
-    required this.secretName,
-    required this.secretType,
-    required this.encryptionMethod,
+  PasswordPolicy({
+    required this.policyId,
+    required this.minLength,
+    required this.requireUppercase,
+    required this.requireLowercase,
+    required this.requireNumbers,
+    required this.requireSpecialChars,
+    required this.expirationDays,
+    required this.historyCount,
     required this.createdAt,
-    this.rotatedAt,
-    required this.rotationIntervalDays,
-    required this.accessorIds,
     this.isActive = true,
   });
 
-  bool get needsRotation => rotatedAt == null || DateTime.now().difference(rotatedAt!).inDays > rotationIntervalDays;
-  int get daysSinceRotation => rotatedAt != null ? DateTime.now().difference(rotatedAt!).inDays : -1;
-  int get accessorCount => accessorIds.length;
-  bool get hasAccessors => accessorIds.isNotEmpty;
+  int get complexityScore {
+    int score = 0;
+    if (requireUppercase) score++;
+    if (requireLowercase) score++;
+    if (requireNumbers) score++;
+    if (requireSpecialChars) score++;
+    return score;
+  }
 }
 
-class AuthenticationSession {
-  final String sessionId;
-  final String userId;
-  final AuthenticationMethod authMethod;
-  final DateTime createdAt;
-  final DateTime? expiresAt;
-  final String ipAddress;
-  final String? userAgent;
-  final bool isValid;
-  final List<String> mfaMethods;
-
-  AuthenticationSession({
-    required this.sessionId,
-    required this.userId,
-    required this.authMethod,
-    required this.createdAt,
-    this.expiresAt,
-    required this.ipAddress,
-    this.userAgent,
-    this.isValid = true,
-    required this.mfaMethods,
-  });
-
-  bool get hasExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
-  bool get isMFAVerified => mfaMethods.isNotEmpty;
-  int get ageInSeconds => DateTime.now().difference(createdAt).inSeconds;
-  bool get isRecent => ageInSeconds < 3600;
-}
-
-class SecurityAuditLog {
+class SecurityAudit {
   final String auditId;
   final String userId;
-  final String action;
-  final AuditAction auditAction;
-  final String resourceId;
-  final String resourceType;
+  final AuditAction action;
+  final ResourceType? resourceType;
+  final String? resourceId;
   final DateTime timestamp;
-  final bool wasSuccessful;
+  final String? ipAddress;
+  final bool isSuccessful;
   final String? failureReason;
   final Map<String, dynamic> details;
 
-  SecurityAuditLog({
+  SecurityAudit({
     required this.auditId,
     required this.userId,
     required this.action,
-    required this.auditAction,
-    required this.resourceId,
-    required this.resourceType,
+    this.resourceType,
+    this.resourceId,
     required this.timestamp,
-    required this.wasSuccessful,
+    this.ipAddress,
+    this.isSuccessful = true,
     this.failureReason,
     required this.details,
   });
 
-  bool get isFailed => !wasSuccessful;
-  bool get isDenied => auditAction == AuditAction.deny;
-  int get ageInDays => DateTime.now().difference(timestamp).inDays;
-  bool get isRecent => DateTime.now().difference(timestamp).inHours < 24;
+  bool get isFailed => !isSuccessful;
+  int get ageInMinutes => DateTime.now().difference(timestamp).inMinutes;
 }
 
-class EncryptionKey {
-  final String keyId;
-  final String keyName;
-  final EncryptionMethod encryptionMethod;
-  final DateTime createdAt;
-  final DateTime? rotatedAt;
-  final int keySizeInBits;
-  final bool isActive;
-  final List<String> authorizedUsers;
-
-  EncryptionKey({
-    required this.keyId,
-    required this.keyName,
-    required this.encryptionMethod,
-    required this.createdAt,
-    this.rotatedAt,
-    required this.keySizeInBits,
-    this.isActive = true,
-    required this.authorizedUsers,
-  });
-
-  bool get isStrong => keySizeInBits >= 256;
-  int get ageInDays => DateTime.now().difference(createdAt).inDays;
-  int get authorizedUserCount => authorizedUsers.length;
-  bool get hasAuthorizedUsers => authorizedUsers.isNotEmpty;
-}
-
-class PrivilegeEscalation {
-  final String escalationId;
+class TwoFactorAuth {
+  final String mfaId;
   final String userId;
-  final String requestedRole;
-  final String requestReason;
-  final DateTime requestedAt;
-  final DateTime? approvedAt;
-  final String? approvedBy;
-  final bool isApproved;
-  final DateTime? expiresAt;
+  final String secret;
+  final DateTime enabledAt;
+  final DateTime? disabledAt;
+  final List<String> backupCodes;
+  final bool isActive;
 
-  PrivilegeEscalation({
-    required this.escalationId,
+  TwoFactorAuth({
+    required this.mfaId,
     required this.userId,
-    required this.requestedRole,
-    required this.requestReason,
-    required this.requestedAt,
-    this.approvedAt,
-    this.approvedBy,
-    this.isApproved = false,
-    this.expiresAt,
+    required this.secret,
+    required this.enabledAt,
+    this.disabledAt,
+    required this.backupCodes,
+    this.isActive = true,
   });
 
-  bool get isPending => !isApproved;
-  bool get hasExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
-  int get ageInDays => DateTime.now().difference(requestedAt).inDays;
-  int get daysUntilExpiry => expiresAt != null ? expiresAt!.difference(DateTime.now()).inDays : -1;
+  bool get hasBackupCodes => backupCodes.isNotEmpty;
+  int get backupCodeCount => backupCodes.length;
+  int get ageInDays => DateTime.now().difference(enabledAt).inDays;
 }
 
-class SecurityThreat {
-  final String threatId;
-  final String threatType;
-  final String description;
-  final double severityScore;
-  final DateTime detectedAt;
-  final String? detectedBy;
-  final DateTime? mitigatedAt;
-  final bool isMitigated;
-  final String? mitigationActions;
+class IPWhitelist {
+  final String whitelistId;
+  final String userId;
+  final List<String> ipAddresses;
+  final List<String> cidrRanges;
+  final DateTime createdAt;
+  final DateTime? expiresAt;
+  final bool isActive;
+  final String? description;
 
-  SecurityThreat({
-    required this.threatId,
-    required this.threatType,
-    required this.description,
-    required this.severityScore,
-    required this.detectedAt,
-    this.detectedBy,
-    this.mitigatedAt,
-    this.isMitigated = false,
-    this.mitigationActions,
+  IPWhitelist({
+    required this.whitelistId,
+    required this.userId,
+    required this.ipAddresses,
+    required this.cidrRanges,
+    required this.createdAt,
+    this.expiresAt,
+    this.isActive = true,
+    this.description,
   });
 
-  bool get isHighSeverity => severityScore > 0.8;
-  bool get isCritical => severityScore > 0.95;
-  bool get isPending => !isMitigated;
-  int get ageInHours => DateTime.now().difference(detectedAt).inHours;
-  bool get isRecent => ageInHours < 24;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  int get totalRanges => ipAddresses.length + cidrRanges.length;
+}
+
+class SecurityPolicy {
+  final String policyId;
+  final String policyName;
+  final int sessionTimeoutMinutes;
+  final int maxLoginAttempts;
+  final int lockoutDurationMinutes;
+  final bool requireMfa;
+  final bool enforceIpWhitelist;
+  final DateTime createdAt;
+  final bool isActive;
+  final Map<String, dynamic> settings;
+
+  SecurityPolicy({
+    required this.policyId,
+    required this.policyName,
+    required this.sessionTimeoutMinutes,
+    required this.maxLoginAttempts,
+    required this.lockoutDurationMinutes,
+    required this.requireMfa,
+    required this.enforceIpWhitelist,
+    required this.createdAt,
+    this.isActive = true,
+    required this.settings,
+  });
+
+  bool get isMfaRequired => requireMfa;
+  bool get isIpEnforced => enforceIpWhitelist;
 }
