@@ -1,308 +1,577 @@
-/// Phase 52: Database Persistence & Transaction Management データベース永続化・トランザクション管理
+/// Phase 58: Database Persistence & Transactions データベース永続化・トランザクション管理
 ///
-/// データベース接続、トランザクション管理、永続化、コネクションプール機能
+/// データベース接続、トランザクション、マイグレーション、バックアップ機能
 
-/// トランザクション状態
-enum TransactionState {
+/// データベースタイプ
+enum DatabaseType {
+  sqlite('sqlite'),
+  postgresql('postgresql'),
+  mysql('mysql'),
+  mongodb('mongodb'),
+  firestore('firestore');
+
+  final String value;
+  const DatabaseType(this.value);
+}
+
+/// トランザクションステータス
+enum TransactionStatus {
   pending('pending'),
+  inProgress('in_progress'),
   committed('committed'),
   rolledBack('rolled_back'),
   failed('failed');
 
   final String value;
-  const TransactionState(this.value);
+  const TransactionStatus(this.value);
 }
 
-/// トランザクション分離レベル
-enum IsolationLevel {
-  readUncommitted('read_uncommitted'),
-  readCommitted('read_committed'),
-  repeatableRead('repeatable_read'),
-  serializable('serializable');
+/// マイグレーションステータス
+enum MigrationStatus {
+  pending('pending'),
+  inProgress('in_progress'),
+  completed('completed'),
+  failed('failed'),
+  rolledBack('rolled_back');
 
   final String value;
-  const IsolationLevel(this.value);
+  const MigrationStatus(this.value);
 }
 
-/// データベース操作種別
-enum DatabaseOperationType {
-  create('create'),
-  read('read'),
-  update('update'),
-  delete('delete');
+/// バックアップタイプ
+enum BackupType {
+  full('full'),
+  incremental('incremental'),
+  differential('differential'),
+  snapshot('snapshot');
 
   final String value;
-  const DatabaseOperationType(this.value);
+  const BackupType(this.value);
 }
 
-/// データベース接続
+/// バックアップステータス
+enum BackupStatus {
+  pending('pending'),
+  inProgress('in_progress'),
+  completed('completed'),
+  failed('failed'),
+  archived('archived');
+
+  final String value;
+  const BackupStatus(this.value);
+}
+
+/// インデックスタイプ
+enum IndexType {
+  primary('primary'),
+  unique('unique'),
+  composite('composite'),
+  fulltext('fulltext'),
+  spatial('spatial');
+
+  final String value;
+  const IndexType(this.value);
+}
+
+/// データベース接続設定
 class DatabaseConnection {
   final String connectionId;
+  final DatabaseType databaseType;
   final String host;
   final int port;
   final String database;
+  final String username;
+  final String password;
+  final int maxConnections;
+  final int connectionTimeout;
   final DateTime createdAt;
-  final DateTime? closedAt;
   final bool isActive;
+  final String? ssl;
 
   DatabaseConnection({
     required this.connectionId,
+    required this.databaseType,
     required this.host,
     required this.port,
     required this.database,
+    required this.username,
+    required this.password,
+    this.maxConnections = 10,
+    this.connectionTimeout = 30,
     required this.createdAt,
-    this.closedAt,
     this.isActive = true,
+    this.ssl,
   });
 
-  /// 接続がアクティブか
-  bool get isOpen => isActive && closedAt == null;
+  /// 接続が有効か
+  bool get isEnabled => isActive;
 
-  /// 接続時間
-  Duration get connectionDuration => (closedAt ?? DateTime.now()).difference(createdAt);
+  /// 接続情報は完全か
+  bool get isComplete => host.isNotEmpty && database.isNotEmpty && username.isNotEmpty;
 
-  /// アイドル時間
-  Duration? get idleTime {
-    if (closedAt == null) return null;
-    return closedAt!.difference(createdAt);
-  }
+  /// 接続タイムアウト秒数
+  int get timeoutSeconds => connectionTimeout;
 }
 
 /// トランザクション
 class Transaction {
   final String transactionId;
   final String connectionId;
-  final TransactionState state;
-  final IsolationLevel isolationLevel;
   final DateTime startedAt;
   final DateTime? committedAt;
   final DateTime? rolledBackAt;
-  final List<String> operationIds;
-  final bool isReadOnly;
+  final TransactionStatus status;
+  final List<String> operations;
+  final String? rollbackReason;
+  final int isolationLevel;
 
   Transaction({
     required this.transactionId,
     required this.connectionId,
-    required this.state,
-    required this.isolationLevel,
     required this.startedAt,
     this.committedAt,
     this.rolledBackAt,
-    required this.operationIds,
-    this.isReadOnly = false,
+    this.status = TransactionStatus.pending,
+    this.operations = const [],
+    this.rollbackReason,
+    this.isolationLevel = 1,
   });
 
-  /// トランザクションがアクティブか
-  bool get isActive => state == TransactionState.pending;
+  /// トランザクションが有効か
+  bool get isActive => status == TransactionStatus.inProgress;
 
-  /// トランザクションが成功したか
-  bool get isSuccessful => state == TransactionState.committed;
+  /// トランザクションが完了したか
+  bool get isCompleted => status == TransactionStatus.committed || status == TransactionStatus.rolledBack;
 
-  /// トランザクションが失敗したか
-  bool get isFailed => state == TransactionState.failed || state == TransactionState.rolledBack;
+  /// トランザクション継続時間（秒）
+  int get durationInSeconds {
+    final endTime = committedAt ?? rolledBackAt ?? DateTime.now();
+    return endTime.difference(startedAt).inSeconds;
+  }
 
   /// 操作数
-  int get operationCount => operationIds.length;
+  int get operationCount => operations.length;
 
-  /// トランザクション実行時間
-  Duration get executionTime {
-    final endTime = committedAt ?? rolledBackAt ?? DateTime.now();
-    return endTime.difference(startedAt);
-  }
+  /// トランザクションが失敗したか
+  bool get hasFailed => status == TransactionStatus.failed;
 }
 
-/// データベース操作
-class DatabaseOperation {
-  final String operationId;
-  final String transactionId;
-  final DatabaseOperationType type;
-  final String table;
-  final String? query;
-  final Map<String, dynamic>? parameters;
-  final DateTime executedAt;
-  final Duration? executionTime;
-  final bool isSuccessful;
+/// データベーススキーマ
+class DatabaseSchema {
+  final String schemaId;
+  final String schemaName;
+  final int version;
+  final List<String> tables;
+  final List<String> indexes;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final bool isActive;
+
+  DatabaseSchema({
+    required this.schemaId,
+    required this.schemaName,
+    required this.version,
+    required this.tables,
+    required this.indexes,
+    required this.createdAt,
+    this.updatedAt,
+    this.isActive = true,
+  });
+
+  /// スキーマが有効か
+  bool get isEnabled => isActive;
+
+  /// テーブル数
+  int get tableCount => tables.length;
+
+  /// インデックス数
+  int get indexCount => indexes.length;
+
+  /// スキーマバージョン
+  String get versionString => 'v$version';
+}
+
+/// マイグレーション
+class Migration {
+  final String migrationId;
+  final String migrationName;
+  final int version;
+  final String upScript;
+  final String downScript;
+  final MigrationStatus status;
+  final DateTime createdAt;
+  final DateTime? appliedAt;
+  final DateTime? rolledBackAt;
   final String? errorMessage;
 
-  DatabaseOperation({
-    required this.operationId,
-    required this.transactionId,
-    required this.type,
-    required this.table,
-    this.query,
-    this.parameters,
-    required this.executedAt,
-    this.executionTime,
-    required this.isSuccessful,
+  Migration({
+    required this.migrationId,
+    required this.migrationName,
+    required this.version,
+    required this.upScript,
+    required this.downScript,
+    this.status = MigrationStatus.pending,
+    required this.createdAt,
+    this.appliedAt,
+    this.rolledBackAt,
     this.errorMessage,
   });
 
-  /// 操作が成功したか
-  bool get success => isSuccessful;
+  /// マイグレーションが完了したか
+  bool get isCompleted => status == MigrationStatus.completed;
 
-  /// 操作がエラーか
-  bool get hasError => !isSuccessful && errorMessage != null;
+  /// マイグレーションが保留中か
+  bool get isPending => status == MigrationStatus.pending;
 
-  /// 実行時間（ミリ秒）
-  int? get executionTimeMs => executionTime?.inMilliseconds;
+  /// マイグレーションが失敗したか
+  bool get hasFailed => status == MigrationStatus.failed;
+
+  /// 適用済みか
+  bool get isApplied => appliedAt != null;
+
+  /// 実行時間（秒）
+  int? get executionTimeInSeconds {
+    if (appliedAt == null) return null;
+    return appliedAt!.difference(createdAt).inSeconds;
+  }
 }
 
-/// コネクションプール
+/// データベースインデックス
+class DatabaseIndex {
+  final String indexId;
+  final String indexName;
+  final String tableName;
+  final List<String> columns;
+  final IndexType indexType;
+  final bool isUnique;
+  final bool isActive;
+  final DateTime createdAt;
+
+  DatabaseIndex({
+    required this.indexId,
+    required this.indexName,
+    required this.tableName,
+    required this.columns,
+    required this.indexType,
+    this.isUnique = false,
+    this.isActive = true,
+    required this.createdAt,
+  });
+
+  /// インデックスが有効か
+  bool get isEnabled => isActive;
+
+  /// カラム数
+  int get columnCount => columns.length;
+
+  /// 複合インデックスか
+  bool get isComposite => columns.length > 1;
+}
+
+/// バックアップ
+class Backup {
+  final String backupId;
+  final String backupName;
+  final BackupType backupType;
+  final int size; // バイト単位
+  final DateTime createdAt;
+  final DateTime? completedAt;
+  final BackupStatus status;
+  final String location;
+  final bool isEncrypted;
+  final String? encryptionMethod;
+  final int? retentionDays;
+
+  Backup({
+    required this.backupId,
+    required this.backupName,
+    required this.backupType,
+    required this.size,
+    required this.createdAt,
+    this.completedAt,
+    this.status = BackupStatus.pending,
+    required this.location,
+    this.isEncrypted = false,
+    this.encryptionMethod,
+    this.retentionDays,
+  });
+
+  /// バックアップが完了したか
+  bool get isCompleted => status == BackupStatus.completed;
+
+  /// バックアップが失敗したか
+  bool get hasFailed => status == BackupStatus.failed;
+
+  /// バックアップサイズ（MB）
+  double get sizeInMB => size / (1024 * 1024);
+
+  /// バックアップが有効期限内か
+  bool get isWithinRetention {
+    if (retentionDays == null) return true;
+    final expiryDate = createdAt.add(Duration(days: retentionDays!));
+    return DateTime.now().isBefore(expiryDate);
+  }
+
+  /// 作成から経過日数
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+
+  /// 実行時間（秒）
+  int? get executionTimeInSeconds {
+    if (completedAt == null) return null;
+    return completedAt!.difference(createdAt).inSeconds;
+  }
+}
+
+/// データベースパフォーマンス統計
+class DatabasePerformanceStats {
+  final String statsId;
+  final int totalQueries;
+  final int slowQueries; // >1秒
+  final double averageQueryTime; // ミリ秒
+  final double maxQueryTime;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final int cacheHitRate; // 0-100
+  final int lockContention;
+  final double diskUsage; // GB
+
+  DatabasePerformanceStats({
+    required this.statsId,
+    required this.totalQueries,
+    required this.slowQueries,
+    required this.averageQueryTime,
+    required this.maxQueryTime,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.cacheHitRate,
+    required this.lockContention,
+    required this.diskUsage,
+  });
+
+  /// パフォーマンスが良好か
+  bool get isHealthy => averageQueryTime < 100 && cacheHitRate > 80;
+
+  /// スローカウント（%）
+  double get slowQueryPercentage {
+    if (totalQueries == 0) return 0.0;
+    return (slowQueries / totalQueries) * 100;
+  }
+
+  /// キャッシュヒット率は高いか
+  bool get hasHighCacheHitRate => cacheHitRate > 90;
+
+  /// ディスク使用率は高いか
+  bool get hasHighDiskUsage => diskUsage > 100; // 100GB以上
+}
+
+/// データベース接続プール
 class ConnectionPool {
   final String poolId;
-  final int maxConnections;
-  final List<String> availableConnectionIds;
-  final List<String> activeConnectionIds;
+  final String poolName;
+  final int maxSize;
+  final int currentSize;
+  final int availableConnections;
+  final int busyConnections;
   final DateTime createdAt;
-  final DateTime? lastAccessedAt;
+  final bool isActive;
 
   ConnectionPool({
     required this.poolId,
-    required this.maxConnections,
-    required this.availableConnectionIds,
-    required this.activeConnectionIds,
+    required this.poolName,
+    required this.maxSize,
+    required this.currentSize,
+    required this.availableConnections,
+    required this.busyConnections,
     required this.createdAt,
-    this.lastAccessedAt,
+    this.isActive = true,
   });
 
-  /// 利用可能な接続数
-  int get availableCount => availableConnectionIds.length;
+  /// プールが有効か
+  bool get isEnabled => isActive;
 
-  /// アクティブな接続数
-  int get activeCount => activeConnectionIds.length;
-
-  /// 総接続数
-  int get totalConnections => availableCount + activeCount;
-
-  /// プール利用率
-  double get utilizationRate {
-    if (maxConnections == 0) return 0.0;
-    return activeCount / maxConnections;
+  /// 利用率（%）
+  double get utilizationPercentage {
+    if (maxSize == 0) return 0.0;
+    return (busyConnections / maxSize) * 100;
   }
 
-  /// プールがいっぱいか
-  bool get isFull => activeCount >= maxConnections;
+  /// プールは満杯か
+  bool get isFull => currentSize >= maxSize;
 
-  /// 利用可能か
-  bool get hasAvailable => availableCount > 0;
+  /// プールは飽和状態か
+  bool get isSaturated => utilizationPercentage > 90;
+
+  /// 平均アイドル接続数
+  int get averageIdleConnections => availableConnections;
 }
 
-/// 永続化統計
-class PersistenceStats {
-  final String statsId;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final int totalTransactions;
-  final int successfulTransactions;
-  final int failedTransactions;
-  final int totalOperations;
-  final Map<DatabaseOperationType, int> operationsByType;
-  final double averageTransactionTime; // milliseconds
-  final double successRate; // 0.0-1.0
+/// データベースレプリケーション
+class DatabaseReplication {
+  final String replicationId;
+  final String sourceDatabaseId;
+  final String targetDatabaseId;
+  final String status; // active, paused, failed
+  final int lag; // ミリ秒
+  final DateTime createdAt;
+  final DateTime? lastSyncAt;
+  final bool isBidirectional;
+  final int replicationFactor;
 
-  PersistenceStats({
-    required this.statsId,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.totalTransactions,
-    required this.successfulTransactions,
-    required this.failedTransactions,
-    required this.totalOperations,
-    required this.operationsByType,
-    required this.averageTransactionTime,
-    required this.successRate,
+  DatabaseReplication({
+    required this.replicationId,
+    required this.sourceDatabaseId,
+    required this.targetDatabaseId,
+    required this.status,
+    required this.lag,
+    required this.createdAt,
+    this.lastSyncAt,
+    this.isBidirectional = false,
+    this.replicationFactor = 1,
   });
 
-  /// 失敗率
-  double get failureRate {
-    if (totalTransactions == 0) return 0.0;
-    return failedTransactions / totalTransactions;
-  }
+  /// レプリケーションが有効か
+  bool get isActive => status == 'active';
 
-  /// 最も多い操作タイプ
-  DatabaseOperationType? get mostCommonOperation {
-    if (operationsByType.isEmpty) return null;
-    return operationsByType.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  /// ラグは許容範囲か
+  bool get isWithinAcceptableLag => lag < 5000; // 5秒以内
+
+  /// 同期が最近か
+  bool get isRecentlysynced {
+    if (lastSyncAt == null) return false;
+    return DateTime.now().difference(lastSyncAt!).inMinutes < 5;
   }
 }
 
 /// トランザクションログ
 class TransactionLog {
   final String logId;
-  final List<Transaction> transactions;
-  final DateTime createdAt;
-  final DateTime? lastUpdated;
+  final String transactionId;
+  final String operation; // INSERT, UPDATE, DELETE, SELECT
+  final String tableName;
+  final Map<String, dynamic>? changes;
+  final DateTime timestamp;
+  final String status; // success, failure
+  final String? errorMessage;
+  final int executionTimeMs;
 
   TransactionLog({
     required this.logId,
-    required this.transactions,
-    required this.createdAt,
-    this.lastUpdated,
+    required this.transactionId,
+    required this.operation,
+    required this.tableName,
+    this.changes,
+    required this.timestamp,
+    this.status = 'success',
+    this.errorMessage,
+    this.executionTimeMs = 0,
   });
 
-  /// トランザクション数
-  int get transactionCount => transactions.length;
+  /// ログが成功したか
+  bool get isSuccess => status == 'success';
 
-  /// 成功数
-  int get successCount => transactions.where((t) => t.isSuccessful).length;
+  /// ログが失敗したか
+  bool get hasFailed => status == 'failure';
 
-  /// 失敗数
-  int get failureCount => transactions.where((t) => t.isFailed).length;
-
-  /// 成功率
-  double get successRate {
-    if (transactions.isEmpty) return 0.0;
-    return successCount / transactions.length;
-  }
+  /// 実行が遅かったか
+  bool get isSlowExecution => executionTimeMs > 1000;
 }
 
-/// データベース永続化レポート
-class DatabasePersistenceReport {
+/// データベース復旧ポイント
+class RecoveryPoint {
+  final String recoveryId;
+  final String recoveryName;
+  final DateTime timestamp;
+  final String backupId;
+  final int dataSize; // バイト
+  final bool isVerified;
+  final String? verificationMethod;
+  final DateTime? testedAt;
+
+  RecoveryPoint({
+    required this.recoveryId,
+    required this.recoveryName,
+    required this.timestamp,
+    required this.backupId,
+    required this.dataSize,
+    this.isVerified = false,
+    this.verificationMethod,
+    this.testedAt,
+  });
+
+  /// 復旧ポイントが検証済みか
+  bool get isVerifiedAndReady => isVerified && testedAt != null;
+
+  /// 復旧ポイント年齢（日）
+  int get ageInDays => DateTime.now().difference(timestamp).inDays;
+
+  /// データサイズ（MB）
+  double get dataSizeInMB => dataSize / (1024 * 1024);
+
+  /// 復旧ポイントは古いか（30日以上）
+  bool get isOld => ageInDays > 30;
+}
+
+/// データベースレポート
+class DatabaseReport {
   final String reportId;
   final DateTime generatedAt;
   final DateTime periodStart;
   final DateTime periodEnd;
+  final int totalConnections;
   final int activeConnections;
-  final TransactionLog transactionLog;
-  final PersistenceStats stats;
+  final int totalQueries;
+  final double averageQueryTime;
+  final List<String> performanceIssues;
   final List<String>? recommendations;
 
-  DatabasePersistenceReport({
+  DatabaseReport({
     required this.reportId,
     required this.generatedAt,
     required this.periodStart,
     required this.periodEnd,
+    required this.totalConnections,
     required this.activeConnections,
-    required this.transactionLog,
-    required this.stats,
+    required this.totalQueries,
+    required this.averageQueryTime,
+    required this.performanceIssues,
     this.recommendations,
   });
+
+  /// レポートが良好か
+  bool get isHealthy => performanceIssues.isEmpty;
+
+  /// 接続使用率（%）
+  double get connectionUtilization {
+    if (totalConnections == 0) return 0.0;
+    return (activeConnections / totalConnections) * 100;
+  }
 
   /// Markdown形式で出力
   String toMarkdown() {
     final buffer = StringBuffer();
-    buffer.writeln('# Database Persistence Report');
+    buffer.writeln('# Database Report');
     buffer.writeln('');
     buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
     buffer.writeln('');
 
     buffer.writeln('## Summary');
     buffer.writeln('');
+    buffer.writeln('- Period: ${periodStart.toIso8601String()} to ${periodEnd.toIso8601String()}');
+    buffer.writeln('- Total Connections: $totalConnections');
     buffer.writeln('- Active Connections: $activeConnections');
-    buffer.writeln('- Total Transactions: ${stats.totalTransactions}');
-    buffer.writeln('- Successful: ${stats.successfulTransactions}');
-    buffer.writeln('- Failed: ${stats.failedTransactions}');
-    buffer.writeln('- Success Rate: ${(stats.successRate * 100).toStringAsFixed(1)}%');
-    buffer.writeln('- Average Transaction Time: ${stats.averageTransactionTime.toStringAsFixed(0)}ms');
+    buffer.writeln('- Connection Utilization: ${connectionUtilization.toStringAsFixed(1)}%');
+    buffer.writeln('- Total Queries: $totalQueries');
+    buffer.writeln('- Average Query Time: ${averageQueryTime.toStringAsFixed(2)}ms');
     buffer.writeln('');
 
-    buffer.writeln('## Operations');
-    buffer.writeln('');
-    buffer.writeln('- Total Operations: ${stats.totalOperations}');
-    for (final entry in stats.operationsByType.entries) {
-      buffer.writeln('- ${entry.key.value}: ${entry.value}');
+    if (performanceIssues.isNotEmpty) {
+      buffer.writeln('## Performance Issues');
+      buffer.writeln('');
+      for (final issue in performanceIssues.take(10)) {
+        buffer.writeln('- $issue');
+      }
+      buffer.writeln('');
     }
-    buffer.writeln('');
 
     if (recommendations != null && recommendations!.isNotEmpty) {
       buffer.writeln('## Recommendations');
@@ -314,36 +583,5 @@ class DatabasePersistenceReport {
     }
 
     return buffer.toString();
-  }
-}
-
-/// コネクション接続履歴
-class ConnectionHistory {
-  final String historyId;
-  final List<DatabaseConnection> connections;
-  final DateTime createdAt;
-  final DateTime? lastUpdated;
-
-  ConnectionHistory({
-    required this.historyId,
-    required this.connections,
-    required this.createdAt,
-    this.lastUpdated,
-  });
-
-  /// 接続数
-  int get connectionCount => connections.length;
-
-  /// アクティブな接続数
-  int get activeConnectionCount => connections.where((c) => c.isOpen).length;
-
-  /// 閉じられた接続数
-  int get closedConnectionCount => connections.where((c) => !c.isOpen).length;
-
-  /// 平均接続時間
-  double get averageConnectionDuration {
-    if (connections.isEmpty) return 0.0;
-    final totalDuration = connections.fold<int>(0, (sum, c) => sum + c.connectionDuration.inMilliseconds);
-    return totalDuration / connections.length;
   }
 }
