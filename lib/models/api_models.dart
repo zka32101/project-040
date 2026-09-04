@@ -1,452 +1,401 @@
-/// Phase 27: API モデル
-/// REST API のリクエスト・レスポンスモデル
+/// Phase 55: API Integration & Webhooks APIインテグレーション・ウェブフック
 
-import 'async_job_model.dart';
-import 'analytics_model.dart';
-import 'search_export_model.dart';
+/// HTTPメソッド
+enum HttpMethod {
+  get('GET'),
+  post('POST'),
+  put('PUT'),
+  patch('PATCH'),
+  delete('DELETE'),
+  head('HEAD');
 
-// ==================== 認証関連 ====================
-
-/// ログインリクエスト
-class LoginRequest {
-  final String email;
-  final String password;
-
-  const LoginRequest({
-    required this.email,
-    required this.password,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'email': email,
-        'password': password,
-      };
+  final String value;
+  const HttpMethod(this.value);
 }
 
-/// ログインレスポンス
-class LoginResponse {
-  final String userId;
-  final String token;
-  final String refreshToken;
-  final DateTime expiresAt;
+/// Webhook イベントタイプ
+enum WebhookEventType {
+  jobCreated('job.created'),
+  jobCompleted('job.completed'),
+  jobFailed('job.failed'),
+  jobCancelled('job.cancelled'),
+  monitoringAlert('monitoring.alert'),
+  reportGenerated('report.generated'),
+  errorOccurred('error.occurred'),
+  dataUpdated('data.updated');
 
-  const LoginResponse({
-    required this.userId,
-    required this.token,
-    required this.refreshToken,
-    required this.expiresAt,
+  final String value;
+  const WebhookEventType(this.value);
+}
+
+/// リトライポリシー
+enum RetryPolicy {
+  noRetry('no_retry'),
+  exponential('exponential'),
+  linear('linear'),
+  fibonacci('fibonacci');
+
+  final String value;
+  const RetryPolicy(this.value);
+}
+
+/// APIエンドポイント
+class ApiEndpoint {
+  final String endpointId;
+  final String name;
+  final String baseUrl;
+  final HttpMethod httpMethod;
+  final String path;
+  final Map<String, String> headers;
+  final int timeoutSeconds;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime? lastUsedAt;
+
+  ApiEndpoint({
+    required this.endpointId,
+    required this.name,
+    required this.baseUrl,
+    required this.httpMethod,
+    required this.path,
+    required this.headers,
+    required this.timeoutSeconds,
+    this.isActive = true,
+    required this.createdAt,
+    this.lastUsedAt,
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    return LoginResponse(
-      userId: json['userId'] as String,
-      token: json['token'] as String,
-      refreshToken: json['refreshToken'] as String,
-      expiresAt: DateTime.parse(json['expiresAt'] as String),
-    );
+  /// エンドポイントが有効か
+  bool get isValid => isActive && (DateTime.now().difference(createdAt).inDays < 365);
+
+  /// 完全URL
+  String get fullUrl => '$baseUrl$path';
+
+  /// 使用済みか
+  bool get isUsed => lastUsedAt != null;
+
+  /// 最後の使用からの日数
+  int? get daysSinceLastUse => lastUsedAt != null 
+    ? DateTime.now().difference(lastUsedAt!).inDays 
+    : null;
+}
+
+/// APIリクエスト
+class ApiRequest {
+  final String requestId;
+  final String endpointId;
+  final HttpMethod method;
+  final String url;
+  final Map<String, String>? headers;
+  final dynamic body;
+  final DateTime sentAt;
+  final int? responseStatusCode;
+  final String? responseBody;
+  final DateTime? receivedAt;
+  final bool isSuccessful;
+  final String? errorMessage;
+
+  ApiRequest({
+    required this.requestId,
+    required this.endpointId,
+    required this.method,
+    required this.url,
+    this.headers,
+    this.body,
+    required this.sentAt,
+    this.responseStatusCode,
+    this.responseBody,
+    this.receivedAt,
+    this.isSuccessful = false,
+    this.errorMessage,
+  });
+
+  /// リクエストが完了したか
+  bool get isCompleted => receivedAt != null;
+
+  /// レスポンス時間（ミリ秒）
+  int? get responseTimeMs => receivedAt != null
+    ? receivedAt!.difference(sentAt).inMilliseconds
+    : null;
+
+  /// ステータスコードが成功か
+  bool get isStatusSuccess => responseStatusCode != null && responseStatusCode! >= 200 && responseStatusCode! < 300;
+}
+
+/// Webhook エンドポイント
+class WebhookEndpoint {
+  final String webhookId;
+  final String targetUrl;
+  final List<WebhookEventType> events;
+  final Map<String, String>? headers;
+  final RetryPolicy retryPolicy;
+  final int maxRetries;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime? lastTriggeredAt;
+  final String? secret;
+
+  WebhookEndpoint({
+    required this.webhookId,
+    required this.targetUrl,
+    required this.events,
+    this.headers,
+    required this.retryPolicy,
+    required this.maxRetries,
+    this.isActive = true,
+    required this.createdAt,
+    this.lastTriggeredAt,
+    this.secret,
+  });
+
+  /// Webhookが有効か
+  bool get isEnabled => isActive;
+
+  /// トリガーされたか
+  bool get isTriggered => lastTriggeredAt != null;
+
+  /// イベント数
+  int get eventCount => events.length;
+}
+
+/// Webhook ペイロード
+class WebhookPayload {
+  final String payloadId;
+  final String webhookId;
+  final WebhookEventType eventType;
+  final DateTime triggeredAt;
+  final Map<String, dynamic> data;
+  final String? signature;
+  final int attemptCount;
+  final WebhookPayloadStatus status;
+  final String? lastError;
+
+  WebhookPayload({
+    required this.payloadId,
+    required this.webhookId,
+    required this.eventType,
+    required this.triggeredAt,
+    required this.data,
+    this.signature,
+    this.attemptCount = 0,
+    this.status = WebhookPayloadStatus.pending,
+    this.lastError,
+  });
+
+  /// ペイロードが保留中か
+  bool get isPending => status == WebhookPayloadStatus.pending;
+
+  /// ペイロードが成功したか
+  bool get isSuccessful => status == WebhookPayloadStatus.delivered;
+
+  /// ペイロードが失敗したか
+  bool get isFailed => status == WebhookPayloadStatus.failed;
+}
+
+/// Webhook ペイロードステータス
+enum WebhookPayloadStatus {
+  pending('pending'),
+  delivered('delivered'),
+  failed('failed'),
+  retrying('retrying');
+
+  final String value;
+  const WebhookPayloadStatus(this.value);
+}
+
+/// API 設定
+class ApiConfiguration {
+  final String configId;
+  final String name;
+  final String apiKey;
+  final String? apiSecret;
+  final int rateLimit; // リクエスト数/分
+  final Duration timeout;
+  final RetryPolicy retryPolicy;
+  final int maxRetries;
+  final bool isActive;
+  final DateTime createdAt;
+
+  ApiConfiguration({
+    required this.configId,
+    required this.name,
+    required this.apiKey,
+    this.apiSecret,
+    required this.rateLimit,
+    required this.timeout,
+    required this.retryPolicy,
+    required this.maxRetries,
+    this.isActive = true,
+    required this.createdAt,
+  });
+
+  /// 設定が有効か
+  bool get isEnabled => isActive;
+
+  /// レート制限が高いか
+  bool get hasHighRateLimit => rateLimit > 100;
+
+  /// タイムアウトが長いか
+  bool get hasLongTimeout => timeout.inSeconds > 30;
+}
+
+/// Webhook イベント
+class WebhookEvent {
+  final String eventId;
+  final WebhookEventType eventType;
+  final DateTime occurredAt;
+  final Map<String, dynamic> payload;
+  final String? source; // ジョブID等
+  final List<String> webhookIds; // トリガーされたWebhook
+
+  WebhookEvent({
+    required this.eventId,
+    required this.eventType,
+    required this.occurredAt,
+    required this.payload,
+    this.source,
+    required this.webhookIds,
+  });
+
+  /// イベントが発火したか
+  bool get isTriggered => webhookIds.isNotEmpty;
+
+  /// トリガーされたWebhook数
+  int get triggeredCount => webhookIds.length;
+}
+
+/// API メトリクス
+class ApiMetrics {
+  final String metricsId;
+  final int totalRequests;
+  final int successfulRequests;
+  final int failedRequests;
+  final double averageResponseTimeMs;
+  final int totalWebhooks;
+  final int successfulWebhooks;
+  final int failedWebhooks;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+
+  ApiMetrics({
+    required this.metricsId,
+    required this.totalRequests,
+    required this.successfulRequests,
+    required this.failedRequests,
+    required this.averageResponseTimeMs,
+    required this.totalWebhooks,
+    required this.successfulWebhooks,
+    required this.failedWebhooks,
+    required this.periodStart,
+    required this.periodEnd,
+  });
+
+  /// 成功率
+  double get successRate {
+    if (totalRequests == 0) return 0.0;
+    return successfulRequests / totalRequests;
+  }
+
+  /// Webhook成功率
+  double get webhookSuccessRate {
+    if (totalWebhooks == 0) return 0.0;
+    return successfulWebhooks / totalWebhooks;
+  }
+
+  /// メトリクスが良好か
+  bool get isHealthy => successRate > 0.95 && webhookSuccessRate > 0.90;
+}
+
+/// API レポート
+class ApiReport {
+  final String reportId;
+  final DateTime generatedAt;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final List<ApiEndpoint> endpoints;
+  final List<ApiRequest> requests;
+  final List<WebhookPayload> webhookPayloads;
+  final ApiMetrics metrics;
+  final List<String>? recommendations;
+
+  ApiReport({
+    required this.reportId,
+    required this.generatedAt,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.endpoints,
+    required this.requests,
+    required this.webhookPayloads,
+    required this.metrics,
+    this.recommendations,
+  });
+
+  /// Markdown形式で出力
+  String toMarkdown() {
+    final buffer = StringBuffer();
+    buffer.writeln('# API Integration Report');
+    buffer.writeln('');
+    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
+    buffer.writeln('');
+
+    buffer.writeln('## Summary');
+    buffer.writeln('');
+    buffer.writeln('- Total Endpoints: ${endpoints.length}');
+    buffer.writeln('- Total Requests: ${metrics.totalRequests}');
+    buffer.writeln('- Success Rate: ${(metrics.successRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln('- Avg Response Time: ${metrics.averageResponseTimeMs.toStringAsFixed(0)}ms');
+    buffer.writeln('- Total Webhooks: ${metrics.totalWebhooks}');
+    buffer.writeln('- Webhook Success Rate: ${(metrics.webhookSuccessRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln('');
+
+    buffer.writeln('## Endpoints');
+    buffer.writeln('');
+    for (final endpoint in endpoints.take(5)) {
+      buffer.writeln('- **${endpoint.name}**: ${endpoint.httpMethod.value} ${endpoint.fullUrl}');
+      buffer.writeln('  - Active: ${endpoint.isActive}');
+    }
+    buffer.writeln('');
+
+    if (recommendations != null && recommendations!.isNotEmpty) {
+      buffer.writeln('## Recommendations');
+      buffer.writeln('');
+      for (final rec in recommendations!.take(5)) {
+        buffer.writeln('- $rec');
+      }
+      buffer.writeln('');
+    }
+
+    return buffer.toString();
   }
 }
 
-/// トークンリフレッシュリクエスト
-class RefreshTokenRequest {
-  final String refreshToken;
+/// API レート制限情報
+class RateLimitInfo {
+  final String limitId;
+  final String configId;
+  final int requestLimit; // リクエスト数/分
+  final int currentCount;
+  final DateTime windowStart;
+  final DateTime windowEnd;
 
-  const RefreshTokenRequest({required this.refreshToken});
-
-  Map<String, dynamic> toJson() => {'refreshToken': refreshToken};
-}
-
-// ==================== ジョブ関連 ====================
-
-/// ジョブ作成リクエスト
-class CreateJobRequest {
-  final String userId;
-  final AsyncJobType jobType;
-  final Map<String, dynamic> parameters;
-
-  const CreateJobRequest({
-    required this.userId,
-    required this.jobType,
-    required this.parameters,
+  RateLimitInfo({
+    required this.limitId,
+    required this.configId,
+    required this.requestLimit,
+    required this.currentCount,
+    required this.windowStart,
+    required this.windowEnd,
   });
 
-  Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'jobType': jobType.toString().split('.').last,
-        'parameters': parameters,
-      };
-}
+  /// レート制限に達したか
+  bool get isLimited => currentCount >= requestLimit;
 
-/// ジョブリストレスポンス
-class JobListResponse {
-  final List<AsyncJob> jobs;
-  final int totalCount;
-  final int pageNumber;
-  final int pageSize;
+  /// 残り許可リクエスト数
+  int get remainingRequests => (requestLimit - currentCount).clamp(0, requestLimit);
 
-  const JobListResponse({
-    required this.jobs,
-    required this.totalCount,
-    required this.pageNumber,
-    required this.pageSize,
-  });
-
-  factory JobListResponse.fromJson(Map<String, dynamic> json) {
-    return JobListResponse(
-      jobs: (json['jobs'] as List)
-          .map((j) => AsyncJob.fromJson(j as Map<String, dynamic>))
-          .toList(),
-      totalCount: json['totalCount'] as int,
-      pageNumber: json['pageNumber'] as int,
-      pageSize: json['pageSize'] as int,
-    );
+  /// リセットまでの秒数
+  int get resetInSeconds {
+    final now = DateTime.now();
+    return windowEnd.difference(now).inSeconds.clamp(0, 60);
   }
-
-  int get totalPages => (totalCount + pageSize - 1) ~/ pageSize;
-}
-
-/// ジョブ更新リクエスト
-class UpdateJobRequest {
-  final String jobId;
-  final AsyncJobStatus? status;
-  final int? progressPercent;
-  final Map<String, dynamic>? metadata;
-
-  const UpdateJobRequest({
-    required this.jobId,
-    this.status,
-    this.progressPercent,
-    this.metadata,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'jobId': jobId,
-        if (status != null) 'status': status.toString().split('.').last,
-        if (progressPercent != null) 'progressPercent': progressPercent,
-        if (metadata != null) 'metadata': metadata,
-      };
-}
-
-// ==================== 分析関連 ====================
-
-/// 分析レポートリクエスト
-class AnalyticsReportRequest {
-  final String userId;
-  final ReportType reportType;
-  final DateRange period;
-  final List<String>? jobTypeFilter;
-
-  const AnalyticsReportRequest({
-    required this.userId,
-    required this.reportType,
-    required this.period,
-    this.jobTypeFilter,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'reportType': reportType.toString().split('.').last,
-        'period': {
-          'startDate': period.startDate.toIso8601String(),
-          'endDate': period.endDate.toIso8601String(),
-        },
-        if (jobTypeFilter != null) 'jobTypeFilter': jobTypeFilter,
-      };
-}
-
-/// 分析レポートレスポンス
-class AnalyticsReportResponse {
-  final AnalyticsReport report;
-  final List<JobTypeAnalytics> jobTypeAnalytics;
-  final PerformanceMetrics? performanceMetrics;
-
-  const AnalyticsReportResponse({
-    required this.report,
-    required this.jobTypeAnalytics,
-    this.performanceMetrics,
-  });
-
-  factory AnalyticsReportResponse.fromJson(Map<String, dynamic> json) {
-    return AnalyticsReportResponse(
-      report: AnalyticsReport(
-        reportId: json['report']['reportId'] as String,
-        reportType: ReportType.values.firstWhere(
-          (e) => e.toString().split('.').last == json['report']['reportType'],
-        ),
-        successRateStats: SuccessRateStatistics(
-          totalJobs: json['report']['successRateStats']['totalJobs'] as int,
-          successJobs: json['report']['successRateStats']['successJobs'] as int,
-          failedJobs: json['report']['successRateStats']['failedJobs'] as int,
-          cancelledJobs:
-              json['report']['successRateStats']['cancelledJobs'] as int,
-          avgExecutionTimeMs: (json['report']['successRateStats']
-              ['avgExecutionTimeMs'] as num)
-            .toDouble(),
-          maxExecutionTimeMs: json['report']['successRateStats']
-              ['maxExecutionTimeMs'] as int,
-          minExecutionTimeMs: json['report']['successRateStats']
-              ['minExecutionTimeMs'] as int,
-          period: DateRange(
-            startDate: DateTime.parse(
-                json['report']['period']['startDate'] as String),
-            endDate:
-                DateTime.parse(json['report']['period']['endDate'] as String),
-          ),
-        ),
-        generatedAt:
-            DateTime.parse(json['report']['generatedAt'] as String),
-        period: DateRange(
-          startDate:
-              DateTime.parse(json['report']['period']['startDate'] as String),
-          endDate:
-              DateTime.parse(json['report']['period']['endDate'] as String),
-        ),
-      ),
-      jobTypeAnalytics: (json['jobTypeAnalytics'] as List?)
-              ?.map((j) => JobTypeAnalytics(
-                    jobType: AsyncJobType.values.firstWhere(
-                      (e) => e.toString().split('.').last == j['jobType'],
-                    ),
-                    executionCount: j['executionCount'] as int,
-                    successCount: j['successCount'] as int,
-                    failureCount: j['failureCount'] as int,
-                    avgExecutionTimeMs: (j['avgExecutionTimeMs'] as num)
-                        .toDouble(),
-                    successRate: (j['successRate'] as num).toDouble(),
-                  ))
-              .toList() ??
-          [],
-      performanceMetrics: json['performanceMetrics'] != null
-          ? PerformanceMetrics(
-              period: DateRange(
-                startDate: DateTime.parse(
-                    json['performanceMetrics']['period']['startDate']
-                        as String),
-                endDate: DateTime.parse(
-                    json['performanceMetrics']['period']['endDate']
-                        as String),
-              ),
-              cpuUsagePercent: (json['performanceMetrics']['cpuUsagePercent']
-                      as num)
-                  .toDouble(),
-              memoryUsageMb: (json['performanceMetrics']['memoryUsageMb']
-                      as num)
-                  .toDouble(),
-              diskUsageMb:
-                  (json['performanceMetrics']['diskUsageMb'] as num)
-                      .toDouble(),
-              throughputJobsPerMinute: (json['performanceMetrics']
-                      ['throughputJobsPerMinute'] as num)
-                  .toDouble(),
-              avgLatencyMs: (json['performanceMetrics']['avgLatencyMs']
-                      as num)
-                  .toDouble(),
-              p95LatencyMs: (json['performanceMetrics']['p95LatencyMs']
-                      as num)
-                  .toDouble(),
-              p99LatencyMs: (json['performanceMetrics']['p99LatencyMs']
-                      as num)
-                  .toDouble(),
-              errorRate:
-                  (json['performanceMetrics']['errorRate'] as num)
-                      .toDouble(),
-              timestamp: DateTime.parse(
-                  json['performanceMetrics']['timestamp'] as String),
-            )
-          : null,
-    );
-  }
-}
-
-// ==================== 検索関連 ====================
-
-/// 検索リクエスト
-class SearchRequest {
-  final String userId;
-  final String queryText;
-  final SearchFilter? filter;
-  final SearchSort? sort;
-  final int page;
-  final int pageSize;
-
-  const SearchRequest({
-    required this.userId,
-    required this.queryText,
-    this.filter,
-    this.sort,
-    this.page = 1,
-    this.pageSize = 20,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'queryText': queryText,
-        if (filter != null) 'filter': filter!.toJson(),
-        if (sort != null) 'sort': sort!.toJson(),
-        'page': page,
-        'pageSize': pageSize,
-      };
-}
-
-/// 検索レスポンス
-class SearchResponse {
-  final SearchResult result;
-  final int totalPages;
-  final int currentPage;
-
-  const SearchResponse({
-    required this.result,
-    required this.totalPages,
-    required this.currentPage,
-  });
-
-  factory SearchResponse.fromJson(Map<String, dynamic> json) {
-    return SearchResponse(
-      result: SearchResult(
-        query: SearchQuery(
-          queryId: json['result']['query']['queryId'] as String,
-          text: json['result']['query']['text'] as String,
-        ),
-        results: (json['result']['results'] as List?)
-                ?.map((r) =>
-                    AsyncJob.fromJson(r as Map<String, dynamic>))
-                .toList() ??
-            [],
-        totalMatches: json['result']['totalMatches'] as int,
-        executionTimeMs: json['result']['executionTimeMs'] as int,
-        executedAt:
-            DateTime.parse(json['result']['executedAt'] as String),
-      ),
-      totalPages: json['totalPages'] as int,
-      currentPage: json['currentPage'] as int,
-    );
-  }
-}
-
-// ==================== エクスポート関連 ====================
-
-/// エクスポートリクエスト
-class ExportRequest {
-  final String userId;
-  final List<String> jobIds;
-  final ExportConfig config;
-
-  const ExportRequest({
-    required this.userId,
-    required this.jobIds,
-    required this.config,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'jobIds': jobIds,
-        'config': config.toJson(),
-      };
-}
-
-/// エクスポートレスポンス
-class ExportResponse {
-  final ExportResult export;
-  final String? downloadUrl;
-
-  const ExportResponse({
-    required this.export,
-    this.downloadUrl,
-  });
-
-  factory ExportResponse.fromJson(Map<String, dynamic> json) {
-    return ExportResponse(
-      export: ExportResult(
-        exportId: json['export']['exportId'] as String,
-        fileName: json['export']['fileName'] as String,
-        fileSizeBytes: json['export']['fileSizeBytes'] as int,
-        jobCount: json['export']['jobCount'] as int,
-        status: ExportStatus.values.firstWhere(
-          (e) => e.toString().split('.').last == json['export']['status'],
-        ),
-        completedAt: json['export']['completedAt'] != null
-            ? DateTime.parse(json['export']['completedAt'] as String)
-            : null,
-      ),
-      downloadUrl: json['downloadUrl'] as String?,
-    );
-  }
-}
-
-// ==================== エラーハンドリング ====================
-
-/// API エラーレスポンス
-class ApiErrorResponse {
-  final int statusCode;
-  final String message;
-  final String? errorCode;
-  final Map<String, dynamic>? details;
-
-  const ApiErrorResponse({
-    required this.statusCode,
-    required this.message,
-    this.errorCode,
-    this.details,
-  });
-
-  factory ApiErrorResponse.fromJson(
-    int statusCode,
-    Map<String, dynamic> json,
-  ) {
-    return ApiErrorResponse(
-      statusCode: statusCode,
-      message: json['message'] as String? ?? 'Unknown error',
-      errorCode: json['errorCode'] as String?,
-      details: json['details'] as Map<String, dynamic>?,
-    );
-  }
-
-  @override
-  String toString() => 'ApiError($statusCode): $message';
-}
-
-// ==================== ページング ====================
-
-/// ページング情報
-class PaginationInfo {
-  final int pageNumber;
-  final int pageSize;
-  final int totalCount;
-  final int totalPages;
-  final bool hasNextPage;
-  final bool hasPreviousPage;
-
-  const PaginationInfo({
-    required this.pageNumber,
-    required this.pageSize,
-    required this.totalCount,
-    required this.totalPages,
-    required this.hasNextPage,
-    required this.hasPreviousPage,
-  });
-
-  factory PaginationInfo.fromJson(Map<String, dynamic> json) {
-    final pageNumber = json['pageNumber'] as int;
-    final pageSize = json['pageSize'] as int;
-    final totalCount = json['totalCount'] as int;
-    final totalPages = (totalCount + pageSize - 1) ~/ pageSize;
-
-    return PaginationInfo(
-      pageNumber: pageNumber,
-      pageSize: pageSize,
-      totalCount: totalCount,
-      totalPages: totalPages,
-      hasNextPage: pageNumber < totalPages,
-      hasPreviousPage: pageNumber > 1,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'pageNumber': pageNumber,
-        'pageSize': pageSize,
-        'totalCount': totalCount,
-        'totalPages': totalPages,
-        'hasNextPage': hasNextPage,
-        'hasPreviousPage': hasPreviousPage,
-      };
 }
