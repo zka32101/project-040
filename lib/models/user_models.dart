@@ -1,387 +1,314 @@
-/// Phase 50: User Management & Authorization System ユーザー管理・認可システム
-///
-/// ユーザー管理、ロール管理、権限制御、アクセス制御、セッション管理
+/// Phase 57: User Management & Authorization ユーザー管理・認可
 
 /// ユーザーロール
 enum UserRole {
   admin('admin'),
   manager('manager'),
-  user('user'),
-  guest('guest'),
-  custom('custom');
+  operator('operator'),
+  viewer('viewer'),
+  guest('guest');
 
   final String value;
   const UserRole(this.value);
 }
 
-/// パーミッションタイプ
-enum PermissionType {
-  create('create'),
-  read('read'),
-  update('update'),
-  delete('delete'),
-  export('export'),
-  approve('approve'),
-  admin('admin');
+/// パーミッション
+enum Permission {
+  createJob('create:job'),
+  readJob('read:job'),
+  updateJob('update:job'),
+  deleteJob('delete:job'),
+  viewReports('view:reports'),
+  exportData('export:data'),
+  manageUsers('manage:users'),
+  manageRoles('manage:roles'),
+  viewAudit('view:audit'),
+  configureSystem('configure:system');
 
   final String value;
-  const PermissionType(this.value);
+  const Permission(this.value);
 }
 
-/// 認可ステータス
-enum AuthStatus {
+/// ユーザーステータス
+enum UserStatus {
   active('active'),
   inactive('inactive'),
   suspended('suspended'),
-  locked('locked'),
-  pendingVerification('pending_verification');
+  pending('pending'),
+  deleted('deleted');
 
   final String value;
-  const AuthStatus(this.value);
+  const UserStatus(this.value);
 }
 
-/// アクセスレベル
-enum AccessLevel {
-  public('public'),
-  internal('internal'),
-  restricted('restricted'),
-  private('private'),
-  custom('custom');
-
-  final String value;
-  const AccessLevel(this.value);
-}
-
-/// ユーザー
+/// ユーザーアカウント
 class User {
   final String userId;
+  final String username;
   final String email;
-  final String name;
-  final List<String> roleIds;
-  final AuthStatus status;
+  final String? displayName;
+  final UserRole role;
+  final UserStatus status;
   final DateTime createdAt;
-  final DateTime? lastLogin;
-  final DateTime? lastPasswordChange;
-  final bool mfaEnabled;
+  final DateTime? lastLoginAt;
+  final DateTime? lastPasswordChangeAt;
+  final bool isMfaEnabled;
+  final String? phoneNumber;
   final Map<String, dynamic>? metadata;
 
   User({
     required this.userId,
+    required this.username,
     required this.email,
-    required this.name,
-    required this.roleIds,
-    this.status = AuthStatus.active,
+    this.displayName,
+    required this.role,
+    this.status = UserStatus.active,
     required this.createdAt,
-    this.lastLogin,
-    this.lastPasswordChange,
-    this.mfaEnabled = false,
+    this.lastLoginAt,
+    this.lastPasswordChangeAt,
+    this.isMfaEnabled = false,
+    this.phoneNumber,
     this.metadata,
   });
 
-  /// ユーザーがアクティブか
-  bool get isActive => status == AuthStatus.active;
+  /// ユーザーが有効か
+  bool get isActive => status == UserStatus.active;
 
-  /// ユーザーがロックされているか
-  bool get isLocked => status == AuthStatus.locked;
+  /// ユーザーが管理者か
+  bool get isAdmin => role == UserRole.admin;
 
-  /// ユーザーが確認待ちか
-  bool get isPendingVerification => status == AuthStatus.pendingVerification;
-
-  /// ユーザーの年齢
-  Duration get age => DateTime.now().difference(createdAt);
-
-  /// 最後のログインからの経過時間
-  Duration? get timeSinceLastLogin {
-    if (lastLogin == null) return null;
-    return DateTime.now().difference(lastLogin!);
+  /// パスワード変更が必要か（90日以上変更されていない）
+  bool get needsPasswordChange {
+    if (lastPasswordChangeAt == null) return true;
+    return DateTime.now().difference(lastPasswordChangeAt!).inDays > 90;
   }
+
+  /// ログイン履歴がある か
+  bool get hasLoginHistory => lastLoginAt != null;
+
+  /// アカウント年齢（日数）
+  int get accountAgeInDays => DateTime.now().difference(createdAt).inDays;
 }
 
-/// ロール
+/// ロール定義
 class Role {
   final String roleId;
-  final String name;
+  final String roleName;
   final String description;
-  final List<String> permissionIds;
-  final bool isActive;
+  final List<Permission> permissions;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final bool isCustom;
+  final bool isActive;
 
   Role({
     required this.roleId,
-    required this.name,
+    required this.roleName,
     required this.description,
-    required this.permissionIds,
-    this.isActive = true,
+    required this.permissions,
     required this.createdAt,
-    this.updatedAt,
+    this.isCustom = false,
+    this.isActive = true,
   });
 
   /// ロールが有効か
   bool get isEnabled => isActive;
 
   /// パーミッション数
-  int get permissionCount => permissionIds.length;
+  int get permissionCount => permissions.length;
+
+  /// 特定のパーミッションを持つか
+  bool hasPermission(Permission permission) => permissions.contains(permission);
 }
 
-/// パーミッション
-class Permission {
-  final String permissionId;
-  final String name;
-  final String description;
-  final PermissionType type;
-  final String resourceType;
-  final AccessLevel level;
-  final DateTime createdAt;
-
-  Permission({
-    required this.permissionId,
-    required this.name,
-    required this.description,
-    required this.type,
-    required this.resourceType,
-    required this.level,
-    required this.createdAt,
-  });
-
-  /// パーミッションが読み取り専用か
-  bool get isReadOnly => type == PermissionType.read;
-
-  /// パーミッションが管理者限定か
-  bool get isAdminOnly => type == PermissionType.admin;
-}
-
-/// ユーザーロール割り当て
-class UserRoleAssignment {
+/// パーミッション割当
+class PermissionAssignment {
   final String assignmentId;
   final String userId;
-  final String roleId;
-  final DateTime assignedAt;
+  final Permission permission;
+  final DateTime grantedAt;
   final DateTime? expiresAt;
-  final String? assignedBy;
+  final String? grantedBy;
+  final String? reason;
 
-  UserRoleAssignment({
+  PermissionAssignment({
     required this.assignmentId,
     required this.userId,
-    required this.roleId,
-    required this.assignedAt,
+    required this.permission,
+    required this.grantedAt,
     this.expiresAt,
-    this.assignedBy,
+    this.grantedBy,
+    this.reason,
   });
 
-  /// ロール割り当てがアクティブか
-  bool get isActive {
-    if (expiresAt == null) return true;
-    return DateTime.now().isBefore(expiresAt!);
-  }
+  /// 割当が有効か
+  bool get isActive => expiresAt == null || DateTime.now().isBefore(expiresAt!);
 
-  /// ロール割り当てが期限切れか
+  /// 割当が期限切れか
   bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
 
-  /// 有効期限までの時間
-  Duration? get timeUntilExpiration {
+  /// 有効期限までの日数
+  int? get daysUntilExpiration {
     if (expiresAt == null) return null;
-    if (isExpired) return null;
-    return expiresAt!.difference(DateTime.now());
+    return expiresAt!.difference(DateTime.now()).inDays;
   }
 }
 
-/// アクセスコントロール
-class AccessControl {
-  final String controlId;
-  final String resourceId;
-  final String resourceType;
-  final List<String> allowedRoleIds;
-  final List<String> allowedUserIds;
-  final AccessLevel level;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-
-  AccessControl({
-    required this.controlId,
-    required this.resourceId,
-    required this.resourceType,
-    required this.allowedRoleIds,
-    required this.allowedUserIds,
-    required this.level,
-    required this.createdAt,
-    this.updatedAt,
-  });
-
-  /// アクセス許可ユーザー数
-  int get totalAllowedUsers => allowedRoleIds.length + allowedUserIds.length;
-
-  /// プライベートリソースか
-  bool get isPrivate => level == AccessLevel.private;
-
-  /// パブリックリソースか
-  bool get isPublic => level == AccessLevel.public;
-}
-
-/// ユーザーセッション
-class UserSession {
+/// セッション
+class Session {
   final String sessionId;
   final String userId;
-  final DateTime loginAt;
-  final DateTime? logoutAt;
-  final DateTime lastActivity;
-  final String? ipAddress;
-  final String? userAgent;
+  final String ipAddress;
+  final String userAgent;
+  final DateTime createdAt;
+  final DateTime lastActivityAt;
+  final DateTime? expiresAt;
   final bool isActive;
+  final Map<String, dynamic>? metadata;
 
-  UserSession({
+  Session({
     required this.sessionId,
     required this.userId,
-    required this.loginAt,
-    this.logoutAt,
-    required this.lastActivity,
-    this.ipAddress,
-    this.userAgent,
-    this.isActive = true,
-  });
-
-  /// セッションがアクティブか
-  bool get isSessionActive => isActive && logoutAt == null;
-
-  /// セッション継続時間
-  Duration get duration {
-    final endTime = logoutAt ?? DateTime.now();
-    return endTime.difference(loginAt);
-  }
-
-  /// アイドル時間
-  Duration get idleTime => DateTime.now().difference(lastActivity);
-
-  /// セッションがタイムアウトしているか（30分以上アイドル）
-  bool get isTimedOut => idleTime.inMinutes > 30;
-}
-
-/// 認可ポリシー
-class AuthorizationPolicy {
-  final String policyId;
-  final String name;
-  final String description;
-  final List<Map<String, dynamic>> rules;
-  final List<Map<String, dynamic>>? conditions;
-  final bool isActive;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-
-  AuthorizationPolicy({
-    required this.policyId,
-    required this.name,
-    required this.description,
-    required this.rules,
-    this.conditions,
-    this.isActive = true,
+    required this.ipAddress,
+    required this.userAgent,
     required this.createdAt,
-    this.updatedAt,
+    required this.lastActivityAt,
+    this.expiresAt,
+    this.isActive = true,
+    this.metadata,
   });
 
-  /// ポリシーが有効か
-  bool get isEnabled => isActive;
+  /// セッションが有効か
+  bool get isValid => isActive && (expiresAt == null || DateTime.now().isBefore(expiresAt!));
 
-  /// ルール数
-  int get ruleCount => rules.length;
+  /// セッション期限切れか
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+
+  /// セッション継続時間（秒）
+  int get durationInSeconds => DateTime.now().difference(createdAt).inSeconds;
+
+  /// 非アクティブ継続時間（秒）
+  int get inactiveDurationInSeconds => DateTime.now().difference(lastActivityAt).inSeconds;
 }
 
-/// 権限監査
-class PermissionAudit {
-  final String auditId;
+/// 監査ログ
+class AuditLog {
+  final String logId;
   final String userId;
-  final PermissionType action;
+  final String action; // login, logout, create, update, delete等
   final String resourceType;
-  final String resourceId;
-  final bool allowed;
+  final String? resourceId;
   final DateTime timestamp;
-  final String? reason;
-  final Map<String, dynamic>? context;
+  final String ipAddress;
+  final bool isSuccessful;
+  final String? details;
+  final Map<String, dynamic>? changes;
 
-  PermissionAudit({
-    required this.auditId,
+  AuditLog({
+    required this.logId,
     required this.userId,
     required this.action,
     required this.resourceType,
-    required this.resourceId,
-    required this.allowed,
+    this.resourceId,
     required this.timestamp,
-    this.reason,
-    this.context,
+    required this.ipAddress,
+    this.isSuccessful = true,
+    this.details,
+    this.changes,
   });
 
-  /// アクセスが許可されたか
-  bool get isAllowed => allowed;
+  /// ログが重要か
+  bool get isImportant => action == 'delete' || !isSuccessful || action == 'configure:system';
 
-  /// アクセスが拒否されたか
-  bool get isDenied => !allowed;
+  /// 変更があったか
+  bool get hasChanges => changes != null && changes!.isNotEmpty;
 }
 
-/// ユーザー統計
-class UserStats {
-  final String statsId;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final int totalUsers;
-  final int activeUsers;
-  final int inactiveUsers;
-  final int suspendedUsers;
-  final Map<UserRole, int> usersByRole;
-  final int totalSessions;
-  final int activeSessions;
-  final double averageSessionDuration; // minutes
+/// アクセス制御リスト
+class AccessControlList {
+  final String aclId;
+  final String resourceId;
+  final String resourceType;
+  final Map<String, List<Permission>> rolePermissions; // role -> permissions
+  final DateTime createdAt;
+  final DateTime? lastUpdatedAt;
 
-  UserStats({
-    required this.statsId,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.totalUsers,
-    required this.activeUsers,
-    required this.inactiveUsers,
-    required this.suspendedUsers,
-    required this.usersByRole,
-    required this.totalSessions,
-    required this.activeSessions,
-    required this.averageSessionDuration,
+  AccessControlList({
+    required this.aclId,
+    required this.resourceId,
+    required this.resourceType,
+    required this.rolePermissions,
+    required this.createdAt,
+    this.lastUpdatedAt,
   });
 
-  /// アクティブ率
-  double get activeRate {
-    if (totalUsers == 0) return 0.0;
-    return activeUsers / totalUsers;
+  /// 特定のロールが特定のパーミッションを持つか
+  bool hasPermissionForRole(UserRole role, Permission permission) {
+    return rolePermissions[role.value]?.contains(permission) ?? false;
   }
 
-  /// セッション稼働率
-  double get sessionActiveRate {
-    if (totalSessions == 0) return 0.0;
-    return activeSessions / totalSessions;
-  }
+  /// ロール数
+  int get roleCount => rolePermissions.length;
+}
 
-  /// 最も使用されたロール
-  UserRole? get mostCommonRole {
-    if (usersByRole.isEmpty) return null;
-    return usersByRole.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-  }
+/// ユーザーアクティビティ統計
+class UserActivity {
+  final String activityId;
+  final String userId;
+  final int totalLogins;
+  final int loginThisMonth;
+  final int loginThisWeek;
+  final DateTime? lastLoginAt;
+  final DateTime? lastLogoutAt;
+  final int averageSessionDurationMinutes;
+  final List<String> recentIpAddresses;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+
+  UserActivity({
+    required this.activityId,
+    required this.userId,
+    required this.totalLogins,
+    required this.loginThisMonth,
+    required this.loginThisWeek,
+    this.lastLoginAt,
+    this.lastLogoutAt,
+    required this.averageSessionDurationMinutes,
+    required this.recentIpAddresses,
+    required this.periodStart,
+    required this.periodEnd,
+  });
+
+  /// ユーザーがアクティブか（30日以内にログイン）
+  bool get isActive => lastLoginAt != null &&
+    DateTime.now().difference(lastLoginAt!).inDays <= 30;
+
+  /// 異常なアクティビティ検出
+  bool get hasAnomalousActivity => loginThisWeek > 50;
 }
 
 /// ユーザー管理レポート
 class UserManagementReport {
   final String reportId;
   final DateTime generatedAt;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final UserStats stats;
-  final List<User> recentUsers;
-  final List<PermissionAudit> recentAudits;
+  final int totalUsers;
+  final int activeUsers;
+  final int inactiveUsers;
+  final int suspendedUsers;
+  final Map<UserRole, int> usersByRole; // role -> count
+  final List<User> recentlyCreatedUsers;
+  final List<User> inactiveUsersList;
   final List<String>? recommendations;
 
   UserManagementReport({
     required this.reportId,
     required this.generatedAt,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.stats,
-    required this.recentUsers,
-    required this.recentAudits,
+    required this.totalUsers,
+    required this.activeUsers,
+    required this.inactiveUsers,
+    required this.suspendedUsers,
+    required this.usersByRole,
+    required this.recentlyCreatedUsers,
+    required this.inactiveUsersCheckList,
     this.recommendations,
   });
 
@@ -395,30 +322,45 @@ class UserManagementReport {
 
     buffer.writeln('## Summary');
     buffer.writeln('');
-    buffer.writeln('- Total Users: ${stats.totalUsers}');
-    buffer.writeln('- Active Users: ${stats.activeUsers}');
-    buffer.writeln('- Inactive Users: ${stats.inactiveUsers}');
-    buffer.writeln('- Suspended Users: ${stats.suspendedUsers}');
-    buffer.writeln('- Active Rate: ${(stats.activeRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln('- Total Users: $totalUsers');
+    buffer.writeln('- Active Users: $activeUsers');
+    buffer.writeln('- Inactive Users: $inactiveUsers');
+    buffer.writeln('- Suspended Users: $suspendedUsers');
     buffer.writeln('');
-
-    buffer.writeln('## Sessions');
-    buffer.writeln('');
-    buffer.writeln('- Total Sessions: ${stats.totalSessions}');
-    buffer.writeln('- Active Sessions: ${stats.activeSessions}');
-    buffer.writeln('- Active Rate: ${(stats.sessionActiveRate * 100).toStringAsFixed(1)}%');
-    buffer.writeln('- Avg Duration: ${stats.averageSessionDuration.toStringAsFixed(1)} min');
-    buffer.writeln('');
-
-    if (recommendations != null && recommendations!.isNotEmpty) {
-      buffer.writeln('## Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations!.take(5)) {
-        buffer.writeln('- $rec');
-      }
-      buffer.writeln('');
-    }
 
     return buffer.toString();
   }
+}
+
+/// パスワードポリシー
+class PasswordPolicy {
+  final String policyId;
+  final int minLength;
+  final int maxLength;
+  final bool requireUppercase;
+  final bool requireNumbers;
+  final bool requireSpecialChars;
+  final int expirationDays;
+  final int minChangeDays;
+  final int historyCount;
+  final bool isActive;
+
+  PasswordPolicy({
+    required this.policyId,
+    required this.minLength,
+    required this.maxLength,
+    required this.requireUppercase,
+    required this.requireNumbers,
+    required this.requireSpecialChars,
+    required this.expirationDays,
+    required this.minChangeDays,
+    required this.historyCount,
+    this.isActive = true,
+  });
+
+  /// ポリシーが有効か
+  bool get isEnabled => isActive;
+
+  /// ポリシーが厳しいか
+  bool get isStrict => minLength >= 12 && requireSpecialChars && expirationDays <= 90;
 }

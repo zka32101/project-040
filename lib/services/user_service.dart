@@ -1,40 +1,81 @@
-/// Phase 50: User Management & Authorization Service ユーザー管理・認可サービス
-
 import '../models/user_models.dart';
 
-/// ユーザーリポジトリ インターフェース
+/// ユーザーリポジトリインターフェース
 abstract class UserRepository {
-  Future<User> addUser(User user);
+  // ユーザー操作
+  Future<void> addUser(User user);
   Future<User?> getUser(String userId);
-  Future<List<User>> getUsersByStatus(AuthStatus status);
+  Future<User?> getUserByUsername(String username);
+  Future<User?> getUserByEmail(String email);
   Future<List<User>> getAllUsers();
-  Future<User> updateUser(User user);
-  Future<Role> addRole(Role role);
+  Future<List<User>> getUsersByRole(UserRole role);
+  Future<List<User>> getActiveUsers();
+  Future<void> updateUser(User user);
+  Future<void> deleteUser(String userId);
+
+  // ロール操作
+  Future<void> addRole(Role role);
   Future<Role?> getRole(String roleId);
   Future<List<Role>> getAllRoles();
-  Future<Permission> addPermission(Permission permission);
-  Future<Permission?> getPermission(String permissionId);
-  Future<List<Permission>> getPermissionsByType(PermissionType type);
-  Future<UserRoleAssignment> assignRole(UserRoleAssignment assignment);
-  Future<List<UserRoleAssignment>> getUserRoles(String userId);
-  Future<AccessControl> addAccessControl(AccessControl control);
-  Future<AccessControl?> getAccessControl(String controlId);
-  Future<List<AccessControl>> getResourceAccess(String resourceId, String resourceType);
-  Future<void> clearAll();
+  Future<void> updateRole(Role role);
+  Future<void> deleteRole(String roleId);
+
+  // パーミッション割当
+  Future<void> addPermissionAssignment(PermissionAssignment assignment);
+  Future<PermissionAssignment?> getAssignment(String assignmentId);
+  Future<List<PermissionAssignment>> getUserPermissions(String userId);
+  Future<List<PermissionAssignment>> getActivePermissions(String userId);
+  Future<void> deleteAssignment(String assignmentId);
+
+  // セッション操作
+  Future<void> addSession(Session session);
+  Future<Session?> getSession(String sessionId);
+  Future<List<Session>> getUserSessions(String userId);
+  Future<List<Session>> getActiveSessions();
+  Future<void> updateSession(Session session);
+  Future<void> deleteSession(String sessionId);
+
+  // 監査ログ操作
+  Future<void> addAuditLog(AuditLog log);
+  Future<AuditLog?> getAuditLog(String logId);
+  Future<List<AuditLog>> getUserLogs(String userId);
+  Future<List<AuditLog>> getFailedLogs();
+  Future<void> deleteAuditLog(String logId);
+
+  // ACL操作
+  Future<void> addACL(AccessControlList acl);
+  Future<AccessControlList?> getACL(String aclId);
+  Future<List<AccessControlList>> getResourceACLs(String resourceId);
+  Future<void> updateACL(AccessControlList acl);
+  Future<void> deleteACL(String aclId);
+
+  // アクティビティ操作
+  Future<void> addActivity(UserActivity activity);
+  Future<UserActivity?> getActivity(String activityId);
+  Future<List<UserActivity>> getUserActivity(String userId);
+  Future<void> updateActivity(UserActivity activity);
+
+  // ポリシー操作
+  Future<void> addPasswordPolicy(PasswordPolicy policy);
+  Future<PasswordPolicy?> getPasswordPolicy(String policyId);
+  Future<List<PasswordPolicy>> getAllPolicies();
+  Future<void> updatePasswordPolicy(PasswordPolicy policy);
 }
 
-/// メモリユーザーリポジトリ実装
+/// メモリ実装のユーザーリポジトリ
 class MemoryUserRepository implements UserRepository {
   final Map<String, User> _users = {};
   final Map<String, Role> _roles = {};
-  final Map<String, Permission> _permissions = {};
-  final Map<String, UserRoleAssignment> _roleAssignments = {};
-  final Map<String, AccessControl> _accessControls = {};
+  final Map<String, PermissionAssignment> _assignments = {};
+  final Map<String, Session> _sessions = {};
+  final Map<String, AuditLog> _auditLogs = {};
+  final Map<String, AccessControlList> _acls = {};
+  final Map<String, UserActivity> _activities = {};
+  final Map<String, PasswordPolicy> _policies = {};
 
   @override
-  Future<User> addUser(User user) async {
+  Future<void> addUser(User user) async {
     _users[user.userId] = user;
-    return user;
   }
 
   @override
@@ -43,8 +84,19 @@ class MemoryUserRepository implements UserRepository {
   }
 
   @override
-  Future<List<User>> getUsersByStatus(AuthStatus status) async {
-    return _users.values.where((u) => u.status == status).toList();
+  Future<User?> getUserByUsername(String username) async {
+    return _users.values.firstWhere(
+      (u) => u.username == username,
+      orElse: () => null as User,
+    );
+  }
+
+  @override
+  Future<User?> getUserByEmail(String email) async {
+    return _users.values.firstWhere(
+      (u) => u.email == email,
+      orElse: () => null as User,
+    );
   }
 
   @override
@@ -53,15 +105,28 @@ class MemoryUserRepository implements UserRepository {
   }
 
   @override
-  Future<User> updateUser(User user) async {
-    _users[user.userId] = user;
-    return user;
+  Future<List<User>> getUsersByRole(UserRole role) async {
+    return _users.values.where((u) => u.role == role).toList();
   }
 
   @override
-  Future<Role> addRole(Role role) async {
+  Future<List<User>> getActiveUsers() async {
+    return _users.values.where((u) => u.isActive).toList();
+  }
+
+  @override
+  Future<void> updateUser(User user) async {
+    _users[user.userId] = user;
+  }
+
+  @override
+  Future<void> deleteUser(String userId) async {
+    _users.remove(userId);
+  }
+
+  @override
+  Future<void> addRole(Role role) async {
     _roles[role.roleId] = role;
-    return role;
   }
 
   @override
@@ -75,360 +140,468 @@ class MemoryUserRepository implements UserRepository {
   }
 
   @override
-  Future<Permission> addPermission(Permission permission) async {
-    _permissions[permission.permissionId] = permission;
-    return permission;
+  Future<void> updateRole(Role role) async {
+    _roles[role.roleId] = role;
   }
 
   @override
-  Future<Permission?> getPermission(String permissionId) async {
-    return _permissions[permissionId];
+  Future<void> deleteRole(String roleId) async {
+    _roles.remove(roleId);
   }
 
   @override
-  Future<List<Permission>> getPermissionsByType(PermissionType type) async {
-    return _permissions.values.where((p) => p.type == type).toList();
+  Future<void> addPermissionAssignment(PermissionAssignment assignment) async {
+    _assignments[assignment.assignmentId] = assignment;
   }
 
   @override
-  Future<UserRoleAssignment> assignRole(UserRoleAssignment assignment) async {
-    _roleAssignments[assignment.assignmentId] = assignment;
-    return assignment;
+  Future<PermissionAssignment?> getAssignment(String assignmentId) async {
+    return _assignments[assignmentId];
   }
 
   @override
-  Future<List<UserRoleAssignment>> getUserRoles(String userId) async {
-    return _roleAssignments.values.where((a) => a.userId == userId).toList();
+  Future<List<PermissionAssignment>> getUserPermissions(String userId) async {
+    return _assignments.values.where((a) => a.userId == userId).toList();
   }
 
   @override
-  Future<AccessControl> addAccessControl(AccessControl control) async {
-    _accessControls[control.controlId] = control;
-    return control;
-  }
-
-  @override
-  Future<AccessControl?> getAccessControl(String controlId) async {
-    return _accessControls[controlId];
-  }
-
-  @override
-  Future<List<AccessControl>> getResourceAccess(String resourceId, String resourceType) async {
-    return _accessControls.values
-        .where((ac) => ac.resourceId == resourceId && ac.resourceType == resourceType)
+  Future<List<PermissionAssignment>> getActivePermissions(String userId) async {
+    return _assignments.values
+        .where((a) => a.userId == userId && a.isActive)
         .toList();
   }
 
   @override
-  Future<void> clearAll() async {
-    _users.clear();
-    _roles.clear();
-    _permissions.clear();
-    _roleAssignments.clear();
-    _accessControls.clear();
+  Future<void> deleteAssignment(String assignmentId) async {
+    _assignments.remove(assignmentId);
+  }
+
+  @override
+  Future<void> addSession(Session session) async {
+    _sessions[session.sessionId] = session;
+  }
+
+  @override
+  Future<Session?> getSession(String sessionId) async {
+    return _sessions[sessionId];
+  }
+
+  @override
+  Future<List<Session>> getUserSessions(String userId) async {
+    return _sessions.values.where((s) => s.userId == userId).toList();
+  }
+
+  @override
+  Future<List<Session>> getActiveSessions() async {
+    return _sessions.values.where((s) => s.isValid).toList();
+  }
+
+  @override
+  Future<void> updateSession(Session session) async {
+    _sessions[session.sessionId] = session;
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    _sessions.remove(sessionId);
+  }
+
+  @override
+  Future<void> addAuditLog(AuditLog log) async {
+    _auditLogs[log.logId] = log;
+  }
+
+  @override
+  Future<AuditLog?> getAuditLog(String logId) async {
+    return _auditLogs[logId];
+  }
+
+  @override
+  Future<List<AuditLog>> getUserLogs(String userId) async {
+    return _auditLogs.values.where((l) => l.userId == userId).toList();
+  }
+
+  @override
+  Future<List<AuditLog>> getFailedLogs() async {
+    return _auditLogs.values.where((l) => !l.isSuccessful).toList();
+  }
+
+  @override
+  Future<void> deleteAuditLog(String logId) async {
+    _auditLogs.remove(logId);
+  }
+
+  @override
+  Future<void> addACL(AccessControlList acl) async {
+    _acls[acl.aclId] = acl;
+  }
+
+  @override
+  Future<AccessControlList?> getACL(String aclId) async {
+    return _acls[aclId];
+  }
+
+  @override
+  Future<List<AccessControlList>> getResourceACLs(String resourceId) async {
+    return _acls.values.where((a) => a.resourceId == resourceId).toList();
+  }
+
+  @override
+  Future<void> updateACL(AccessControlList acl) async {
+    _acls[acl.aclId] = acl;
+  }
+
+  @override
+  Future<void> deleteACL(String aclId) async {
+    _acls.remove(aclId);
+  }
+
+  @override
+  Future<void> addActivity(UserActivity activity) async {
+    _activities[activity.activityId] = activity;
+  }
+
+  @override
+  Future<UserActivity?> getActivity(String activityId) async {
+    return _activities[activityId];
+  }
+
+  @override
+  Future<List<UserActivity>> getUserActivity(String userId) async {
+    return _activities.values.where((a) => a.userId == userId).toList();
+  }
+
+  @override
+  Future<void> updateActivity(UserActivity activity) async {
+    _activities[activity.activityId] = activity;
+  }
+
+  @override
+  Future<void> addPasswordPolicy(PasswordPolicy policy) async {
+    _policies[policy.policyId] = policy;
+  }
+
+  @override
+  Future<PasswordPolicy?> getPasswordPolicy(String policyId) async {
+    return _policies[policyId];
+  }
+
+  @override
+  Future<List<PasswordPolicy>> getAllPolicies() async {
+    return _policies.values.toList();
+  }
+
+  @override
+  Future<void> updatePasswordPolicy(PasswordPolicy policy) async {
+    _policies[policy.policyId] = policy;
   }
 }
 
-/// 認可エンジン インターフェース
+/// 認可エンジンインターフェース
 abstract class AuthorizationEngine {
-  Future<bool> hasPermission(String userId, PermissionType permission, String resourceType, String resourceId);
-  Future<List<Permission>> getUserPermissions(String userId, List<String> roleIds);
-  Future<bool> canAccess(String userId, String resourceId, String resourceType);
-  Future<PermissionAudit> auditAccess(String userId, PermissionType action, String resourceType, String resourceId, bool allowed, String? reason);
-  Future<AuthorizationPolicy> createPolicy(String policyId, String name, String description, List<Map<String, dynamic>> rules);
+  Future<bool> hasPermission(String userId, Permission permission);
+  Future<bool> canPerformAction(String userId, String action, String resourceId);
+  Future<List<Permission>> getUserPermissions(String userId);
+  Future<void> enforceACL(String userId, String resourceId, String action);
+  Future<bool> validateRole(String userId, UserRole requiredRole);
 }
 
-/// メモリ認可エンジン実装
+/// メモリ実装の認可エンジン
 class MemoryAuthorizationEngine implements AuthorizationEngine {
-  final Map<String, Permission> _permissions = {};
-  final Map<String, Role> _roles = {};
-  final Map<String, PermissionAudit> _audits = {};
-  final Map<String, AuthorizationPolicy> _policies = {};
+  final UserRepository _repository;
+
+  MemoryAuthorizationEngine(this._repository);
 
   @override
-  Future<bool> hasPermission(String userId, PermissionType permission, String resourceType, String resourceId) async {
-    // 簡略化したロジック：ユーザーがリソースタイプのパーミッションを持っているかチェック
-    return true; // 実装では実際のロジックが必要
+  Future<bool> hasPermission(String userId, Permission permission) async {
+    final assignments = await _repository.getUserPermissions(userId);
+    return assignments.any((a) => a.permission == permission && a.isActive);
   }
 
   @override
-  Future<List<Permission>> getUserPermissions(String userId, List<String> roleIds) async {
-    final permissions = <Permission>[];
+  Future<bool> canPerformAction(String userId, String action, String resourceId) async {
+    // アクション処理
+    return true;
+  }
 
-    for (final roleId in roleIds) {
-      final role = _roles[roleId];
-      if (role != null) {
-        for (final permId in role.permissionIds) {
-          final perm = _permissions[permId];
-          if (perm != null && !permissions.contains(perm)) {
-            permissions.add(perm);
-          }
-        }
-      }
+  @override
+  Future<List<Permission>> getUserPermissions(String userId) async {
+    final assignments = await _repository.getActivePermissions(userId);
+    return assignments.map((a) => a.permission).toList();
+  }
+
+  @override
+  Future<void> enforceACL(String userId, String resourceId, String action) async {
+    // ACL処理
+  }
+
+  @override
+  Future<bool> validateRole(String userId, UserRole requiredRole) async {
+    final user = await _repository.getUser(userId);
+    return user != null && user.role.value.compareTo(requiredRole.value) >= 0;
+  }
+}
+
+/// セッションエンジンインターフェース
+abstract class SessionEngine {
+  Future<Session> createSession(String userId, String ipAddress, String userAgent);
+  Future<void> updateSession(String sessionId);
+  Future<void> terminateSession(String sessionId);
+  Future<bool> validateSession(String sessionId);
+}
+
+/// メモリ実装のセッションエンジン
+class MemorySessionEngine implements SessionEngine {
+  final UserRepository _repository;
+
+  MemorySessionEngine(this._repository);
+
+  @override
+  Future<Session> createSession(String userId, String ipAddress, String userAgent) async {
+    final sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}';
+    final session = Session(
+      sessionId: sessionId,
+      userId: userId,
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      createdAt: DateTime.now(),
+      lastActivityAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(hours: 24)),
+    );
+    await _repository.addSession(session);
+    return session;
+  }
+
+  @override
+  Future<void> updateSession(String sessionId) async {
+    final session = await _repository.getSession(sessionId);
+    if (session != null) {
+      final updated = Session(
+        sessionId: session.sessionId,
+        userId: session.userId,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        createdAt: session.createdAt,
+        lastActivityAt: DateTime.now(),
+        expiresAt: session.expiresAt,
+      );
+      await _repository.updateSession(updated);
     }
-
-    return permissions;
   }
 
   @override
-  Future<bool> canAccess(String userId, String resourceId, String resourceType) async {
-    // 簡略化したロジック：ユーザーがリソースにアクセスできるかチェック
-    return true; // 実装では実際のロジックが必要
+  Future<void> terminateSession(String sessionId) async {
+    final session = await _repository.getSession(sessionId);
+    if (session != null) {
+      await _repository.deleteSession(sessionId);
+    }
   }
 
   @override
-  Future<PermissionAudit> auditAccess(String userId, PermissionType action, String resourceType, String resourceId, bool allowed, String? reason) async {
-    final audit = PermissionAudit(
-      auditId: 'audit_${DateTime.now().millisecondsSinceEpoch}',
+  Future<bool> validateSession(String sessionId) async {
+    final session = await _repository.getSession(sessionId);
+    return session != null && session.isValid;
+  }
+}
+
+/// ユーザーマネージャーインターフェース
+abstract class UserManager {
+  Future<void> createUser(String username, String email, UserRole role);
+  Future<void> updateUserRole(String userId, UserRole newRole);
+  Future<void> grantPermission(String userId, Permission permission);
+  Future<void> revokePermission(String userId, Permission permission);
+  Future<void> suspendUser(String userId);
+  Future<void> activateUser(String userId);
+  Future<UserManagementReport> generateUserReport(DateTime start, DateTime end);
+  Future<void> recordAuditLog(String userId, String action, String resourceType);
+}
+
+/// メモリ実装のユーザーマネージャー
+class MemoryUserManager implements UserManager {
+  final UserRepository _repository;
+  final AuthorizationEngine _authEngine;
+  final SessionEngine _sessionEngine;
+
+  MemoryUserManager(this._repository, this._authEngine, this._sessionEngine);
+
+  @override
+  Future<void> createUser(String username, String email, UserRole role) async {
+    final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+    final user = User(
+      userId: userId,
+      username: username,
+      email: email,
+      role: role,
+      createdAt: DateTime.now(),
+    );
+    await _repository.addUser(user);
+  }
+
+  @override
+  Future<void> updateUserRole(String userId, UserRole newRole) async {
+    final user = await _repository.getUser(userId);
+    if (user != null) {
+      final updated = User(
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        role: newRole,
+        status: user.status,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+      );
+      await _repository.updateUser(updated);
+    }
+  }
+
+  @override
+  Future<void> grantPermission(String userId, Permission permission) async {
+    final assignmentId = 'perm_${DateTime.now().millisecondsSinceEpoch}';
+    final assignment = PermissionAssignment(
+      assignmentId: assignmentId,
+      userId: userId,
+      permission: permission,
+      grantedAt: DateTime.now(),
+    );
+    await _repository.addPermissionAssignment(assignment);
+  }
+
+  @override
+  Future<void> revokePermission(String userId, Permission permission) async {
+    final assignments = await _repository.getUserPermissions(userId);
+    for (final a in assignments.where((a) => a.permission == permission)) {
+      await _repository.deleteAssignment(a.assignmentId);
+    }
+  }
+
+  @override
+  Future<void> suspendUser(String userId) async {
+    final user = await _repository.getUser(userId);
+    if (user != null) {
+      final updated = User(
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        status: UserStatus.suspended,
+        createdAt: user.createdAt,
+      );
+      await _repository.updateUser(updated);
+    }
+  }
+
+  @override
+  Future<void> activateUser(String userId) async {
+    final user = await _repository.getUser(userId);
+    if (user != null) {
+      final updated = User(
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        status: UserStatus.active,
+        createdAt: user.createdAt,
+      );
+      await _repository.updateUser(updated);
+    }
+  }
+
+  @override
+  Future<UserManagementReport> generateUserReport(DateTime start, DateTime end) async {
+    final users = await _repository.getAllUsers();
+    final active = users.where((u) => u.isActive).toList();
+    final inactive = users.where((u) => u.status == UserStatus.inactive).toList();
+    final suspended = users.where((u) => u.status == UserStatus.suspended).toList();
+
+    return UserManagementReport(
+      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      generatedAt: DateTime.now(),
+      totalUsers: users.length,
+      activeUsers: active.length,
+      inactiveUsers: inactive.length,
+      suspendedUsers: suspended.length,
+      usersByRole: {},
+      recentlyCreatedUsers: users.where((u) => 
+        DateTime.now().difference(u.createdAt).inDays <= 7
+      ).toList(),
+      inactiveUsersCheckList: inactive,
+    );
+  }
+
+  @override
+  Future<void> recordAuditLog(String userId, String action, String resourceType) async {
+    final logId = 'log_${DateTime.now().millisecondsSinceEpoch}';
+    final log = AuditLog(
+      logId: logId,
       userId: userId,
       action: action,
       resourceType: resourceType,
-      resourceId: resourceId,
-      allowed: allowed,
       timestamp: DateTime.now(),
-      reason: reason,
+      ipAddress: '0.0.0.0',
     );
-    _audits[audit.auditId] = audit;
-    return audit;
-  }
-
-  @override
-  Future<AuthorizationPolicy> createPolicy(String policyId, String name, String description, List<Map<String, dynamic>> rules) async {
-    final policy = AuthorizationPolicy(
-      policyId: policyId,
-      name: name,
-      description: description,
-      rules: rules,
-      createdAt: DateTime.now(),
-    );
-    _policies[policyId] = policy;
-    return policy;
+    await _repository.addAuditLog(log);
   }
 }
 
-/// ユーザーマネージャー インターフェース
-abstract class UserManager {
-  Future<User> createUser(String userId, String email, String name, List<String> roleIds);
-  Future<User> updateUserStatus(String userId, AuthStatus status);
-  Future<UserRoleAssignment> assignRoleToUser(String userId, String roleId, {DateTime? expiresAt});
-  Future<bool> checkUserPermission(String userId, PermissionType permission, String resourceType, String resourceId);
-  Future<UserStats> calculateStats(DateTime start, DateTime end);
-  Future<UserManagementReport> generateReport(String reportId, DateTime start, DateTime end);
-}
+/// ユーザーファサード
+class UserFacade {
+  final UserManager _manager;
+  final UserRepository _repository;
+  final AuthorizationEngine _authEngine;
+  final SessionEngine _sessionEngine;
 
-/// メモリユーザーマネージャー実装
-class MemoryUserManager implements UserManager {
-  final UserRepository repository;
-  final AuthorizationEngine engine;
-  final Map<String, UserSession> _sessions = {};
+  UserFacade(this._manager, this._repository, this._authEngine, this._sessionEngine);
 
-  MemoryUserManager({
-    required this.repository,
-    required this.engine,
-  });
+  /// ユーザー作成
+  Future<void> createUser(String username, String email, UserRole role) =>
+      _manager.createUser(username, email, role);
 
-  @override
-  Future<User> createUser(String userId, String email, String name, List<String> roleIds) async {
-    final user = User(
-      userId: userId,
-      email: email,
-      name: name,
-      roleIds: roleIds,
-      createdAt: DateTime.now(),
-    );
-    return repository.addUser(user);
-  }
+  /// ロール更新
+  Future<void> updateUserRole(String userId, UserRole newRole) =>
+      _manager.updateUserRole(userId, newRole);
 
-  @override
-  Future<User> updateUserStatus(String userId, AuthStatus status) async {
-    final user = await repository.getUser(userId);
-    if (user != null) {
-      final updatedUser = User(
-        userId: user.userId,
-        email: user.email,
-        name: user.name,
-        roleIds: user.roleIds,
-        status: status,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin,
-        lastPasswordChange: user.lastPasswordChange,
-        mfaEnabled: user.mfaEnabled,
-        metadata: user.metadata,
-      );
-      return repository.updateUser(updatedUser);
-    }
-    return user!;
-  }
+  /// パーミッション付与
+  Future<void> grantPermission(String userId, Permission permission) =>
+      _manager.grantPermission(userId, permission);
 
-  @override
-  Future<UserRoleAssignment> assignRoleToUser(String userId, String roleId, {DateTime? expiresAt}) async {
-    final assignment = UserRoleAssignment(
-      assignmentId: 'assign_${DateTime.now().millisecondsSinceEpoch}',
-      userId: userId,
-      roleId: roleId,
-      assignedAt: DateTime.now(),
-      expiresAt: expiresAt,
-    );
-    return repository.assignRole(assignment);
-  }
+  /// パーミッション剥奪
+  Future<void> revokePermission(String userId, Permission permission) =>
+      _manager.revokePermission(userId, permission);
 
-  @override
-  Future<bool> checkUserPermission(String userId, PermissionType permission, String resourceType, String resourceId) async {
-    return engine.hasPermission(userId, permission, resourceType, resourceId);
-  }
+  /// ユーザー停止
+  Future<void> suspendUser(String userId) =>
+      _manager.suspendUser(userId);
 
-  @override
-  Future<UserStats> calculateStats(DateTime start, DateTime end) async {
-    final allUsers = await repository.getAllUsers();
-    final filteredUsers = allUsers.where((u) => u.createdAt.isAfter(start) && u.createdAt.isBefore(end)).toList();
+  /// ユーザー復帰
+  Future<void> activateUser(String userId) =>
+      _manager.activateUser(userId);
 
-    final activeCount = filteredUsers.where((u) => u.isActive).length;
-    final inactiveCount = filteredUsers.where((u) => u.status == AuthStatus.inactive).length;
-    final suspendedCount = filteredUsers.where((u) => u.status == AuthStatus.suspended).length;
+  /// パーミッションチェック
+  Future<bool> hasPermission(String userId, Permission permission) =>
+      _authEngine.hasPermission(userId, permission);
 
-    final roleDistribution = <UserRole, int>{};
-    for (final user in filteredUsers) {
-      // 簡略化：ユーザーの最初のロール
-    }
+  /// セッション作成
+  Future<Session> createSession(String userId, String ipAddress, String userAgent) =>
+      _sessionEngine.createSession(userId, ipAddress, userAgent);
 
-    return UserStats(
-      statsId: 'stats_${DateTime.now().millisecondsSinceEpoch}',
-      periodStart: start,
-      periodEnd: end,
-      totalUsers: filteredUsers.length,
-      activeUsers: activeCount,
-      inactiveUsers: inactiveCount,
-      suspendedUsers: suspendedCount,
-      usersByRole: roleDistribution,
-      totalSessions: _sessions.length,
-      activeSessions: _sessions.values.where((s) => s.isSessionActive).length,
-      averageSessionDuration: 45.0,
-    );
-  }
+  /// セッション検証
+  Future<bool> validateSession(String sessionId) =>
+      _sessionEngine.validateSession(sessionId);
 
-  @override
-  Future<UserManagementReport> generateReport(String reportId, DateTime start, DateTime end) async {
-    final stats = await calculateStats(start, end);
-    final allUsers = await repository.getAllUsers();
-    final recentUsers = allUsers.take(5).toList();
+  /// レポート生成
+  Future<UserManagementReport> generateReport(DateTime start, DateTime end) =>
+      _manager.generateUserReport(start, end);
 
-    return UserManagementReport(
-      reportId: reportId,
-      generatedAt: DateTime.now(),
-      periodStart: start,
-      periodEnd: end,
-      stats: stats,
-      recentUsers: recentUsers,
-      recentAudits: [],
-      recommendations: _generateRecommendations(stats),
-    );
-  }
+  /// ユーザー取得
+  Future<User?> getUser(String userId) =>
+      _repository.getUser(userId);
 
-  List<String> _generateRecommendations(UserStats stats) {
-    final recommendations = <String>[];
+  /// 全ユーザー取得
+  Future<List<User>> getAllUsers() =>
+      _repository.getAllUsers();
 
-    if (stats.activeRate < 0.8) {
-      recommendations.add('Low user activity rate detected');
-      recommendations.add('Consider implementing engagement campaigns');
-    }
-
-    if (stats.suspendedUsers > stats.totalUsers * 0.1) {
-      recommendations.add('High number of suspended users');
-      recommendations.add('Review suspension reasons and policies');
-    }
-
-    return recommendations;
-  }
-}
-
-/// ユーザー管理ファサード
-class UserManagerFacade {
-  late final UserRepository repository;
-  late final AuthorizationEngine engine;
-  late final MemoryUserManager manager;
-
-  UserManagerFacade({
-    UserRepository? customRepository,
-    AuthorizationEngine? customEngine,
-  }) {
-    repository = customRepository ?? MemoryUserRepository();
-    engine = customEngine ?? MemoryAuthorizationEngine();
-    manager = MemoryUserManager(repository: repository, authorizationEngine: engine);
-  }
-
-  Future<User> createUser(String userId, String email, String name, List<String> roleIds) async {
-    return manager.createUser(userId, email, name, roleIds);
-  }
-
-  Future<User> updateUserStatus(String userId, AuthStatus status) async {
-    return manager.updateUserStatus(userId, status);
-  }
-
-  Future<UserRoleAssignment> assignRole(String userId, String roleId, {DateTime? expiresAt}) async {
-    return manager.assignRoleToUser(userId, roleId, expiresAt: expiresAt);
-  }
-
-  Future<Role> createRole(String roleId, String name, String description, List<String> permissionIds) async {
-    return repository.addRole(
-      Role(
-        roleId: roleId,
-        name: name,
-        description: description,
-        permissionIds: permissionIds,
-        createdAt: DateTime.now(),
-      ),
-    );
-  }
-
-  Future<Permission> createPermission(String permissionId, String name, String description, PermissionType type, String resourceType, AccessLevel level) async {
-    return repository.addPermission(
-      Permission(
-        permissionId: permissionId,
-        name: name,
-        description: description,
-        type: type,
-        resourceType: resourceType,
-        level: level,
-        createdAt: DateTime.now(),
-      ),
-    );
-  }
-
-  Future<bool> checkPermission(String userId, PermissionType permission, String resourceType, String resourceId) async {
-    return manager.checkUserPermission(userId, permission, resourceType, resourceId);
-  }
-
-  Future<AccessControl> createAccessControl(String controlId, String resourceId, String resourceType, List<String> roleIds, List<String> userIds, AccessLevel level) async {
-    return repository.addAccessControl(
-      AccessControl(
-        controlId: controlId,
-        resourceId: resourceId,
-        resourceType: resourceType,
-        allowedRoleIds: roleIds,
-        allowedUserIds: userIds,
-        level: level,
-        createdAt: DateTime.now(),
-      ),
-    );
-  }
-
-  Future<UserManagementReport> generateReport(String reportId, DateTime start, DateTime end) async {
-    return manager.generateReport(reportId, start, end);
-  }
-
-  Future<User?> getUser(String userId) async {
-    return repository.getUser(userId);
-  }
-
-  Future<List<User>> getActiveUsers() async {
-    return repository.getUsersByStatus(AuthStatus.active);
-  }
-
-  Future<List<Role>> getAllRoles() async {
-    return repository.getAllRoles();
-  }
-
-  Future<List<Permission>> getPermissionsByType(PermissionType type) async {
-    return repository.getPermissionsByType(type);
-  }
+  /// アクティブユーザー取得
+  Future<List<User>> getActiveUsers() =>
+      _repository.getActiveUsers();
 }
