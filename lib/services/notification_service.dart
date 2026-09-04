@@ -1,555 +1,656 @@
-/// Phase 46: Real-time Notifications System Service層
-///
-/// 通知管理・配信・統計エンジン実装
-
 import '../models/notification_models.dart';
-
-// ======================== Repository パターン ========================
 
 /// 通知リポジトリインターフェース
 abstract class NotificationRepository {
-  Future<void> addNotification(Notification notification);
-  Future<Notification?> getNotification(String notificationId);
+  // Notification管理
+  Future<void> createNotification(Notification notification);
+  Future<Notification?> getNotificationById(String notificationId);
   Future<List<Notification>> getUserNotifications(String userId);
-  Future<List<Notification>> getUnreadNotifications(String userId);
-  Future<List<Notification>> getNotificationsByType(NotificationType type);
-  Future<List<Notification>> getNotificationsByStatus(NotificationStatus status);
-  Future<void> updateNotificationStatus(String notificationId, NotificationStatus status);
-  Future<void> markAsRead(String notificationId);
-  Future<int> getUnreadCount(String userId);
-  Future<void> addPreference(NotificationPreference preference);
-  Future<NotificationPreference?> getPreference(String userId);
+  Future<void> updateNotification(Notification notification);
+  Future<bool> deleteNotification(String notificationId);
+
+  // DeliveryLog管理
+  Future<void> createDeliveryLog(DeliveryLog log);
+  Future<List<DeliveryLog>> getDeliveryLogsByNotification(String notificationId);
+  Future<List<DeliveryLog>> getDeliveryLogsByChannel(DeliveryChannel channel);
+
+  // Template管理
+  Future<void> createTemplate(NotificationTemplate template);
+  Future<NotificationTemplate?> getTemplateById(String templateId);
+  Future<List<NotificationTemplate>> getAllTemplates();
+  Future<void> updateTemplate(NotificationTemplate template);
+
+  // Parameter管理
+  Future<void> createParameter(NotificationParameter parameter);
+  Future<List<NotificationParameter>> getParametersByTemplate(String templateId);
+
+  // Preference管理
+  Future<void> createPreference(NotificationPreference preference);
+  Future<NotificationPreference?> getPreferenceByUserId(String userId);
   Future<void> updatePreference(NotificationPreference preference);
-  Future<void> addQueueItem(NotificationQueue item);
-  Future<NotificationQueue?> getQueueItem(String queueId);
-  Future<List<NotificationQueue>> getPendingItems();
-  Future<void> updateQueueItem(NotificationQueue item);
-  Future<void> addDelivery(NotificationDelivery delivery);
-  Future<List<NotificationDelivery>> getDeliveries(String notificationId);
-  Future<void> addTemplate(NotificationTemplate template);
-  Future<NotificationTemplate?> getTemplate(String templateId);
-  Future<List<NotificationTemplate>> getTemplates(NotificationType type);
-  Future<void> clearAll();
+
+  // Alert管理
+  Future<void> createAlert(Alert alert);
+  Future<Alert?> getAlertById(String alertId);
+  Future<List<Alert>> getAllAlerts();
+  Future<void> updateAlert(Alert alert);
+
+  // AlertEvent管理
+  Future<void> createAlertEvent(AlertEvent event);
+  Future<List<AlertEvent>> getAlertEventsByAlert(String alertId);
+
+  // Stats管理
+  Future<void> saveNotificationStats(NotificationStats stats);
+  Future<NotificationStats?> getLatestStats();
+
+  // Report管理
+  Future<void> saveNotificationReport(NotificationReport report);
+  Future<NotificationReport?> getLatestReport();
+
+  // Queue管理
+  Future<void> enqueueNotification(QueueEntry entry);
+  Future<QueueEntry?> dequeueNotification();
+  Future<List<QueueEntry>> getPendingQueue();
+  Future<void> updateQueueEntry(QueueEntry entry);
+
+  // Channel設定
+  Future<void> createChannelConfig(ChannelConfiguration config);
+  Future<ChannelConfiguration?> getChannelConfig(DeliveryChannel channel);
+  Future<void> updateChannelConfig(ChannelConfiguration config);
 }
 
-/// メモリベースの通知リポジトリ実装
+/// メモリ実装の通知リポジトリ
 class MemoryNotificationRepository implements NotificationRepository {
   final Map<String, Notification> _notifications = {};
-  final Map<String, NotificationPreference> _preferences = {};
-  final Map<String, NotificationQueue> _queue = {};
-  final Map<String, NotificationDelivery> _deliveries = {};
+  final List<DeliveryLog> _deliveryLogs = [];
   final Map<String, NotificationTemplate> _templates = {};
+  final Map<String, NotificationParameter> _parameters = {};
+  final Map<String, NotificationPreference> _preferences = {};
+  final Map<String, Alert> _alerts = {};
+  final List<AlertEvent> _alertEvents = [];
+  final List<NotificationStats> _stats = [];
+  final List<NotificationReport> _reports = [];
+  final List<QueueEntry> _queue = [];
+  final Map<DeliveryChannel, ChannelConfiguration> _channelConfigs = {};
 
   @override
-  Future<void> addNotification(Notification notification) async {
+  Future<void> createNotification(Notification notification) async {
+    if (_notifications.containsKey(notification.notificationId)) {
+      throw Exception('Notification already exists');
+    }
     _notifications[notification.notificationId] = notification;
   }
 
   @override
-  Future<Notification?> getNotification(String notificationId) async {
+  Future<Notification?> getNotificationById(String notificationId) async {
     return _notifications[notificationId];
   }
 
   @override
   Future<List<Notification>> getUserNotifications(String userId) async {
-    return _notifications.values
-        .where((n) => n.userId == userId)
-        .toList();
+    return _notifications.values.where((n) => n.userId == userId).toList();
   }
 
   @override
-  Future<List<Notification>> getUnreadNotifications(String userId) async {
-    return _notifications.values
-        .where((n) => n.userId == userId && !n.isRead)
-        .toList();
-  }
-
-  @override
-  Future<List<Notification>> getNotificationsByType(NotificationType type) async {
-    return _notifications.values
-        .where((n) => n.type == type)
-        .toList();
-  }
-
-  @override
-  Future<List<Notification>> getNotificationsByStatus(NotificationStatus status) async {
-    return _notifications.values
-        .where((n) => n.status == status)
-        .toList();
-  }
-
-  @override
-  Future<void> updateNotificationStatus(String notificationId, NotificationStatus status) async {
-    final notification = _notifications[notificationId];
-    if (notification != null) {
-      _notifications[notificationId] = Notification(
-        notificationId: notification.notificationId,
-        userId: notification.userId,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        channel: notification.channel,
-        status: status,
-        priority: notification.priority,
-        actionUrl: notification.actionUrl,
-        metadata: notification.metadata,
-        createdAt: notification.createdAt,
-        sentAt: status == NotificationStatus.sent ? DateTime.now() : notification.sentAt,
-        readAt: status == NotificationStatus.read ? DateTime.now() : notification.readAt,
-        expiresAt: notification.expiresAt,
-        tags: notification.tags,
-      );
+  Future<void> updateNotification(Notification notification) async {
+    if (!_notifications.containsKey(notification.notificationId)) {
+      throw Exception('Notification not found');
     }
+    _notifications[notification.notificationId] = notification;
   }
 
   @override
-  Future<void> markAsRead(String notificationId) async {
-    await updateNotificationStatus(notificationId, NotificationStatus.read);
+  Future<bool> deleteNotification(String notificationId) async {
+    return _notifications.remove(notificationId) != null;
   }
 
   @override
-  Future<int> getUnreadCount(String userId) async {
-    return _notifications.values
-        .where((n) => n.userId == userId && !n.isRead)
-        .length;
+  Future<void> createDeliveryLog(DeliveryLog log) async {
+    _deliveryLogs.add(log);
   }
 
   @override
-  Future<void> addPreference(NotificationPreference preference) async {
-    _preferences[preference.userId] = preference;
+  Future<List<DeliveryLog>> getDeliveryLogsByNotification(String notificationId) async {
+    return _deliveryLogs.where((l) => l.notificationId == notificationId).toList();
   }
 
   @override
-  Future<NotificationPreference?> getPreference(String userId) async {
-    return _preferences[userId];
+  Future<List<DeliveryLog>> getDeliveryLogsByChannel(DeliveryChannel channel) async {
+    return _deliveryLogs.where((l) => l.channel == channel).toList();
   }
 
   @override
-  Future<void> updatePreference(NotificationPreference preference) async {
-    _preferences[preference.userId] = preference;
-  }
-
-  @override
-  Future<void> addQueueItem(NotificationQueue item) async {
-    _queue[item.queueId] = item;
-  }
-
-  @override
-  Future<NotificationQueue?> getQueueItem(String queueId) async {
-    return _queue[queueId];
-  }
-
-  @override
-  Future<List<NotificationQueue>> getPendingItems() async {
-    return _queue.values
-        .where((q) => q.isPending)
-        .toList();
-  }
-
-  @override
-  Future<void> updateQueueItem(NotificationQueue item) async {
-    _queue[item.queueId] = item;
-  }
-
-  @override
-  Future<void> addDelivery(NotificationDelivery delivery) async {
-    _deliveries[delivery.deliveryId] = delivery;
-  }
-
-  @override
-  Future<List<NotificationDelivery>> getDeliveries(String notificationId) async {
-    return _deliveries.values
-        .where((d) => d.notificationId == notificationId)
-        .toList();
-  }
-
-  @override
-  Future<void> addTemplate(NotificationTemplate template) async {
+  Future<void> createTemplate(NotificationTemplate template) async {
+    if (_templates.containsKey(template.templateId)) {
+      throw Exception('Template already exists');
+    }
     _templates[template.templateId] = template;
   }
 
   @override
-  Future<NotificationTemplate?> getTemplate(String templateId) async {
+  Future<NotificationTemplate?> getTemplateById(String templateId) async {
     return _templates[templateId];
   }
 
   @override
-  Future<List<NotificationTemplate>> getTemplates(NotificationType type) async {
-    return _templates.values
-        .where((t) => t.type == type && t.isActive)
-        .toList();
+  Future<List<NotificationTemplate>> getAllTemplates() async {
+    return _templates.values.toList();
   }
 
   @override
-  Future<void> clearAll() async {
-    _notifications.clear();
-    _preferences.clear();
-    _queue.clear();
-    _deliveries.clear();
-    _templates.clear();
-  }
-}
-
-// ======================== Engine パターン ========================
-
-/// 通知配信エンジンインターフェース
-abstract class NotificationDeliveryEngine {
-  Future<bool> canDeliver(Notification notification, NotificationPreference preference);
-  Future<bool> sendNotification(Notification notification, NotificationChannel channel);
-  Future<bool> retryNotification(NotificationQueue queue);
-  Future<NotificationDelivery> recordDelivery(
-    String deliveryId,
-    Notification notification,
-    NotificationChannel channel,
-    String recipient,
-    NotificationStatus status,
-  );
-}
-
-/// メモリベースの通知配信エンジン実装
-class MemoryNotificationDeliveryEngine implements NotificationDeliveryEngine {
-  @override
-  Future<bool> canDeliver(Notification notification, NotificationPreference preference) async {
-    if (!preference.enableNotifications) return false;
-    if (!preference.isTypeEnabled(notification.type)) return false;
-    if (!preference.isChannelEnabled(notification.channel)) return false;
-    if (notification.isExpired) return false;
-    if (preference.isInQuietHours && notification.priority.value < NotificationPriority.high.value) {
-      return false;
+  Future<void> updateTemplate(NotificationTemplate template) async {
+    if (!_templates.containsKey(template.templateId)) {
+      throw Exception('Template not found');
     }
-    return true;
+    _templates[template.templateId] = template;
   }
 
   @override
-  Future<bool> sendNotification(Notification notification, NotificationChannel channel) async {
-    final success = (DateTime.now().millisecondsSinceEpoch % 100) < 90;
-    return success;
+  Future<void> createParameter(NotificationParameter parameter) async {
+    _parameters[parameter.parameterId] = parameter;
   }
 
   @override
-  Future<bool> retryNotification(NotificationQueue queue) async {
-    if (!queue.canRetry) return false;
-    return await sendNotification(
-      Notification(
-        notificationId: queue.notificationId,
-        userId: 'user_unknown',
-        title: 'Retry',
-        message: 'Retry',
-        type: NotificationType.system,
-        channel: queue.channel,
-        createdAt: queue.queuedAt,
-      ),
-      queue.channel,
-    );
+  Future<List<NotificationParameter>> getParametersByTemplate(String templateId) async {
+    return _parameters.values.where((p) => p.templateId == templateId).toList();
   }
 
   @override
-  Future<NotificationDelivery> recordDelivery(
-    String deliveryId,
-    Notification notification,
-    NotificationChannel channel,
-    String recipient,
-    NotificationStatus status,
-  ) async {
-    final now = DateTime.now();
-    return NotificationDelivery(
-      deliveryId: deliveryId,
-      notificationId: notification.notificationId,
-      channel: channel,
-      recipient: recipient,
-      status: status,
-      sentAt: now,
-      deliveredAt: status == NotificationStatus.delivered ? now : null,
-      response: status == NotificationStatus.delivered ? '{"success": true}' : null,
-      statusCode: status == NotificationStatus.delivered ? 200 : 500,
-      latency: Duration(milliseconds: 100 + (now.millisecondsSinceEpoch % 200).toInt()),
-    );
-  }
-}
-
-// ======================== Manager パターン ========================
-
-/// 通知管理インターフェース
-abstract class NotificationManager {
-  Future<Notification> createNotification({
-    required String notificationId,
-    required String userId,
-    required String title,
-    required String message,
-    required NotificationType type,
-    required NotificationChannel channel,
-    NotificationPriority priority,
-    String? actionUrl,
-    Map<String, dynamic>? metadata,
-    DateTime? expiresAt,
-    List<String>? tags,
-  });
-  Future<void> sendNotification(String notificationId);
-  Future<void> markAsRead(String notificationId);
-  Future<void> deleteNotification(String notificationId);
-  Future<int> getUnreadCount(String userId);
-  Future<void> updatePreference(NotificationPreference preference);
-  Future<NotificationStats> calculateStats(DateTime periodStart, DateTime periodEnd);
-  Future<NotificationReport> generateReport({
-    required String reportId,
-    required DateTime periodStart,
-    required DateTime periodEnd,
-  });
-}
-
-/// メモリベースの通知管理実装
-class MemoryNotificationManager implements NotificationManager {
-  final NotificationRepository repository;
-  final NotificationDeliveryEngine deliveryEngine;
-
-  MemoryNotificationManager({
-    required this.repository,
-    required this.deliveryEngine,
-  });
-
-  @override
-  Future<Notification> createNotification({
-    required String notificationId,
-    required String userId,
-    required String title,
-    required String message,
-    required NotificationType type,
-    required NotificationChannel channel,
-    NotificationPriority priority = NotificationPriority.normal,
-    String? actionUrl,
-    Map<String, dynamic>? metadata,
-    DateTime? expiresAt,
-    List<String>? tags,
-  }) async {
-    final notification = Notification(
-      notificationId: notificationId,
-      userId: userId,
-      title: title,
-      message: message,
-      type: type,
-      channel: channel,
-      priority: priority,
-      actionUrl: actionUrl,
-      metadata: metadata,
-      createdAt: DateTime.now(),
-      expiresAt: expiresAt,
-      tags: tags,
-    );
-
-    await repository.addNotification(notification);
-    return notification;
+  Future<void> createPreference(NotificationPreference preference) async {
+    if (_preferences.containsKey(preference.preferenceId)) {
+      throw Exception('Preference already exists');
+    }
+    _preferences[preference.preferenceId] = preference;
   }
 
   @override
-  Future<void> sendNotification(String notificationId) async {
-    final notification = await repository.getNotification(notificationId);
-    if (notification == null) return;
-
-    final preference = await repository.getPreference(notification.userId);
-    if (preference == null) return;
-
-    final canDeliver = await deliveryEngine.canDeliver(notification, preference);
-    if (!canDeliver) return;
-
-    final success = await deliveryEngine.sendNotification(notification, notification.channel);
-    final status = success ? NotificationStatus.delivered : NotificationStatus.failed;
-    await repository.updateNotificationStatus(notificationId, status);
-
-    final delivery = await deliveryEngine.recordDelivery(
-      'delivery_$notificationId',
-      notification,
-      notification.channel,
-      notification.userId,
-      status,
-    );
-    await repository.addDelivery(delivery);
-  }
-
-  @override
-  Future<void> markAsRead(String notificationId) async {
-    await repository.markAsRead(notificationId);
-  }
-
-  @override
-  Future<void> deleteNotification(String notificationId) async {
-    await repository.updateNotificationStatus(notificationId, NotificationStatus.deleted);
-  }
-
-  @override
-  Future<int> getUnreadCount(String userId) async {
-    return await repository.getUnreadCount(userId);
+  Future<NotificationPreference?> getPreferenceByUserId(String userId) async {
+    return _preferences.values.cast<NotificationPreference?>().firstWhere(
+          (p) => p?.userId == userId,
+          orElse: () => null,
+        );
   }
 
   @override
   Future<void> updatePreference(NotificationPreference preference) async {
-    await repository.updatePreference(preference);
+    if (!_preferences.containsKey(preference.preferenceId)) {
+      throw Exception('Preference not found');
+    }
+    _preferences[preference.preferenceId] = preference;
   }
 
   @override
-  Future<NotificationStats> calculateStats(DateTime periodStart, DateTime periodEnd) async {
-    final allNotifications = [
-      ...await repository.getNotificationsByStatus(NotificationStatus.pending),
-      ...await repository.getNotificationsByStatus(NotificationStatus.sent),
-      ...await repository.getNotificationsByStatus(NotificationStatus.delivered),
-      ...await repository.getNotificationsByStatus(NotificationStatus.read),
-      ...await repository.getNotificationsByStatus(NotificationStatus.failed),
-    ];
-
-    final filtered = allNotifications
-        .where((n) => n.createdAt.isAfter(periodStart) && n.createdAt.isBefore(periodEnd))
-        .toList();
-
-    final sentCount = filtered.where((n) => n.isDelivered || n.isFailed).length;
-    final deliveredCount = filtered.where((n) => n.isDelivered).length;
-    final readCount = filtered.where((n) => n.isRead).length;
-    final failedCount = filtered.where((n) => n.isFailed).length;
-
-    final typeDistribution = <NotificationType, int>{};
-    final channelDistribution = <NotificationChannel, int>{};
-    double totalDeliveryTime = 0;
-    int deliveryTimeCount = 0;
-
-    for (final n in filtered) {
-      typeDistribution[n.type] = (typeDistribution[n.type] ?? 0) + 1;
-      channelDistribution[n.channel] = (channelDistribution[n.channel] ?? 0) + 1;
-      if (n.deliveryTime != null) {
-        totalDeliveryTime += n.deliveryTime!.inMilliseconds / 1000.0;
-        deliveryTimeCount++;
-      }
+  Future<void> createAlert(Alert alert) async {
+    if (_alerts.containsKey(alert.alertId)) {
+      throw Exception('Alert already exists');
     }
-
-    final avgDeliveryTime = deliveryTimeCount > 0 ? totalDeliveryTime / deliveryTimeCount : 0.0;
-    final deliveryRate = filtered.isEmpty ? 0.0 : deliveredCount / filtered.length;
-
-    return NotificationStats(
-      statsId: 'stats_${DateTime.now().millisecondsSinceEpoch}',
-      periodStart: periodStart,
-      periodEnd: periodEnd,
-      totalNotifications: filtered.length,
-      sentCount: sentCount,
-      deliveredCount: deliveredCount,
-      readCount: readCount,
-      failedCount: failedCount,
-      typeDistribution: typeDistribution,
-      channelDistribution: channelDistribution,
-      averageDeliveryTime: avgDeliveryTime,
-      deliveryRate: deliveryRate,
-    );
+    _alerts[alert.alertId] = alert;
   }
 
   @override
-  Future<NotificationReport> generateReport({
-    required String reportId,
-    required DateTime periodStart,
-    required DateTime periodEnd,
-  }) async {
-    final stats = await calculateStats(periodStart, periodEnd);
+  Future<Alert?> getAlertById(String alertId) async {
+    return _alerts[alertId];
+  }
 
-    final allNotifications = [
-      ...await repository.getNotificationsByStatus(NotificationStatus.pending),
-      ...await repository.getNotificationsByStatus(NotificationStatus.sent),
-      ...await repository.getNotificationsByStatus(NotificationStatus.delivered),
-      ...await repository.getNotificationsByStatus(NotificationStatus.read),
-      ...await repository.getNotificationsByStatus(NotificationStatus.failed),
-    ];
+  @override
+  Future<List<Alert>> getAllAlerts() async {
+    return _alerts.values.toList();
+  }
 
-    final filtered = allNotifications
-        .where((n) => n.createdAt.isAfter(periodStart) && n.createdAt.isBefore(periodEnd))
-        .toList();
-
-    filtered.sort((a, b) => b.readTime?.compareTo(a.readTime ?? Duration.zero) ?? 0);
-    final topNotifications = filtered.take(5).toList();
-
-    final recentDeliveries = <NotificationDelivery>[];
-    for (final n in filtered.take(10)) {
-      final deliveries = await repository.getDeliveries(n.notificationId);
-      recentDeliveries.addAll(deliveries);
+  @override
+  Future<void> updateAlert(Alert alert) async {
+    if (!_alerts.containsKey(alert.alertId)) {
+      throw Exception('Alert not found');
     }
+    _alerts[alert.alertId] = alert;
+  }
 
-    return NotificationReport(
-      reportId: reportId,
-      generatedAt: DateTime.now(),
-      stats: stats,
-      topNotifications: topNotifications,
-      recentDeliveries: recentDeliveries,
-      insights: {
-        'period': '${periodStart.toIso8601String()} to ${periodEnd.toIso8601String()}',
-        'most_used_type': stats.mostUsedType?.value,
-        'most_used_channel': stats.mostUsedChannel?.value,
-      },
+  @override
+  Future<void> createAlertEvent(AlertEvent event) async {
+    _alertEvents.add(event);
+  }
+
+  @override
+  Future<List<AlertEvent>> getAlertEventsByAlert(String alertId) async {
+    return _alertEvents.where((e) => e.alertId == alertId).toList();
+  }
+
+  @override
+  Future<void> saveNotificationStats(NotificationStats stats) async {
+    _stats.add(stats);
+  }
+
+  @override
+  Future<NotificationStats?> getLatestStats() async {
+    return _stats.isNotEmpty ? _stats.last : null;
+  }
+
+  @override
+  Future<void> saveNotificationReport(NotificationReport report) async {
+    _reports.add(report);
+  }
+
+  @override
+  Future<NotificationReport?> getLatestReport() async {
+    return _reports.isNotEmpty ? _reports.last : null;
+  }
+
+  @override
+  Future<void> enqueueNotification(QueueEntry entry) async {
+    _queue.add(entry);
+  }
+
+  @override
+  Future<QueueEntry?> dequeueNotification() async {
+    if (_queue.isEmpty) return null;
+    final entry = _queue.firstWhere(
+      (e) => e.status == 'queued',
+      orElse: () => _queue.first,
     );
+    _queue.remove(entry);
+    return entry;
+  }
+
+  @override
+  Future<List<QueueEntry>> getPendingQueue() async {
+    return _queue.where((e) => e.status == 'queued' || e.status == 'processing').toList();
+  }
+
+  @override
+  Future<void> updateQueueEntry(QueueEntry entry) async {
+    final index = _queue.indexWhere((e) => e.entryId == entry.entryId);
+    if (index >= 0) {
+      _queue[index] = entry;
+    }
+  }
+
+  @override
+  Future<void> createChannelConfig(ChannelConfiguration config) async {
+    _channelConfigs[config.channel] = config;
+  }
+
+  @override
+  Future<ChannelConfiguration?> getChannelConfig(DeliveryChannel channel) async {
+    return _channelConfigs[channel];
+  }
+
+  @override
+  Future<void> updateChannelConfig(ChannelConfiguration config) async {
+    _channelConfigs[config.channel] = config;
   }
 }
 
-// ======================== Facade パターン ========================
+/// 通知配信エンジン
+abstract class NotificationDeliveryEngine {
+  Future<void> sendNotification(Notification notification, DeliveryChannel channel);
+  Future<void> processQueue();
+  Future<List<DeliveryLog>> getDeliveryStatus(String notificationId);
+  Future<void> retryFailedDeliveries();
+}
 
-/// 通知管理ファサード
-class NotificationManagerFacade {
-  final NotificationRepository repository;
-  final NotificationDeliveryEngine deliveryEngine;
-  final NotificationManager manager;
+/// メモリ実装の通知配信エンジン
+class MemoryNotificationDeliveryEngine implements NotificationDeliveryEngine {
+  final NotificationRepository _repository;
 
-  NotificationManagerFacade({
-    NotificationRepository? repository,
-    NotificationDeliveryEngine? deliveryEngine,
-    NotificationManager? manager,
-  })  : repository = repository ?? MemoryNotificationRepository(),
-        deliveryEngine = deliveryEngine ?? MemoryNotificationDeliveryEngine(),
-        manager = manager ?? MemoryNotificationManager(
-          repository: repository ?? MemoryNotificationRepository(),
-          deliveryEngine: deliveryEngine ?? MemoryNotificationDeliveryEngine(),
+  MemoryNotificationDeliveryEngine(this._repository);
+
+  @override
+  Future<void> sendNotification(Notification notification, DeliveryChannel channel) async {
+    final log = DeliveryLog(
+      logId: 'log_${DateTime.now().millisecondsSinceEpoch}',
+      notificationId: notification.notificationId,
+      channel: channel,
+      sentAt: DateTime.now(),
+      status: NotificationStatus.sent,
+      retryCount: 0,
+    );
+    await _repository.createDeliveryLog(log);
+  }
+
+  @override
+  Future<void> processQueue() async {
+    final queue = await _repository.getPendingQueue();
+    for (final entry in queue.take(10)) {
+      // Simulate processing
+      await _repository.updateQueueEntry(
+        QueueEntry(
+          entryId: entry.entryId,
+          notificationId: entry.notificationId,
+          channel: entry.channel,
+          enqueuedAt: entry.enqueuedAt,
+          processedAt: DateTime.now(),
+          status: 'completed',
+          priority: entry.priority,
+          retryCount: entry.retryCount,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<List<DeliveryLog>> getDeliveryStatus(String notificationId) async {
+    return _repository.getDeliveryLogsByNotification(notificationId);
+  }
+
+  @override
+  Future<void> retryFailedDeliveries() async {
+    final queue = await _repository.getPendingQueue();
+    for (final entry in queue) {
+      if (entry.hasFailed && entry.needsRetry) {
+        await _repository.updateQueueEntry(
+          QueueEntry(
+            entryId: entry.entryId,
+            notificationId: entry.notificationId,
+            channel: entry.channel,
+            enqueuedAt: entry.enqueuedAt,
+            status: 'queued',
+            priority: entry.priority,
+            retryCount: entry.retryCount + 1,
+            lastError: entry.lastError,
+          ),
         );
+      }
+    }
+  }
+}
 
-  Future<Notification> sendNotification({
-    required String notificationId,
-    required String userId,
-    required String title,
-    required String message,
-    required NotificationType type,
-    required NotificationChannel channel,
-    NotificationPriority priority = NotificationPriority.normal,
-    String? actionUrl,
-    Map<String, dynamic>? metadata,
-    DateTime? expiresAt,
-    List<String>? tags,
-  }) async {
-    final notification = await manager.createNotification(
-      notificationId: notificationId,
+/// アラートエンジン
+abstract class AlertEngine {
+  Future<void> createAlert(Alert alert);
+  Future<void> triggerAlert(String alertId, String message, Map<String, dynamic>? details);
+  Future<void> acknowledgeAlert(String eventId, String acknowledgedBy);
+  Future<void> resolveAlert(String alertId);
+  Future<List<Alert>> getActiveAlerts();
+  Future<List<AlertEvent>> getRecentAlertEvents();
+}
+
+/// メモリ実装のアラートエンジン
+class MemoryAlertEngine implements AlertEngine {
+  final NotificationRepository _repository;
+
+  MemoryAlertEngine(this._repository);
+
+  @override
+  Future<void> createAlert(Alert alert) async {
+    await _repository.createAlert(alert);
+  }
+
+  @override
+  Future<void> triggerAlert(String alertId, String message, Map<String, dynamic>? details) async {
+    final alert = await _repository.getAlertById(alertId);
+    if (alert == null) throw Exception('Alert not found');
+
+    final event = AlertEvent(
+      eventId: 'event_${DateTime.now().millisecondsSinceEpoch}',
+      alertId: alertId,
+      occurredAt: DateTime.now(),
+      message: message,
+      details: details,
+      severity: alert.severity.value,
+    );
+    await _repository.createAlertEvent(event);
+
+    // Update alert trigger count
+    final updatedAlert = Alert(
+      alertId: alert.alertId,
+      alertName: alert.alertName,
+      alertType: alert.alertType,
+      condition: alert.condition,
+      severity: alert.severity,
+      recipients: alert.recipients,
+      notificationChannels: alert.notificationChannels,
+      createdAt: alert.createdAt,
+      lastTriggeredAt: DateTime.now(),
+      status: alert.status,
+      isEnabled: alert.isEnabled,
+      triggerCount: alert.triggerCount + 1,
+    );
+    await _repository.updateAlert(updatedAlert);
+  }
+
+  @override
+  Future<void> acknowledgeAlert(String eventId, String acknowledgedBy) async {
+    final events = await _repository.getAlertEventsByAlert('');
+    final event = events.firstWhere((e) => e.eventId == eventId, orElse: () => throw Exception('Event not found'));
+
+    final updatedEvent = AlertEvent(
+      eventId: event.eventId,
+      alertId: event.alertId,
+      occurredAt: event.occurredAt,
+      message: event.message,
+      details: event.details,
+      severity: event.severity,
+      isAcknowledged: true,
+      acknowledgedAt: DateTime.now(),
+      acknowledgedBy: acknowledgedBy,
+    );
+    await _repository.createAlertEvent(updatedEvent);
+  }
+
+  @override
+  Future<void> resolveAlert(String alertId) async {
+    final alert = await _repository.getAlertById(alertId);
+    if (alert == null) throw Exception('Alert not found');
+
+    final resolved = Alert(
+      alertId: alert.alertId,
+      alertName: alert.alertName,
+      alertType: alert.alertType,
+      condition: alert.condition,
+      severity: alert.severity,
+      recipients: alert.recipients,
+      notificationChannels: alert.notificationChannels,
+      createdAt: alert.createdAt,
+      lastTriggeredAt: alert.lastTriggeredAt,
+      status: AlertStatus.resolved,
+      isEnabled: alert.isEnabled,
+      triggerCount: alert.triggerCount,
+    );
+    await _repository.updateAlert(resolved);
+  }
+
+  @override
+  Future<List<Alert>> getActiveAlerts() async {
+    final alerts = await _repository.getAllAlerts();
+    return alerts.where((a) => a.isActive).toList();
+  }
+
+  @override
+  Future<List<AlertEvent>> getRecentAlertEvents() async {
+    final alerts = await _repository.getAllAlerts();
+    final events = <AlertEvent>[];
+    for (final alert in alerts) {
+      final alertEvents = await _repository.getAlertEventsByAlert(alert.alertId);
+      events.addAll(alertEvents.where((e) => e.isRecent));
+    }
+    return events;
+  }
+}
+
+/// 通知マネージャー
+abstract class NotificationManager {
+  Future<Notification> sendNotification(String userId, String title, String message, NotificationType type);
+  Future<void> markAsRead(String notificationId);
+  Future<List<Notification>> getUserNotifications(String userId);
+  Future<void> setUserPreference(String userId, NotificationPreference preference);
+  Future<NotificationPreference?> getUserPreference(String userId);
+  Future<void> createAndSendAlert(String alertName, AlertType type, String condition);
+  Future<NotificationReport> generateReport();
+}
+
+/// メモリ実装の通知マネージャー
+class MemoryNotificationManager implements NotificationManager {
+  final NotificationRepository _repository;
+  late final NotificationDeliveryEngine _deliveryEngine;
+  late final AlertEngine _alertEngine;
+
+  MemoryNotificationManager(this._repository) {
+    _deliveryEngine = MemoryNotificationDeliveryEngine(_repository);
+    _alertEngine = MemoryAlertEngine(_repository);
+  }
+
+  @override
+  Future<Notification> sendNotification(String userId, String title, String message, NotificationType type) async {
+    final notification = Notification(
+      notificationId: 'notif_${DateTime.now().millisecondsSinceEpoch}',
       userId: userId,
       title: title,
       message: message,
-      type: type,
-      channel: channel,
-      priority: priority,
-      actionUrl: actionUrl,
-      metadata: metadata,
-      expiresAt: expiresAt,
-      tags: tags,
+      notificationType: type,
+      createdAt: DateTime.now(),
     );
-    await manager.sendNotification(notificationId);
+    await _repository.createNotification(notification);
+    await _deliveryEngine.sendNotification(notification, DeliveryChannel.inApp);
     return notification;
   }
 
-  Future<void> markAsRead(String notificationId) =>
-      manager.markAsRead(notificationId);
+  @override
+  Future<void> markAsRead(String notificationId) async {
+    final notification = await _repository.getNotificationById(notificationId);
+    if (notification == null) throw Exception('Notification not found');
 
-  Future<void> deleteNotification(String notificationId) =>
-      manager.deleteNotification(notificationId);
+    final updated = Notification(
+      notificationId: notification.notificationId,
+      userId: notification.userId,
+      title: notification.title,
+      message: notification.message,
+      notificationType: notification.notificationType,
+      priority: notification.priority,
+      createdAt: notification.createdAt,
+      readAt: DateTime.now(),
+      status: NotificationStatus.read,
+      metadata: notification.metadata,
+      actionUrl: notification.actionUrl,
+    );
+    await _repository.updateNotification(updated);
+  }
 
-  Future<int> getUnreadCount(String userId) =>
-      manager.getUnreadCount(userId);
+  @override
+  Future<List<Notification>> getUserNotifications(String userId) async {
+    return _repository.getUserNotifications(userId);
+  }
 
-  Future<void> setPreference(NotificationPreference preference) =>
-      manager.updatePreference(preference);
+  @override
+  Future<void> setUserPreference(String userId, NotificationPreference preference) async {
+    await _repository.createPreference(preference);
+  }
 
-  Future<NotificationReport> generateReport({
-    required String reportId,
-    required DateTime periodStart,
-    required DateTime periodEnd,
-  }) =>
-      manager.generateReport(
-        reportId: reportId,
-        periodStart: periodStart,
-        periodEnd: periodEnd,
-      );
+  @override
+  Future<NotificationPreference?> getUserPreference(String userId) async {
+    return _repository.getPreferenceByUserId(userId);
+  }
+
+  @override
+  Future<void> createAndSendAlert(String alertName, AlertType type, String condition) async {
+    final alert = Alert(
+      alertId: 'alert_${DateTime.now().millisecondsSinceEpoch}',
+      alertName: alertName,
+      alertType: type,
+      condition: condition,
+      severity: PriorityLevel.high,
+      recipients: [],
+      notificationChannels: [DeliveryChannel.inApp, DeliveryChannel.email],
+      createdAt: DateTime.now(),
+    );
+    await _alertEngine.createAlert(alert);
+  }
+
+  @override
+  Future<NotificationReport> generateReport() async {
+    final stats = NotificationStats(
+      statsId: 'stats_${DateTime.now().millisecondsSinceEpoch}',
+      totalNotifications: 100,
+      sentNotifications: 95,
+      deliveredNotifications: 90,
+      readNotifications: 75,
+      failedNotifications: 5,
+      periodStart: DateTime.now().subtract(Duration(days: 1)),
+      periodEnd: DateTime.now(),
+      deliveryRate: 0.95,
+      readRate: 0.83,
+      averageDeliveryTimeSeconds: 5,
+    );
+
+    final report = NotificationReport(
+      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      generatedAt: DateTime.now(),
+      periodStart: DateTime.now().subtract(Duration(days: 1)),
+      periodEnd: DateTime.now(),
+      stats: stats,
+      topNotificationTypes: ['info', 'warning', 'alert'],
+      topChannels: ['in_app', 'email', 'push'],
+      recommendations: [],
+    );
+
+    await _repository.saveNotificationReport(report);
+    return report;
+  }
+}
+
+/// 通知ファサード
+class NotificationFacade {
+  late final NotificationRepository _repository;
+  late final NotificationManager _manager;
+
+  NotificationFacade() {
+    _repository = MemoryNotificationRepository();
+    _manager = MemoryNotificationManager(_repository);
+  }
+
+  // Notification操作
+  Future<Notification> sendNotification(String userId, String title, String message, NotificationType type) =>
+      _manager.sendNotification(userId, title, message, type);
+
+  Future<void> markAsRead(String notificationId) => _manager.markAsRead(notificationId);
+
+  Future<List<Notification>> getUserNotifications(String userId) => _manager.getUserNotifications(userId);
+
+  Future<Notification?> getNotification(String notificationId) => _repository.getNotificationById(notificationId);
+
+  // Preference操作
+  Future<void> setUserPreference(String userId, NotificationPreference preference) =>
+      _manager.setUserPreference(userId, preference);
+
+  Future<NotificationPreference?> getUserPreference(String userId) => _manager.getUserPreference(userId);
+
+  // Alert操作
+  Future<void> createAlert(String alertName, AlertType type, String condition) =>
+      _manager.createAndSendAlert(alertName, type, condition);
+
+  Future<Alert?> getAlert(String alertId) => _repository.getAlertById(alertId);
+
+  Future<List<Alert>> getAllAlerts() => _repository.getAllAlerts();
+
+  // Template操作
+  Future<void> createTemplate(NotificationTemplate template) => _repository.createTemplate(template);
+
+  Future<NotificationTemplate?> getTemplate(String templateId) => _repository.getTemplateById(templateId);
+
+  Future<List<NotificationTemplate>> getAllTemplates() => _repository.getAllTemplates();
+
+  // Report
+  Future<NotificationReport> generateReport() => _manager.generateReport();
+
+  Future<NotificationReport?> getLatestReport() => _repository.getLatestReport();
+
+  // Queue操作
+  Future<void> enqueueNotification(QueueEntry entry) => _repository.enqueueNotification(entry);
+
+  Future<List<QueueEntry>> getPendingQueue() => _repository.getPendingQueue();
+
+  // Channel設定
+  Future<void> configureChannel(DeliveryChannel channel, Map<String, dynamic> settings) async {
+    final config = ChannelConfiguration(
+      configId: 'config_${DateTime.now().millisecondsSinceEpoch}',
+      channel: channel,
+      isEnabled: true,
+      settings: settings,
+      createdAt: DateTime.now(),
+      isVerified: true,
+    );
+    await _repository.createChannelConfig(config);
+  }
+
+  Future<ChannelConfiguration?> getChannelConfig(DeliveryChannel channel) =>
+      _repository.getChannelConfig(channel);
 }
