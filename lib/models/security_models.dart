@@ -1,379 +1,435 @@
-/// Phase 54: Security & Compliance セキュリティ・法令準拠
-///
-/// 暗号化、トークン管理、パスワードポリシー、監査ログ、法令準拠機能
+/// Phase 89: Advanced Security & Compliance Frameworks
+/// Core domain models for security and compliance systems
+library security_models;
 
-/// 暗号化方式
+// ============================================================================
+// ENUMS (6 total)
+// ============================================================================
+
 enum EncryptionType {
-  aes256('aes256'),
-  rsa2048('rsa2048'),
-  sha256('sha256'),
-  bcrypt('bcrypt');
+  aes256('AES-256'),
+  rsa2048('RSA-2048'),
+  chacha20('ChaCha20'),
+  twofish('Twofish'),
+  serpent('Serpent'),
+  blake3('BLAKE3');
 
-  final String value;
-  const EncryptionType(this.value);
+  const EncryptionType(this.displayName);
+  final String displayName;
 }
 
-/// セキュリティレベル
-enum SecurityLevel {
-  low('low'),
-  medium('medium'),
-  high('high'),
-  critical('critical');
+enum ComplianceFramework {
+  gdpr('GDPR'),
+  hipaa('HIPAA'),
+  pci_dss('PCI DSS'),
+  soc2('SOC 2'),
+  iso27001('ISO 27001'),
+  ccpa('CCPA');
 
-  final String value;
-  const SecurityLevel(this.value);
+  const ComplianceFramework(this.displayName);
+  final String displayName;
 }
 
-/// 法令準拠ステータス
+enum SecurityAuditAction {
+  login('ログイン'),
+  logout('ログアウト'),
+  dataAccess('データアクセス'),
+  dataModify('データ変更'),
+  roleChange('ロール変更'),
+  permissionChange('権限変更');
+
+  const SecurityAuditAction(this.displayName);
+  final String displayName;
+}
+
+enum IncidentSeverity {
+  critical('クリティカル'),
+  high('高'),
+  medium('中'),
+  low('低'),
+  informational('情報');
+
+  const IncidentSeverity(this.displayName);
+  final String displayName;
+}
+
 enum ComplianceStatus {
-  compliant('compliant'),
-  nonCompliant('non_compliant'),
-  partiallyCompliant('partially_compliant'),
-  unknown('unknown');
+  compliant('準拠'),
+  nonCompliant('非準拠'),
+  partiallyCompliant('部分的に準拠'),
+  notAssessed('未評価'),
+  remediation('改善中');
 
-  final String value;
-  const ComplianceStatus(this.value);
+  const ComplianceStatus(this.displayName);
+  final String displayName;
 }
 
-/// 暗号化キー
-class EncryptionKey {
-  final String keyId;
-  final String keyName;
-  final EncryptionType encryptionType;
-  final DateTime createdAt;
-  final DateTime? rotatedAt;
-  final DateTime? expiresAt;
-  final bool isActive;
-  final String? algorithm;
+enum PrivacyLevel {
+  public('公開'),
+  internal('社内'),
+  confidential('機密'),
+  restricted('制限'),
+  topSecret('極秘');
 
+  const PrivacyLevel(this.displayName);
+  final String displayName;
+}
+
+// ============================================================================
+// MODELS (12 total)
+// ============================================================================
+
+/// EncryptionKey: 暗号化キー
+class EncryptionKey {
   EncryptionKey({
-    required this.keyId,
+    required this.id,
     required this.keyName,
     required this.encryptionType,
     required this.createdAt,
-    this.rotatedAt,
-    this.expiresAt,
-    this.isActive = true,
-    this.algorithm,
-  });
-
-  /// キーが有効か
-  bool get isValid => isActive && (expiresAt == null || DateTime.now().isBefore(expiresAt!));
-
-  /// キーが期限切れか
-  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
-
-  /// キーがローテーション前か
-  bool get needsRotation => rotatedAt != null && 
-    DateTime.now().difference(rotatedAt!).inDays > 90;
-}
-
-/// トークン情報
-class TokenInfo {
-  final String tokenId;
-  final String userId;
-  final String token;
-  final DateTime issuedAt;
-  final DateTime expiresAt;
-  final List<String> scopes;
-  final SecurityLevel securityLevel;
-  final bool isRevoked;
-
-  TokenInfo({
-    required this.tokenId,
-    required this.userId,
-    required this.token,
-    required this.issuedAt,
     required this.expiresAt,
-    required this.scopes,
-    required this.securityLevel,
-    this.isRevoked = false,
+    this.description,
+    this.keyVersion = '1.0',
+    this.isActive = true,
+    this.rotationSchedule,
   });
 
-  /// トークンが有効か
-  bool get isValid => !isRevoked && DateTime.now().isBefore(expiresAt);
-
-  /// トークンが期限切れか
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
-
-  /// トークンの有効期限までの時間
-  Duration? get timeUntilExpiration {
-    if (isExpired) return null;
-    return expiresAt.difference(DateTime.now());
-  }
-}
-
-/// パスワードポリシー
-class PasswordPolicy {
-  final String policyId;
-  final int minLength;
-  final int maxLength;
-  final bool requireUppercase;
-  final bool requireLowercase;
-  final bool requireNumbers;
-  final bool requireSpecialChars;
-  final int expirationDays;
-  final int historyCount;
+  final String id;
+  final String keyName;
+  final EncryptionType encryptionType;
   final DateTime createdAt;
-
-  PasswordPolicy({
-    required this.policyId,
-    required this.minLength,
-    required this.maxLength,
-    required this.requireUppercase,
-    required this.requireLowercase,
-    required this.requireNumbers,
-    required this.requireSpecialChars,
-    required this.expirationDays,
-    required this.historyCount,
-    required this.createdAt,
-  });
-
-  /// ポリシーが厳しいか
-  bool get isStrict => minLength >= 12 && requireSpecialChars && expirationDays <= 90;
-
-  /// パスワード複雑度スコア
-  int get complexityScore {
-    int score = 0;
-    if (minLength >= 12) score += 2;
-    if (requireUppercase) score += 1;
-    if (requireLowercase) score += 1;
-    if (requireNumbers) score += 1;
-    if (requireSpecialChars) score += 2;
-    return score;
-  }
-}
-
-/// セキュリティイベント
-class SecurityEvent {
-  final String eventId;
-  final String userId;
-  final String eventType; // login, logout, failed_login, permission_change
-  final SecurityLevel severity;
-  final DateTime occurredAt;
-  final String ipAddress;
-  final Map<String, dynamic>? details;
-  final bool isAnomalous;
-
-  SecurityEvent({
-    required this.eventId,
-    required this.userId,
-    required this.eventType,
-    required this.severity,
-    required this.occurredAt,
-    required this.ipAddress,
-    this.details,
-    this.isAnomalous = false,
-  });
-
-  /// イベントが重大か
-  bool get isCritical => severity == SecurityLevel.critical;
-
-  /// イベントが警告レベルか
-  bool get isWarning => severity == SecurityLevel.high;
-}
-
-/// 脆弱性評価
-class VulnerabilityAssessment {
-  final String assessmentId;
-  final String resourceId;
-  final String resourceType;
-  final List<String> vulnerabilities;
-  final double riskScore; // 0.0-1.0
-  final DateTime assessedAt;
-  final String? remediationPlan;
-  final bool isResolved;
-
-  VulnerabilityAssessment({
-    required this.assessmentId,
-    required this.resourceId,
-    required this.resourceType,
-    required this.vulnerabilities,
-    required this.riskScore,
-    required this.assessedAt,
-    this.remediationPlan,
-    this.isResolved = false,
-  });
-
-  /// リスクが高いか
-  bool get isHighRisk => riskScore > 0.7;
-
-  /// 脆弱性数
-  int get vulnerabilityCount => vulnerabilities.length;
-}
-
-/// 法令準拠ルール
-class ComplianceRule {
-  final String ruleId;
-  final String ruleName;
-  final String description;
-  final String framework; // GDPR, HIPAA, SOC2等
+  final DateTime expiresAt;
+  final String? description;
+  final String keyVersion;
   final bool isActive;
-  final DateTime createdAt;
-  final List<String> relatedPolicies;
+  final int? rotationSchedule;
 
-  ComplianceRule({
-    required this.ruleId,
-    required this.ruleName,
-    required this.description,
-    required this.framework,
-    required this.isActive,
-    required this.createdAt,
-    required this.relatedPolicies,
-  });
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  bool get needsRotation =>
+      rotationSchedule != null &&
+      DateTime.now().difference(createdAt).inDays >= rotationSchedule!;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+  int get daysUntilExpiry => expiresAt.difference(DateTime.now()).inDays;
 
-  /// ルールが有効か
-  bool get isEnabled => isActive;
-
-  /// 関連ポリシー数
-  int get policyCount => relatedPolicies.length;
-}
-
-/// セキュリティ監査
-class SecurityAudit {
-  final String auditId;
-  final List<SecurityEvent> events;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final int totalEvents;
-  final int criticalEvents;
-  final double compliancePercentage;
-
-  SecurityAudit({
-    required this.auditId,
-    required this.events,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.totalEvents,
-    required this.criticalEvents,
-    required this.compliancePercentage,
-  });
-
-  /// 監査が良好か
-  bool get isPassing => compliancePercentage > 0.95;
-
-  /// セキュリティイベント数
-  int get eventCount => events.length;
-
-  /// クリティカルイベント率
-  double get criticalEventRate {
-    if (totalEvents == 0) return 0.0;
-    return criticalEvents / totalEvents;
+  EncryptionKey copyWith({
+    String? id,
+    String? keyName,
+    EncryptionType? encryptionType,
+    DateTime? createdAt,
+    DateTime? expiresAt,
+    String? description,
+    String? keyVersion,
+    bool? isActive,
+    int? rotationSchedule,
+  }) {
+    return EncryptionKey(
+      id: id ?? this.id,
+      keyName: keyName ?? this.keyName,
+      encryptionType: encryptionType ?? this.encryptionType,
+      createdAt: createdAt ?? this.createdAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      description: description ?? this.description,
+      keyVersion: keyVersion ?? this.keyVersion,
+      isActive: isActive ?? this.isActive,
+      rotationSchedule: rotationSchedule ?? this.rotationSchedule,
+    );
   }
 }
 
-/// セキュリティレポート
-class SecurityReport {
-  final String reportId;
-  final DateTime generatedAt;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final SecurityAudit audit;
-  final List<VulnerabilityAssessment> vulnerabilities;
-  final ComplianceStatus overallComplianceStatus;
-  final List<String>? recommendations;
-
-  SecurityReport({
-    required this.reportId,
-    required this.generatedAt,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.audit,
-    required this.vulnerabilities,
-    required this.overallComplianceStatus,
-    this.recommendations,
-  });
-
-  /// Markdown形式で出力
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# Security Report');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('');
-
-    buffer.writeln('## Summary');
-    buffer.writeln('');
-    buffer.writeln('- Compliance Status: ${overallComplianceStatus.value}');
-    buffer.writeln('- Compliance Score: ${(audit.compliancePercentage * 100).toStringAsFixed(1)}%');
-    buffer.writeln('- Total Events: ${audit.totalEvents}');
-    buffer.writeln('- Critical Events: ${audit.criticalEvents}');
-    buffer.writeln('- Vulnerabilities Found: ${vulnerabilities.length}');
-    buffer.writeln('');
-
-    if (vulnerabilities.isNotEmpty) {
-      buffer.writeln('## High Risk Vulnerabilities');
-      buffer.writeln('');
-      for (final vuln in vulnerabilities.where((v) => v.isHighRisk).take(5)) {
-        buffer.writeln('- **${vuln.resourceId}**: Risk ${(vuln.riskScore * 100).toStringAsFixed(0)}%');
-        buffer.writeln('  - Found: ${vuln.vulnerabilityCount} issues');
-      }
-      buffer.writeln('');
-    }
-
-    if (recommendations != null && recommendations!.isNotEmpty) {
-      buffer.writeln('## Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations!.take(5)) {
-        buffer.writeln('- $rec');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
-  }
-}
-
-/// 権限監査ログ
-class PermissionAuditLog {
-  final String logId;
-  final String userId;
-  final String action; // grant, revoke, modify
-  final String permission;
-  final DateTime timestamp;
-  final String? reason;
-  final bool isApproved;
-
-  PermissionAuditLog({
-    required this.logId,
+/// SecurityAuditLog: セキュリティ監査ログ
+class SecurityAuditLog {
+  SecurityAuditLog({
+    required this.id,
     required this.userId,
     required this.action,
-    required this.permission,
     required this.timestamp,
-    this.reason,
-    this.isApproved = false,
+    required this.createdAt,
+    this.resourceId,
+    this.details,
+    this.ipAddress,
+    this.userAgent,
+    this.status = 'success',
   });
 
-  /// 権限付与か
-  bool get isGrant => action == 'grant';
+  final String id;
+  final String userId;
+  final SecurityAuditAction action;
+  final DateTime timestamp;
+  final DateTime createdAt;
+  final String? resourceId;
+  final String? details;
+  final String? ipAddress;
+  final String? userAgent;
+  final String status;
 
-  /// 権限取消か
-  bool get isRevoke => action == 'revoke';
+  bool get isSuccess => status == 'success';
+  bool get isFailure => status == 'failure';
+  int get ageInSeconds => DateTime.now().difference(timestamp).inSeconds;
+  int get ageInMinutes => DateTime.now().difference(timestamp).inMinutes;
 }
 
-/// セキュリティポリシー
-class SecurityPolicy {
-  final String policyId;
-  final String policyName;
-  final SecurityLevel minimumLevel;
-  final List<String> appliedRoles;
-  final DateTime createdAt;
-  final DateTime? lastUpdatedAt;
-  final bool isActive;
-
-  SecurityPolicy({
-    required this.policyId,
-    required this.policyName,
-    required this.minimumLevel,
-    required this.appliedRoles,
+/// ComplianceRule: コンプライアンスルール
+class ComplianceRule {
+  ComplianceRule({
+    required this.id,
+    required this.ruleName,
+    required this.framework,
     required this.createdAt,
+    this.description,
+    this.severity = 'high',
+    this.isActive = true,
+    this.lastAuditedAt,
+  });
+
+  final String id;
+  final String ruleName;
+  final ComplianceFramework framework;
+  final DateTime createdAt;
+  final String? description;
+  final String severity;
+  final bool isActive;
+  final DateTime? lastAuditedAt;
+
+  bool get needsAudit =>
+      lastAuditedAt == null ||
+      DateTime.now().difference(lastAuditedAt!).inDays > 30;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+  int get daysSinceAudit => lastAuditedAt != null
+      ? DateTime.now().difference(lastAuditedAt!).inDays
+      : -1;
+}
+
+/// SecurityIncident: セキュリティインシデント
+class SecurityIncident {
+  SecurityIncident({
+    required this.id,
+    required this.incidentType,
+    required this.severity,
+    required this.detectedAt,
+    required this.createdAt,
+    this.description,
+    this.affectedResources,
+    this.resolvedAt,
+    this.status = 'open',
+  });
+
+  final String id;
+  final String incidentType;
+  final IncidentSeverity severity;
+  final DateTime detectedAt;
+  final DateTime createdAt;
+  final String? description;
+  final List<String>? affectedResources;
+  final DateTime? resolvedAt;
+  final String status;
+
+  bool get isResolved => resolvedAt != null;
+  bool get isCritical => severity == IncidentSeverity.critical;
+  int get durationSeconds => (resolvedAt ?? DateTime.now())
+      .difference(detectedAt)
+      .inSeconds;
+  int get ageInHours => DateTime.now().difference(detectedAt).inHours;
+}
+
+/// ComplianceAssessment: コンプライアンス評価
+class ComplianceAssessment {
+  ComplianceAssessment({
+    required this.id,
+    required this.framework,
+    required this.assessmentDate,
+    required this.createdAt,
+    this.status = ComplianceStatus.notAssessed,
+    this.complianceScore = 0.0,
+    this.findingsCount = 0,
+    this.remediationDeadline,
+  });
+
+  final String id;
+  final ComplianceFramework framework;
+  final DateTime assessmentDate;
+  final DateTime createdAt;
+  final ComplianceStatus status;
+  final double complianceScore;
+  final int findingsCount;
+  final DateTime? remediationDeadline;
+
+  bool get isCompliant => status == ComplianceStatus.compliant;
+  bool get hasFindings => findingsCount > 0;
+  bool get isOverdue =>
+      remediationDeadline != null &&
+      DateTime.now().isAfter(remediationDeadline!);
+  int get ageInDays => DateTime.now().difference(assessmentDate).inDays;
+}
+
+/// PrivacyPolicy: プライバシーポリシー
+class PrivacyPolicy {
+  PrivacyPolicy({
+    required this.id,
+    required this.policyName,
+    required this.privacyLevel,
+    required this.createdAt,
+    required this.version,
+    this.description,
+    this.dataRetentionDays = 365,
+    this.isActive = true,
     this.lastUpdatedAt,
+  });
+
+  final String id;
+  final String policyName;
+  final PrivacyLevel privacyLevel;
+  final DateTime createdAt;
+  final String version;
+  final String? description;
+  final int dataRetentionDays;
+  final bool isActive;
+  final DateTime? lastUpdatedAt;
+
+  bool get needsReview =>
+      lastUpdatedAt == null ||
+      DateTime.now().difference(lastUpdatedAt!).inDays > 90;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+}
+
+/// DataEncryption: データ暗号化
+class DataEncryption {
+  DataEncryption({
+    required this.id,
+    required this.dataId,
+    required this.encryptionKeyId,
+    required this.encryptionType,
+    required this.createdAt,
+    this.algorithm,
+    this.isEncrypted = true,
+    this.encryptionTimestampMs = 0,
+  });
+
+  final String id;
+  final String dataId;
+  final String encryptionKeyId;
+  final EncryptionType encryptionType;
+  final DateTime createdAt;
+  final String? algorithm;
+  final bool isEncrypted;
+  final int encryptionTimestampMs;
+
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+}
+
+/// SecurityPolicy: セキュリティポリシー
+class SecurityPolicy {
+  SecurityPolicy({
+    required this.id,
+    required this.policyName,
+    required this.createdAt,
+    this.description,
+    this.minPasswordLength = 12,
+    this.requireMfa = true,
+    this.sessionTimeoutMinutes = 30,
     this.isActive = true,
   });
 
-  /// ポリシーが有効か
-  bool get isEnabled => isActive;
+  final String id;
+  final String policyName;
+  final DateTime createdAt;
+  final String? description;
+  final int minPasswordLength;
+  final bool requireMfa;
+  final int sessionTimeoutMinutes;
+  final bool isActive;
 
-  /// 対象ロール数
-  int get roleCount => appliedRoles.length;
+  bool get isMfaRequired => requireMfa;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+}
+
+/// VulnerabilityReport: 脆弱性レポート
+class VulnerabilityReport {
+  VulnerabilityReport({
+    required this.id,
+    required this.vulnerabilityName,
+    required this.severity,
+    required this.discoveredAt,
+    required this.createdAt,
+    this.cvssScore = 0.0,
+    this.affectedComponent,
+    this.remediationDate,
+    this.status = 'open',
+  });
+
+  final String id;
+  final String vulnerabilityName;
+  final IncidentSeverity severity;
+  final DateTime discoveredAt;
+  final DateTime createdAt;
+  final double cvssScore;
+  final String? affectedComponent;
+  final DateTime? remediationDate;
+  final String status;
+
+  bool get isResolved => status == 'resolved';
+  bool get isCritical => cvssScore >= 9.0;
+  int get ageInDays => DateTime.now().difference(discoveredAt).inDays;
+  int get daysToRemediation => remediationDate != null
+      ? remediationDate!.difference(DateTime.now()).inDays
+      : -1;
+}
+
+/// DataAccessLog: データアクセスログ
+class DataAccessLog {
+  DataAccessLog({
+    required this.id,
+    required this.userId,
+    required this.dataId,
+    required this.accessTime,
+    required this.createdAt,
+    this.accessType = 'read',
+    this.purpose,
+    this.ipAddress,
+    this.status = 'granted',
+  });
+
+  final String id;
+  final String userId;
+  final String dataId;
+  final DateTime accessTime;
+  final DateTime createdAt;
+  final String accessType;
+  final String? purpose;
+  final String? ipAddress;
+  final String status;
+
+  bool get isGranted => status == 'granted';
+  bool get isDenied => status == 'denied';
+  int get ageInSeconds => DateTime.now().difference(accessTime).inSeconds;
+  int get ageInMinutes => DateTime.now().difference(accessTime).inMinutes;
+}
+
+/// ComplianceViolation: コンプライアンス違反
+class ComplianceViolation {
+  ComplianceViolation({
+    required this.id,
+    required this.violationType,
+    required this.framework,
+    required this.detectedAt,
+    required this.createdAt,
+    this.description,
+    this.severity = 'high',
+    this.remediationDeadline,
+    this.status = 'open',
+  });
+
+  final String id;
+  final String violationType;
+  final ComplianceFramework framework;
+  final DateTime detectedAt;
+  final DateTime createdAt;
+  final String? description;
+  final String severity;
+  final DateTime? remediationDeadline;
+  final String status;
+
+  bool get isResolved => status == 'resolved';
+  bool get isOverdue =>
+      remediationDeadline != null &&
+      DateTime.now().isAfter(remediationDeadline!);
+  int get ageInDays => DateTime.now().difference(detectedAt).inDays;
 }

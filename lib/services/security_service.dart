@@ -1,705 +1,852 @@
-import '../models/security_models.dart';
+/// Phase 89: Advanced Security & Compliance Frameworks
+/// Service layer for security and compliance management
+library security_service;
 
-/// セキュリティリポジトリインターフェース
+import 'dart:async';
+import 'package:project_040/models/security_models.dart';
+
+// ============================================================================
+// REPOSITORY INTERFACE
+// ============================================================================
+
 abstract class SecurityRepository {
-  /// 暗号化キー操作
-  Future<void> addEncryptionKey(EncryptionKey key);
-  Future<EncryptionKey?> getEncryptionKey(String keyId);
-  Future<List<EncryptionKey>> getAllEncryptionKeys();
-  Future<void> updateEncryptionKey(EncryptionKey key);
-  Future<void> deleteEncryptionKey(String keyId);
+  // ========== Encryption Key Management (10 methods) ==========
+  Future<EncryptionKey> createEncryptionKey(EncryptionKey key);
+  Future<EncryptionKey?> getEncryptionKeyById(String id);
+  Future<List<EncryptionKey>> getActiveEncryptionKeys();
+  Future<List<EncryptionKey>> getExpiredEncryptionKeys();
+  Future<List<EncryptionKey>> getKeysNeedingRotation();
+  Future<EncryptionKey> updateEncryptionKey(EncryptionKey key);
+  Future<void> deleteEncryptionKey(String id);
+  Future<List<EncryptionKey>> listEncryptionKeys();
+  Future<int> getEncryptionKeyCount();
+  Future<List<EncryptionKey>> getKeysByType(EncryptionType type);
 
-  /// トークン操作
-  Future<void> addToken(TokenInfo token);
-  Future<TokenInfo?> getToken(String tokenId);
-  Future<List<TokenInfo>> getUserTokens(String userId);
-  Future<void> revokeToken(String tokenId);
-  Future<void> deleteToken(String tokenId);
+  // ========== Audit Logs (12 methods) ==========
+  Future<SecurityAuditLog> createAuditLog(SecurityAuditLog log);
+  Future<SecurityAuditLog?> getAuditLogById(String id);
+  Future<List<SecurityAuditLog>> getAuditLogsByUserId(String userId);
+  Future<List<SecurityAuditLog>> getAuditLogsByAction(SecurityAuditAction action);
+  Future<List<SecurityAuditLog>> getFailedAuditLogs();
+  Future<List<SecurityAuditLog>> getAuditLogsByTimeRange(DateTime start, DateTime end);
+  Future<void> deleteAuditLog(String id);
+  Future<List<SecurityAuditLog>> listAuditLogs();
+  Future<int> getAuditLogCount();
+  Future<List<SecurityAuditLog>> searchAuditLogs(String query);
+  Future<int> getSuccessfulLoginCount();
+  Future<int> getFailedLoginCount();
 
-  /// パスワードポリシー操作
-  Future<void> addPasswordPolicy(PasswordPolicy policy);
-  Future<PasswordPolicy?> getPasswordPolicy(String policyId);
-  Future<List<PasswordPolicy>> getAllPasswordPolicies();
-  Future<void> updatePasswordPolicy(PasswordPolicy policy);
-  Future<void> deletePasswordPolicy(String policyId);
+  // ========== Compliance Rules (8 methods) ==========
+  Future<ComplianceRule> createComplianceRule(ComplianceRule rule);
+  Future<ComplianceRule?> getComplianceRuleById(String id);
+  Future<List<ComplianceRule>> getRulesByFramework(ComplianceFramework framework);
+  Future<List<ComplianceRule>> getActiveRules();
+  Future<List<ComplianceRule>> getRulesNeedingAudit();
+  Future<ComplianceRule> updateComplianceRule(ComplianceRule rule);
+  Future<void> deleteComplianceRule(String id);
+  Future<List<ComplianceRule>> listComplianceRules();
 
-  /// セキュリティイベント操作
-  Future<void> addSecurityEvent(SecurityEvent event);
-  Future<SecurityEvent?> getSecurityEvent(String eventId);
-  Future<List<SecurityEvent>> getUserSecurityEvents(String userId);
-  Future<List<SecurityEvent>> getAnomalousEvents();
-  Future<void> deleteSecurityEvent(String eventId);
+  // ========== Security Incidents (10 methods) ==========
+  Future<SecurityIncident> createSecurityIncident(SecurityIncident incident);
+  Future<SecurityIncident?> getSecurityIncidentById(String id);
+  Future<List<SecurityIncident>> getOpenIncidents();
+  Future<List<SecurityIncident>> getIncidentsBySeverity(IncidentSeverity severity);
+  Future<List<SecurityIncident>> getCriticalIncidents();
+  Future<SecurityIncident> updateSecurityIncident(SecurityIncident incident);
+  Future<void> deleteSecurityIncident(String id);
+  Future<List<SecurityIncident>> listSecurityIncidents();
+  Future<int> getSecurityIncidentCount();
+  Future<List<SecurityIncident>> getUnresolvedIncidents();
 
-  /// 脆弱性評価操作
-  Future<void> addVulnerabilityAssessment(VulnerabilityAssessment assessment);
-  Future<VulnerabilityAssessment?> getVulnerabilityAssessment(String assessmentId);
-  Future<List<VulnerabilityAssessment>> getResourceAssessments(String resourceId);
-  Future<List<VulnerabilityAssessment>> getHighRiskAssessments();
-  Future<void> updateVulnerabilityAssessment(VulnerabilityAssessment assessment);
-  Future<void> deleteVulnerabilityAssessment(String assessmentId);
+  // ========== Compliance Assessments (10 methods) ==========
+  Future<ComplianceAssessment> createAssessment(ComplianceAssessment assessment);
+  Future<ComplianceAssessment?> getAssessmentById(String id);
+  Future<List<ComplianceAssessment>> getAssessmentsByFramework(ComplianceFramework framework);
+  Future<List<ComplianceAssessment>> getCompliantAssessments();
+  Future<List<ComplianceAssessment>> getNonCompliantAssessments();
+  Future<ComplianceAssessment> updateAssessment(ComplianceAssessment assessment);
+  Future<void> deleteAssessment(String id);
+  Future<List<ComplianceAssessment>> listAssessments();
+  Future<double> getAverageComplianceScore();
+  Future<int> getOverdueAssessmentCount();
 
-  /// 法令準拠ルール操作
-  Future<void> addComplianceRule(ComplianceRule rule);
-  Future<ComplianceRule?> getComplianceRule(String ruleId);
-  Future<List<ComplianceRule>> getAllComplianceRules();
-  Future<List<ComplianceRule>> getFrameworkRules(String framework);
-  Future<void> updateComplianceRule(ComplianceRule rule);
-  Future<void> deleteComplianceRule(String ruleId);
+  // ========== Privacy Policies (8 methods) ==========
+  Future<PrivacyPolicy> createPrivacyPolicy(PrivacyPolicy policy);
+  Future<PrivacyPolicy?> getPrivacyPolicyById(String id);
+  Future<List<PrivacyPolicy>> getActivePolicies();
+  Future<List<PrivacyPolicy>> getPoliciesNeedingReview();
+  Future<PrivacyPolicy> updatePrivacyPolicy(PrivacyPolicy policy);
+  Future<void> deletePrivacyPolicy(String id);
+  Future<List<PrivacyPolicy>> listPrivacyPolicies();
+  Future<List<PrivacyPolicy>> getPoliciesByPrivacyLevel(PrivacyLevel level);
 
-  /// セキュリティ監査操作
-  Future<void> addSecurityAudit(SecurityAudit audit);
-  Future<SecurityAudit?> getSecurityAudit(String auditId);
-  Future<List<SecurityAudit>> getRecentAudits(int count);
-  Future<void> deleteSecurityAudit(String auditId);
+  // ========== Data Encryption (8 methods) ==========
+  Future<DataEncryption> createDataEncryption(DataEncryption encryption);
+  Future<DataEncryption?> getDataEncryptionById(String id);
+  Future<List<DataEncryption>> getEncryptionsByDataId(String dataId);
+  Future<List<DataEncryption>> getEncryptedData();
+  Future<DataEncryption> updateDataEncryption(DataEncryption encryption);
+  Future<void> deleteDataEncryption(String id);
+  Future<List<DataEncryption>> listDataEncryptions();
+  Future<int> getEncryptedDataCount();
 
-  /// 権限監査ログ操作
-  Future<void> addPermissionAuditLog(PermissionAuditLog log);
-  Future<PermissionAuditLog?> getPermissionAuditLog(String logId);
-  Future<List<PermissionAuditLog>> getUserPermissionLogs(String userId);
-  Future<List<PermissionAuditLog>> getUnapprovedLogs();
-  Future<void> deletePermissionAuditLog(String logId);
-
-  /// セキュリティポリシー操作
-  Future<void> addSecurityPolicy(SecurityPolicy policy);
-  Future<SecurityPolicy?> getSecurityPolicy(String policyId);
-  Future<List<SecurityPolicy>> getAllSecurityPolicies();
+  // ========== Security Policies (8 methods) ==========
+  Future<SecurityPolicy> createSecurityPolicy(SecurityPolicy policy);
+  Future<SecurityPolicy?> getSecurityPolicyById(String id);
   Future<List<SecurityPolicy>> getActivePolicies();
-  Future<void> updateSecurityPolicy(SecurityPolicy policy);
-  Future<void> deleteSecurityPolicy(String policyId);
+  Future<SecurityPolicy> updateSecurityPolicy(SecurityPolicy policy);
+  Future<void> deleteSecurityPolicy(String id);
+  Future<List<SecurityPolicy>> listSecurityPolicies();
+  Future<int> getSecurityPolicyCount();
+  Future<List<SecurityPolicy>> getMfaRequiredPolicies();
+
+  // ========== Vulnerability Reports (10 methods) ==========
+  Future<VulnerabilityReport> createVulnerabilityReport(VulnerabilityReport report);
+  Future<VulnerabilityReport?> getVulnerabilityReportById(String id);
+  Future<List<VulnerabilityReport>> getOpenVulnerabilities();
+  Future<List<VulnerabilityReport>> getCriticalVulnerabilities();
+  Future<List<VulnerabilityReport>> getVulnerabilityBySeverity(IncidentSeverity severity);
+  Future<VulnerabilityReport> updateVulnerabilityReport(VulnerabilityReport report);
+  Future<void> deleteVulnerabilityReport(String id);
+  Future<List<VulnerabilityReport>> listVulnerabilityReports();
+  Future<int> getVulnerabilityCount();
+  Future<List<VulnerabilityReport>> getOverdueVulnerabilities();
+
+  // ========== Data Access Logs (10 methods) ==========
+  Future<DataAccessLog> createAccessLog(DataAccessLog log);
+  Future<DataAccessLog?> getAccessLogById(String id);
+  Future<List<DataAccessLog>> getAccessLogsByUserId(String userId);
+  Future<List<DataAccessLog>> getAccessLogsByDataId(String dataId);
+  Future<List<DataAccessLog>> getDeniedAccessLogs();
+  Future<List<DataAccessLog>> getAccessLogsByTimeRange(DateTime start, DateTime end);
+  Future<void> deleteAccessLog(String id);
+  Future<List<DataAccessLog>> listAccessLogs();
+  Future<int> getAccessLogCount();
+  Future<List<DataAccessLog>> getUnauthorizedAccessAttempts();
+
+  // ========== Compliance Violations (10 methods) ==========
+  Future<ComplianceViolation> createViolation(ComplianceViolation violation);
+  Future<ComplianceViolation?> getViolationById(String id);
+  Future<List<ComplianceViolation>> getOpenViolations();
+  Future<List<ComplianceViolation>> getViolationsByFramework(ComplianceFramework framework);
+  Future<List<ComplianceViolation>> getOverdueViolations();
+  Future<ComplianceViolation> updateViolation(ComplianceViolation violation);
+  Future<void> deleteViolation(String id);
+  Future<List<ComplianceViolation>> listViolations();
+  Future<int> getViolationCount();
+  Future<List<ComplianceViolation>> getCriticalViolations();
 }
 
-/// メモリ実装のセキュリティリポジトリ
-class MemorySecurityRepository implements SecurityRepository {
+// ============================================================================
+// IN-MEMORY IMPLEMENTATION
+// ============================================================================
+
+class InMemorySecurityRepository implements SecurityRepository {
   final Map<String, EncryptionKey> _encryptionKeys = {};
-  final Map<String, TokenInfo> _tokens = {};
-  final Map<String, PasswordPolicy> _passwordPolicies = {};
-  final Map<String, SecurityEvent> _securityEvents = {};
-  final Map<String, VulnerabilityAssessment> _vulnerabilities = {};
+  final Map<String, SecurityAuditLog> _auditLogs = {};
   final Map<String, ComplianceRule> _complianceRules = {};
-  final Map<String, SecurityAudit> _audits = {};
-  final Map<String, PermissionAuditLog> _permissionLogs = {};
-  final Map<String, SecurityPolicy> _policies = {};
+  final Map<String, SecurityIncident> _incidents = {};
+  final Map<String, ComplianceAssessment> _assessments = {};
+  final Map<String, PrivacyPolicy> _policies = {};
+  final Map<String, DataEncryption> _dataEncryptions = {};
+  final Map<String, SecurityPolicy> _securityPolicies = {};
+  final Map<String, VulnerabilityReport> _vulnerabilities = {};
+  final Map<String, DataAccessLog> _accessLogs = {};
+  final Map<String, ComplianceViolation> _violations = {};
 
   @override
-  Future<void> addEncryptionKey(EncryptionKey key) async {
-    _encryptionKeys[key.keyId] = key;
-  }
-
-  @override
-  Future<EncryptionKey?> getEncryptionKey(String keyId) async {
-    return _encryptionKeys[keyId];
-  }
-
-  @override
-  Future<List<EncryptionKey>> getAllEncryptionKeys() async {
-    return _encryptionKeys.values.toList();
-  }
-
-  @override
-  Future<void> updateEncryptionKey(EncryptionKey key) async {
-    _encryptionKeys[key.keyId] = key;
-  }
-
-  @override
-  Future<void> deleteEncryptionKey(String keyId) async {
-    _encryptionKeys.remove(keyId);
-  }
-
-  @override
-  Future<void> addToken(TokenInfo token) async {
-    _tokens[token.tokenId] = token;
-  }
-
-  @override
-  Future<TokenInfo?> getToken(String tokenId) async {
-    return _tokens[tokenId];
-  }
-
-  @override
-  Future<List<TokenInfo>> getUserTokens(String userId) async {
-    return _tokens.values.where((t) => t.userId == userId).toList();
-  }
-
-  @override
-  Future<void> revokeToken(String tokenId) async {
-    final token = _tokens[tokenId];
-    if (token != null) {
-      _tokens[tokenId] = TokenInfo(
-        tokenId: token.tokenId,
-        userId: token.userId,
-        token: token.token,
-        issuedAt: token.issuedAt,
-        expiresAt: token.expiresAt,
-        scopes: token.scopes,
-        securityLevel: token.securityLevel,
-        isRevoked: true,
-      );
-    }
-  }
-
-  @override
-  Future<void> deleteToken(String tokenId) async {
-    _tokens.remove(tokenId);
-  }
-
-  @override
-  Future<void> addPasswordPolicy(PasswordPolicy policy) async {
-    _passwordPolicies[policy.policyId] = policy;
-  }
-
-  @override
-  Future<PasswordPolicy?> getPasswordPolicy(String policyId) async {
-    return _passwordPolicies[policyId];
-  }
-
-  @override
-  Future<List<PasswordPolicy>> getAllPasswordPolicies() async {
-    return _passwordPolicies.values.toList();
-  }
-
-  @override
-  Future<void> updatePasswordPolicy(PasswordPolicy policy) async {
-    _passwordPolicies[policy.policyId] = policy;
-  }
-
-  @override
-  Future<void> deletePasswordPolicy(String policyId) async {
-    _passwordPolicies.remove(policyId);
-  }
-
-  @override
-  Future<void> addSecurityEvent(SecurityEvent event) async {
-    _securityEvents[event.eventId] = event;
-  }
-
-  @override
-  Future<SecurityEvent?> getSecurityEvent(String eventId) async {
-    return _securityEvents[eventId];
-  }
-
-  @override
-  Future<List<SecurityEvent>> getUserSecurityEvents(String userId) async {
-    return _securityEvents.values.where((e) => e.userId == userId).toList();
-  }
-
-  @override
-  Future<List<SecurityEvent>> getAnomalousEvents() async {
-    return _securityEvents.values.where((e) => e.isAnomalous).toList();
-  }
-
-  @override
-  Future<void> deleteSecurityEvent(String eventId) async {
-    _securityEvents.remove(eventId);
-  }
-
-  @override
-  Future<void> addVulnerabilityAssessment(VulnerabilityAssessment assessment) async {
-    _vulnerabilities[assessment.assessmentId] = assessment;
-  }
-
-  @override
-  Future<VulnerabilityAssessment?> getVulnerabilityAssessment(String assessmentId) async {
-    return _vulnerabilities[assessmentId];
-  }
-
-  @override
-  Future<List<VulnerabilityAssessment>> getResourceAssessments(String resourceId) async {
-    return _vulnerabilities.values.where((v) => v.resourceId == resourceId).toList();
-  }
-
-  @override
-  Future<List<VulnerabilityAssessment>> getHighRiskAssessments() async {
-    return _vulnerabilities.values.where((v) => v.isHighRisk).toList();
-  }
-
-  @override
-  Future<void> updateVulnerabilityAssessment(VulnerabilityAssessment assessment) async {
-    _vulnerabilities[assessment.assessmentId] = assessment;
-  }
-
-  @override
-  Future<void> deleteVulnerabilityAssessment(String assessmentId) async {
-    _vulnerabilities.remove(assessmentId);
-  }
-
-  @override
-  Future<void> addComplianceRule(ComplianceRule rule) async {
-    _complianceRules[rule.ruleId] = rule;
-  }
-
-  @override
-  Future<ComplianceRule?> getComplianceRule(String ruleId) async {
-    return _complianceRules[ruleId];
-  }
-
-  @override
-  Future<List<ComplianceRule>> getAllComplianceRules() async {
-    return _complianceRules.values.toList();
-  }
-
-  @override
-  Future<List<ComplianceRule>> getFrameworkRules(String framework) async {
-    return _complianceRules.values.where((r) => r.framework == framework).toList();
-  }
-
-  @override
-  Future<void> updateComplianceRule(ComplianceRule rule) async {
-    _complianceRules[rule.ruleId] = rule;
-  }
-
-  @override
-  Future<void> deleteComplianceRule(String ruleId) async {
-    _complianceRules.remove(ruleId);
-  }
-
-  @override
-  Future<void> addSecurityAudit(SecurityAudit audit) async {
-    _audits[audit.auditId] = audit;
-  }
-
-  @override
-  Future<SecurityAudit?> getSecurityAudit(String auditId) async {
-    return _audits[auditId];
-  }
-
-  @override
-  Future<List<SecurityAudit>> getRecentAudits(int count) async {
-    return _audits.values.toList().reversed.take(count).toList();
-  }
-
-  @override
-  Future<void> deleteSecurityAudit(String auditId) async {
-    _audits.remove(auditId);
-  }
-
-  @override
-  Future<void> addPermissionAuditLog(PermissionAuditLog log) async {
-    _permissionLogs[log.logId] = log;
-  }
-
-  @override
-  Future<PermissionAuditLog?> getPermissionAuditLog(String logId) async {
-    return _permissionLogs[logId];
-  }
-
-  @override
-  Future<List<PermissionAuditLog>> getUserPermissionLogs(String userId) async {
-    return _permissionLogs.values.where((l) => l.userId == userId).toList();
-  }
-
-  @override
-  Future<List<PermissionAuditLog>> getUnapprovedLogs() async {
-    return _permissionLogs.values.where((l) => !l.isApproved).toList();
-  }
-
-  @override
-  Future<void> deletePermissionAuditLog(String logId) async {
-    _permissionLogs.remove(logId);
-  }
-
-  @override
-  Future<void> addSecurityPolicy(SecurityPolicy policy) async {
-    _policies[policy.policyId] = policy;
-  }
-
-  @override
-  Future<SecurityPolicy?> getSecurityPolicy(String policyId) async {
-    return _policies[policyId];
-  }
-
-  @override
-  Future<List<SecurityPolicy>> getAllSecurityPolicies() async {
-    return _policies.values.toList();
-  }
-
-  @override
-  Future<List<SecurityPolicy>> getActivePolicies() async {
-    return _policies.values.where((p) => p.isActive).toList();
-  }
-
-  @override
-  Future<void> updateSecurityPolicy(SecurityPolicy policy) async {
-    _policies[policy.policyId] = policy;
-  }
-
-  @override
-  Future<void> deleteSecurityPolicy(String policyId) async {
-    _policies.remove(policyId);
-  }
-}
-
-/// 暗号化エンジンインターフェース
-abstract class EncryptionEngine {
-  Future<String> encryptData(String data, String keyId);
-  Future<String?> decryptData(String encryptedData, String keyId);
-  Future<String> hashPassword(String password, EncryptionType hashType);
-  Future<bool> verifyPassword(String password, String hash, EncryptionType hashType);
-  Future<String> generateKey(EncryptionType encryptionType);
-  Future<void> rotateKey(String keyId);
-  Future<EncryptionKey> getKeyInfo(String keyId);
-}
-
-/// メモリ実装の暗号化エンジン
-class MemoryEncryptionEngine implements EncryptionEngine {
-  final SecurityRepository _repository;
-  final Map<String, String> _encryptedData = {};
-
-  MemoryEncryptionEngine(this._repository);
-
-  @override
-  Future<String> encryptData(String data, String keyId) async {
-    final key = await _repository.getEncryptionKey(keyId);
-    if (key == null || !key.isValid) {
-      throw Exception('Key not found or invalid: $keyId');
-    }
-
-    // シミュレーション: データを保存
-    final encryptedId = 'encrypted_${DateTime.now().millisecondsSinceEpoch}';
-    _encryptedData[encryptedId] = data;
-    return encryptedId;
-  }
-
-  @override
-  Future<String?> decryptData(String encryptedData, String keyId) async {
-    final key = await _repository.getEncryptionKey(keyId);
-    if (key == null || !key.isValid) return null;
-
-    return _encryptedData[encryptedData];
-  }
-
-  @override
-  Future<String> hashPassword(String password, EncryptionType hashType) async {
-    // シミュレーション
-    return '${hashType.value}_${password.hashCode}';
-  }
-
-  @override
-  Future<bool> verifyPassword(String password, String hash, EncryptionType hashType) async {
-    final computed = '${hashType.value}_${password.hashCode}';
-    return computed == hash;
-  }
-
-  @override
-  Future<String> generateKey(EncryptionType encryptionType) async {
-    return 'key_${DateTime.now().millisecondsSinceEpoch}_${encryptionType.value}';
-  }
-
-  @override
-  Future<void> rotateKey(String keyId) async {
-    final key = await _repository.getEncryptionKey(keyId);
-    if (key != null) {
-      final rotatedKey = EncryptionKey(
-        keyId: key.keyId,
-        keyName: key.keyName,
-        encryptionType: key.encryptionType,
-        createdAt: key.createdAt,
-        rotatedAt: DateTime.now(),
-        expiresAt: key.expiresAt,
-        isActive: key.isActive,
-        algorithm: key.algorithm,
-      );
-      await _repository.updateEncryptionKey(rotatedKey);
-    }
-  }
-
-  @override
-  Future<EncryptionKey> getKeyInfo(String keyId) async {
-    final key = await _repository.getEncryptionKey(keyId);
-    if (key == null) {
-      throw Exception('Key not found: $keyId');
-    }
+  Future<EncryptionKey> createEncryptionKey(EncryptionKey key) async {
+    _encryptionKeys[key.id] = key;
     return key;
   }
+
+  @override
+  Future<EncryptionKey?> getEncryptionKeyById(String id) async =>
+      _encryptionKeys[id];
+
+  @override
+  Future<List<EncryptionKey>> getActiveEncryptionKeys() async =>
+      _encryptionKeys.values.where((k) => k.isActive).toList();
+
+  @override
+  Future<List<EncryptionKey>> getExpiredEncryptionKeys() async =>
+      _encryptionKeys.values.where((k) => k.isExpired).toList();
+
+  @override
+  Future<List<EncryptionKey>> getKeysNeedingRotation() async =>
+      _encryptionKeys.values.where((k) => k.needsRotation).toList();
+
+  @override
+  Future<EncryptionKey> updateEncryptionKey(EncryptionKey key) async {
+    _encryptionKeys[key.id] = key;
+    return key;
+  }
+
+  @override
+  Future<void> deleteEncryptionKey(String id) async {
+    _encryptionKeys.remove(id);
+  }
+
+  @override
+  Future<List<EncryptionKey>> listEncryptionKeys() async =>
+      _encryptionKeys.values.toList();
+
+  @override
+  Future<int> getEncryptionKeyCount() async => _encryptionKeys.length;
+
+  @override
+  Future<List<EncryptionKey>> getKeysByType(EncryptionType type) async =>
+      _encryptionKeys.values.where((k) => k.encryptionType == type).toList();
+
+  @override
+  Future<SecurityAuditLog> createAuditLog(SecurityAuditLog log) async {
+    _auditLogs[log.id] = log;
+    return log;
+  }
+
+  @override
+  Future<SecurityAuditLog?> getAuditLogById(String id) async =>
+      _auditLogs[id];
+
+  @override
+  Future<List<SecurityAuditLog>> getAuditLogsByUserId(String userId) async =>
+      _auditLogs.values.where((l) => l.userId == userId).toList();
+
+  @override
+  Future<List<SecurityAuditLog>> getAuditLogsByAction(
+      SecurityAuditAction action) async =>
+      _auditLogs.values.where((l) => l.action == action).toList();
+
+  @override
+  Future<List<SecurityAuditLog>> getFailedAuditLogs() async =>
+      _auditLogs.values.where((l) => l.isFailure).toList();
+
+  @override
+  Future<List<SecurityAuditLog>> getAuditLogsByTimeRange(
+      DateTime start, DateTime end) async =>
+      _auditLogs.values
+          .where((l) => l.timestamp.isAfter(start) && l.timestamp.isBefore(end))
+          .toList();
+
+  @override
+  Future<void> deleteAuditLog(String id) async {
+    _auditLogs.remove(id);
+  }
+
+  @override
+  Future<List<SecurityAuditLog>> listAuditLogs() async =>
+      _auditLogs.values.toList();
+
+  @override
+  Future<int> getAuditLogCount() async => _auditLogs.length;
+
+  @override
+  Future<List<SecurityAuditLog>> searchAuditLogs(String query) async =>
+      _auditLogs.values
+          .where((l) => l.details?.contains(query) ?? false)
+          .toList();
+
+  @override
+  Future<int> getSuccessfulLoginCount() async =>
+      _auditLogs.values
+          .where((l) => l.action == SecurityAuditAction.login && l.isSuccess)
+          .length;
+
+  @override
+  Future<int> getFailedLoginCount() async =>
+      _auditLogs.values
+          .where((l) => l.action == SecurityAuditAction.login && l.isFailure)
+          .length;
+
+  @override
+  Future<ComplianceRule> createComplianceRule(ComplianceRule rule) async {
+    _complianceRules[rule.id] = rule;
+    return rule;
+  }
+
+  @override
+  Future<ComplianceRule?> getComplianceRuleById(String id) async =>
+      _complianceRules[id];
+
+  @override
+  Future<List<ComplianceRule>> getRulesByFramework(
+      ComplianceFramework framework) async =>
+      _complianceRules.values
+          .where((r) => r.framework == framework)
+          .toList();
+
+  @override
+  Future<List<ComplianceRule>> getActiveRules() async =>
+      _complianceRules.values.where((r) => r.isActive).toList();
+
+  @override
+  Future<List<ComplianceRule>> getRulesNeedingAudit() async =>
+      _complianceRules.values.where((r) => r.needsAudit).toList();
+
+  @override
+  Future<ComplianceRule> updateComplianceRule(ComplianceRule rule) async {
+    _complianceRules[rule.id] = rule;
+    return rule;
+  }
+
+  @override
+  Future<void> deleteComplianceRule(String id) async {
+    _complianceRules.remove(id);
+  }
+
+  @override
+  Future<List<ComplianceRule>> listComplianceRules() async =>
+      _complianceRules.values.toList();
+
+  @override
+  Future<SecurityIncident> createSecurityIncident(
+      SecurityIncident incident) async {
+    _incidents[incident.id] = incident;
+    return incident;
+  }
+
+  @override
+  Future<SecurityIncident?> getSecurityIncidentById(String id) async =>
+      _incidents[id];
+
+  @override
+  Future<List<SecurityIncident>> getOpenIncidents() async =>
+      _incidents.values.where((i) => i.status == 'open').toList();
+
+  @override
+  Future<List<SecurityIncident>> getIncidentsBySeverity(
+      IncidentSeverity severity) async =>
+      _incidents.values.where((i) => i.severity == severity).toList();
+
+  @override
+  Future<List<SecurityIncident>> getCriticalIncidents() async =>
+      _incidents.values.where((i) => i.isCritical).toList();
+
+  @override
+  Future<SecurityIncident> updateSecurityIncident(
+      SecurityIncident incident) async {
+    _incidents[incident.id] = incident;
+    return incident;
+  }
+
+  @override
+  Future<void> deleteSecurityIncident(String id) async {
+    _incidents.remove(id);
+  }
+
+  @override
+  Future<List<SecurityIncident>> listSecurityIncidents() async =>
+      _incidents.values.toList();
+
+  @override
+  Future<int> getSecurityIncidentCount() async => _incidents.length;
+
+  @override
+  Future<List<SecurityIncident>> getUnresolvedIncidents() async =>
+      _incidents.values.where((i) => !i.isResolved).toList();
+
+  @override
+  Future<ComplianceAssessment> createAssessment(
+      ComplianceAssessment assessment) async {
+    _assessments[assessment.id] = assessment;
+    return assessment;
+  }
+
+  @override
+  Future<ComplianceAssessment?> getAssessmentById(String id) async =>
+      _assessments[id];
+
+  @override
+  Future<List<ComplianceAssessment>> getAssessmentsByFramework(
+      ComplianceFramework framework) async =>
+      _assessments.values
+          .where((a) => a.framework == framework)
+          .toList();
+
+  @override
+  Future<List<ComplianceAssessment>> getCompliantAssessments() async =>
+      _assessments.values
+          .where((a) => a.status == ComplianceStatus.compliant)
+          .toList();
+
+  @override
+  Future<List<ComplianceAssessment>> getNonCompliantAssessments() async =>
+      _assessments.values
+          .where((a) => a.status == ComplianceStatus.nonCompliant)
+          .toList();
+
+  @override
+  Future<ComplianceAssessment> updateAssessment(
+      ComplianceAssessment assessment) async {
+    _assessments[assessment.id] = assessment;
+    return assessment;
+  }
+
+  @override
+  Future<void> deleteAssessment(String id) async {
+    _assessments.remove(id);
+  }
+
+  @override
+  Future<List<ComplianceAssessment>> listAssessments() async =>
+      _assessments.values.toList();
+
+  @override
+  Future<double> getAverageComplianceScore() async {
+    if (_assessments.isEmpty) return 0.0;
+    final total =
+        _assessments.values.fold<double>(0, (sum, a) => sum + a.complianceScore);
+    return total / _assessments.length;
+  }
+
+  @override
+  Future<int> getOverdueAssessmentCount() async =>
+      _assessments.values.where((a) => a.isOverdue).length;
+
+  @override
+  Future<PrivacyPolicy> createPrivacyPolicy(PrivacyPolicy policy) async {
+    _policies[policy.id] = policy;
+    return policy;
+  }
+
+  @override
+  Future<PrivacyPolicy?> getPrivacyPolicyById(String id) async =>
+      _policies[id];
+
+  @override
+  Future<List<PrivacyPolicy>> getActivePolicies() async =>
+      _policies.values.where((p) => p.isActive).toList();
+
+  @override
+  Future<List<PrivacyPolicy>> getPoliciesNeedingReview() async =>
+      _policies.values.where((p) => p.needsReview).toList();
+
+  @override
+  Future<PrivacyPolicy> updatePrivacyPolicy(PrivacyPolicy policy) async {
+    _policies[policy.id] = policy;
+    return policy;
+  }
+
+  @override
+  Future<void> deletePrivacyPolicy(String id) async {
+    _policies.remove(id);
+  }
+
+  @override
+  Future<List<PrivacyPolicy>> listPrivacyPolicies() async =>
+      _policies.values.toList();
+
+  @override
+  Future<List<PrivacyPolicy>> getPoliciesByPrivacyLevel(
+      PrivacyLevel level) async =>
+      _policies.values.where((p) => p.privacyLevel == level).toList();
+
+  @override
+  Future<DataEncryption> createDataEncryption(DataEncryption encryption) async {
+    _dataEncryptions[encryption.id] = encryption;
+    return encryption;
+  }
+
+  @override
+  Future<DataEncryption?> getDataEncryptionById(String id) async =>
+      _dataEncryptions[id];
+
+  @override
+  Future<List<DataEncryption>> getEncryptionsByDataId(String dataId) async =>
+      _dataEncryptions.values.where((e) => e.dataId == dataId).toList();
+
+  @override
+  Future<List<DataEncryption>> getEncryptedData() async =>
+      _dataEncryptions.values.where((e) => e.isEncrypted).toList();
+
+  @override
+  Future<DataEncryption> updateDataEncryption(DataEncryption encryption) async {
+    _dataEncryptions[encryption.id] = encryption;
+    return encryption;
+  }
+
+  @override
+  Future<void> deleteDataEncryption(String id) async {
+    _dataEncryptions.remove(id);
+  }
+
+  @override
+  Future<List<DataEncryption>> listDataEncryptions() async =>
+      _dataEncryptions.values.toList();
+
+  @override
+  Future<int> getEncryptedDataCount() async =>
+      _dataEncryptions.values.where((e) => e.isEncrypted).length;
+
+  @override
+  Future<SecurityPolicy> createSecurityPolicy(SecurityPolicy policy) async {
+    _securityPolicies[policy.id] = policy;
+    return policy;
+  }
+
+  @override
+  Future<SecurityPolicy?> getSecurityPolicyById(String id) async =>
+      _securityPolicies[id];
+
+  @override
+  Future<List<SecurityPolicy>> getActivePolicies() async =>
+      _securityPolicies.values.where((p) => p.isActive).toList();
+
+  @override
+  Future<SecurityPolicy> updateSecurityPolicy(SecurityPolicy policy) async {
+    _securityPolicies[policy.id] = policy;
+    return policy;
+  }
+
+  @override
+  Future<void> deleteSecurityPolicy(String id) async {
+    _securityPolicies.remove(id);
+  }
+
+  @override
+  Future<List<SecurityPolicy>> listSecurityPolicies() async =>
+      _securityPolicies.values.toList();
+
+  @override
+  Future<int> getSecurityPolicyCount() async => _securityPolicies.length;
+
+  @override
+  Future<List<SecurityPolicy>> getMfaRequiredPolicies() async =>
+      _securityPolicies.values.where((p) => p.isMfaRequired).toList();
+
+  @override
+  Future<VulnerabilityReport> createVulnerabilityReport(
+      VulnerabilityReport report) async {
+    _vulnerabilities[report.id] = report;
+    return report;
+  }
+
+  @override
+  Future<VulnerabilityReport?> getVulnerabilityReportById(String id) async =>
+      _vulnerabilities[id];
+
+  @override
+  Future<List<VulnerabilityReport>> getOpenVulnerabilities() async =>
+      _vulnerabilities.values.where((v) => v.status == 'open').toList();
+
+  @override
+  Future<List<VulnerabilityReport>> getCriticalVulnerabilities() async =>
+      _vulnerabilities.values.where((v) => v.isCritical).toList();
+
+  @override
+  Future<List<VulnerabilityReport>> getVulnerabilityBySeverity(
+      IncidentSeverity severity) async =>
+      _vulnerabilities.values.where((v) => v.severity == severity).toList();
+
+  @override
+  Future<VulnerabilityReport> updateVulnerabilityReport(
+      VulnerabilityReport report) async {
+    _vulnerabilities[report.id] = report;
+    return report;
+  }
+
+  @override
+  Future<void> deleteVulnerabilityReport(String id) async {
+    _vulnerabilities.remove(id);
+  }
+
+  @override
+  Future<List<VulnerabilityReport>> listVulnerabilityReports() async =>
+      _vulnerabilities.values.toList();
+
+  @override
+  Future<int> getVulnerabilityCount() async => _vulnerabilities.length;
+
+  @override
+  Future<List<VulnerabilityReport>> getOverdueVulnerabilities() async =>
+      _vulnerabilities.values.where((v) => v.daysToRemediation >= 0).toList();
+
+  @override
+  Future<DataAccessLog> createAccessLog(DataAccessLog log) async {
+    _accessLogs[log.id] = log;
+    return log;
+  }
+
+  @override
+  Future<DataAccessLog?> getAccessLogById(String id) async =>
+      _accessLogs[id];
+
+  @override
+  Future<List<DataAccessLog>> getAccessLogsByUserId(String userId) async =>
+      _accessLogs.values.where((l) => l.userId == userId).toList();
+
+  @override
+  Future<List<DataAccessLog>> getAccessLogsByDataId(String dataId) async =>
+      _accessLogs.values.where((l) => l.dataId == dataId).toList();
+
+  @override
+  Future<List<DataAccessLog>> getDeniedAccessLogs() async =>
+      _accessLogs.values.where((l) => l.isDenied).toList();
+
+  @override
+  Future<List<DataAccessLog>> getAccessLogsByTimeRange(
+      DateTime start, DateTime end) async =>
+      _accessLogs.values
+          .where((l) =>
+              l.accessTime.isAfter(start) && l.accessTime.isBefore(end))
+          .toList();
+
+  @override
+  Future<void> deleteAccessLog(String id) async {
+    _accessLogs.remove(id);
+  }
+
+  @override
+  Future<List<DataAccessLog>> listAccessLogs() async =>
+      _accessLogs.values.toList();
+
+  @override
+  Future<int> getAccessLogCount() async => _accessLogs.length;
+
+  @override
+  Future<List<DataAccessLog>> getUnauthorizedAccessAttempts() async =>
+      _accessLogs.values.where((l) => l.isDenied).toList();
+
+  @override
+  Future<ComplianceViolation> createViolation(
+      ComplianceViolation violation) async {
+    _violations[violation.id] = violation;
+    return violation;
+  }
+
+  @override
+  Future<ComplianceViolation?> getViolationById(String id) async =>
+      _violations[id];
+
+  @override
+  Future<List<ComplianceViolation>> getOpenViolations() async =>
+      _violations.values.where((v) => v.status == 'open').toList();
+
+  @override
+  Future<List<ComplianceViolation>> getViolationsByFramework(
+      ComplianceFramework framework) async =>
+      _violations.values.where((v) => v.framework == framework).toList();
+
+  @override
+  Future<List<ComplianceViolation>> getOverdueViolations() async =>
+      _violations.values.where((v) => v.isOverdue).toList();
+
+  @override
+  Future<ComplianceViolation> updateViolation(
+      ComplianceViolation violation) async {
+    _violations[violation.id] = violation;
+    return violation;
+  }
+
+  @override
+  Future<void> deleteViolation(String id) async {
+    _violations.remove(id);
+  }
+
+  @override
+  Future<List<ComplianceViolation>> listViolations() async =>
+      _violations.values.toList();
+
+  @override
+  Future<int> getViolationCount() async => _violations.length;
+
+  @override
+  Future<List<ComplianceViolation>> getCriticalViolations() async =>
+      _violations.values.where((v) => v.severity == 'critical').toList();
 }
 
-/// 法令準拠エンジンインターフェース
-abstract class ComplianceEngine {
-  Future<bool> checkCompliance(ComplianceRule rule, String resourceId);
-  Future<ComplianceStatus> assessCompliance(List<ComplianceRule> rules);
-  Future<List<String>> getComplianceRecommendations(ComplianceStatus status);
-  Future<double> calculateComplianceScore(SecurityAudit audit);
-  Future<bool> validatePolicyCompliance(SecurityPolicy policy);
-  Future<List<VulnerabilityAssessment>> identifyRisks(String resourceId);
-}
+// ============================================================================
+// ENGINES
+// ============================================================================
 
-/// メモリ実装の法令準拠エンジン
-class MemoryComplianceEngine implements ComplianceEngine {
-  final SecurityRepository _repository;
+class EncryptionEngine {
+  final SecurityRepository repository;
 
-  MemoryComplianceEngine(this._repository);
+  EncryptionEngine(this.repository);
 
-  @override
-  Future<bool> checkCompliance(ComplianceRule rule, String resourceId) async {
-    // ここでは常に準拠と仮定
-    return true;
-  }
-
-  @override
-  Future<ComplianceStatus> assessCompliance(List<ComplianceRule> rules) async {
-    if (rules.isEmpty) {
-      return ComplianceStatus.unknown;
-    }
-
-    final compliantCount = rules.where((r) => r.isActive).length;
-    if (compliantCount == rules.length) {
-      return ComplianceStatus.compliant;
-    } else if (compliantCount > rules.length / 2) {
-      return ComplianceStatus.partiallyCompliant;
-    } else {
-      return ComplianceStatus.nonCompliant;
-    }
-  }
-
-  @override
-  Future<List<String>> getComplianceRecommendations(ComplianceStatus status) async {
-    switch (status) {
-      case ComplianceStatus.compliant:
-        return ['Continue monitoring compliance', 'Maintain current security posture'];
-      case ComplianceStatus.partiallyCompliant:
-        return ['Address identified compliance gaps', 'Implement additional controls'];
-      case ComplianceStatus.nonCompliant:
-        return ['Immediate action required', 'Conduct comprehensive audit', 'Implement remediation plan'];
-      default:
-        return ['Perform initial compliance assessment'];
-    }
-  }
-
-  @override
-  Future<double> calculateComplianceScore(SecurityAudit audit) async {
-    return audit.compliancePercentage;
-  }
-
-  @override
-  Future<bool> validatePolicyCompliance(SecurityPolicy policy) async {
-    return policy.isEnabled && policy.roleCount > 0;
-  }
-
-  @override
-  Future<List<VulnerabilityAssessment>> identifyRisks(String resourceId) async {
-    return await _repository.getResourceAssessments(resourceId);
-  }
-}
-
-/// セキュリティマネージャーインターフェース
-abstract class SecurityManager {
-  Future<void> setupEncryptionKey(String keyName, EncryptionType type);
-  Future<void> issueToken(String userId, List<String> scopes, SecurityLevel level);
-  Future<void> revokeExpiredTokens();
-  Future<void> recordSecurityEvent(String userId, String eventType, SecurityLevel severity);
-  Future<List<SecurityEvent>> getUserAnomalies(String userId);
-  Future<void> assessResourceSecurity(String resourceId, String resourceType);
-  Future<SecurityReport> generateSecurityReport(DateTime start, DateTime end);
-  Future<ComplianceStatus> checkComplianceStatus();
-  Future<void> approvePermissionChange(String logId);
-  Future<void> enforceSecurityPolicy(String policyId);
-}
-
-/// メモリ実装のセキュリティマネージャー
-class MemorySecurityManager implements SecurityManager {
-  final SecurityRepository _repository;
-  final EncryptionEngine _encryptionEngine;
-  final ComplianceEngine _complianceEngine;
-
-  MemorySecurityManager(
-    this._repository,
-    this._encryptionEngine,
-    this._complianceEngine,
-  );
-
-  @override
-  Future<void> setupEncryptionKey(String keyName, EncryptionType type) async {
-    final keyId = 'key_${DateTime.now().millisecondsSinceEpoch}';
-    final key = EncryptionKey(
-      keyId: keyId,
-      keyName: keyName,
-      encryptionType: type,
-      createdAt: DateTime.now(),
-      isActive: true,
-    );
-    await _repository.addEncryptionKey(key);
-  }
-
-  @override
-  Future<void> issueToken(String userId, List<String> scopes, SecurityLevel level) async {
-    final tokenId = 'token_${DateTime.now().millisecondsSinceEpoch}';
-    final token = TokenInfo(
-      tokenId: tokenId,
-      userId: userId,
-      token: 'tok_${DateTime.now().millisecondsSinceEpoch}',
-      issuedAt: DateTime.now(),
-      expiresAt: DateTime.now().add(Duration(hours: 24)),
-      scopes: scopes,
-      securityLevel: level,
-    );
-    await _repository.addToken(token);
-  }
-
-  @override
-  Future<void> revokeExpiredTokens() async {
-    final allTokens = await _repository.getAllEncryptionKeys();
-    // トークンの有効期限をチェックして期限切れを無効化
-  }
-
-  @override
-  Future<void> recordSecurityEvent(String userId, String eventType, SecurityLevel severity) async {
-    final eventId = 'event_${DateTime.now().millisecondsSinceEpoch}';
-    final event = SecurityEvent(
-      eventId: eventId,
-      userId: userId,
-      eventType: eventType,
-      severity: severity,
-      occurredAt: DateTime.now(),
-      ipAddress: '0.0.0.0',
-    );
-    await _repository.addSecurityEvent(event);
-  }
-
-  @override
-  Future<List<SecurityEvent>> getUserAnomalies(String userId) async {
-    return await _repository.getAnomalousEvents()
-        .then((events) => events.where((e) => e.userId == userId).toList());
-  }
-
-  @override
-  Future<void> assessResourceSecurity(String resourceId, String resourceType) async {
-    final assessmentId = 'vuln_${DateTime.now().millisecondsSinceEpoch}';
-    final assessment = VulnerabilityAssessment(
-      assessmentId: assessmentId,
-      resourceId: resourceId,
-      resourceType: resourceType,
-      vulnerabilities: [],
-      riskScore: 0.0,
-      assessedAt: DateTime.now(),
-    );
-    await _repository.addVulnerabilityAssessment(assessment);
-  }
-
-  @override
-  Future<SecurityReport> generateSecurityReport(DateTime start, DateTime end) async {
-    final auditId = 'audit_${DateTime.now().millisecondsSinceEpoch}';
-    final events = <SecurityEvent>[];
-    final vulnerabilities = await _repository.getHighRiskAssessments();
-
-    final audit = SecurityAudit(
-      auditId: auditId,
-      events: events,
-      periodStart: start,
-      periodEnd: end,
-      totalEvents: events.length,
-      criticalEvents: events.where((e) => e.isCritical).length,
-      compliancePercentage: 0.95,
-    );
-
-    return SecurityReport(
-      reportId: 'report_${DateTime.now().millisecondsSinceEpoch}',
-      generatedAt: DateTime.now(),
-      periodStart: start,
-      periodEnd: end,
-      audit: audit,
-      vulnerabilities: vulnerabilities,
-      overallComplianceStatus: ComplianceStatus.compliant,
-    );
-  }
-
-  @override
-  Future<ComplianceStatus> checkComplianceStatus() async {
-    final rules = await _repository.getAllComplianceRules();
-    return await _complianceEngine.assessCompliance(rules);
-  }
-
-  @override
-  Future<void> approvePermissionChange(String logId) async {
-    final log = await _repository.getPermissionAuditLog(logId);
-    if (log != null) {
-      final approved = PermissionAuditLog(
-        logId: log.logId,
-        userId: log.userId,
-        action: log.action,
-        permission: log.permission,
-        timestamp: log.timestamp,
-        reason: log.reason,
-        isApproved: true,
+  Future<void> rotateExpiredKeys() async {
+    final expired = await repository.getExpiredEncryptionKeys();
+    for (final key in expired) {
+      await repository.updateEncryptionKey(
+        key.copyWith(isActive: false),
       );
-      await _repository.addPermissionAuditLog(approved);
-    }
-  }
-
-  @override
-  Future<void> enforceSecurityPolicy(String policyId) async {
-    final policy = await _repository.getSecurityPolicy(policyId);
-    if (policy != null && policy.isEnabled) {
-      // ポリシー実行ロジック
     }
   }
 }
 
-/// セキュリティファサード
+class AuditEngine {
+  final SecurityRepository repository;
+
+  AuditEngine(this.repository);
+
+  Future<void> logSecurityAction(
+    String userId,
+    SecurityAuditAction action,
+    String? resourceId,
+    String? details,
+  ) async {
+    await repository.createAuditLog(
+      SecurityAuditLog(
+        id: 'audit_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        action: action,
+        timestamp: DateTime.now(),
+        createdAt: DateTime.now(),
+        resourceId: resourceId,
+        details: details,
+      ),
+    );
+  }
+}
+
+class ComplianceEngine {
+  final SecurityRepository repository;
+
+  ComplianceEngine(this.repository);
+
+  Future<void> updateAssessmentStatus(String assessmentId) async {
+    final assessment = await repository.getAssessmentById(assessmentId);
+    if (assessment == null) return;
+
+    final status = assessment.complianceScore >= 0.95
+        ? ComplianceStatus.compliant
+        : assessment.complianceScore >= 0.7
+            ? ComplianceStatus.partiallyCompliant
+            : ComplianceStatus.nonCompliant;
+
+    await repository.updateAssessment(assessment.copyWith(status: status));
+  }
+}
+
+class IncidentEngine {
+  final SecurityRepository repository;
+
+  IncidentEngine(this.repository);
+
+  Future<void> escalateIncident(String incidentId) async {
+    final incident = await repository.getSecurityIncidentById(incidentId);
+    if (incident == null) return;
+
+    await repository.updateSecurityIncident(
+      incident.copyWith(status: 'escalated'),
+    );
+  }
+}
+
+class VulnerabilityEngine {
+  final SecurityRepository repository;
+
+  VulnerabilityEngine(this.repository);
+
+  Future<int> getCriticalVulnerabilityCount() async {
+    final vulns = await repository.getCriticalVulnerabilities();
+    return vulns.length;
+  }
+}
+
+// ============================================================================
+// MANAGER
+// ============================================================================
+
+class SecurityManager {
+  final SecurityRepository repository;
+  late final EncryptionEngine encryptionEngine;
+  late final AuditEngine auditEngine;
+  late final ComplianceEngine complianceEngine;
+  late final IncidentEngine incidentEngine;
+  late final VulnerabilityEngine vulnerabilityEngine;
+
+  SecurityManager(this.repository) {
+    encryptionEngine = EncryptionEngine(repository);
+    auditEngine = AuditEngine(repository);
+    complianceEngine = ComplianceEngine(repository);
+    incidentEngine = IncidentEngine(repository);
+    vulnerabilityEngine = VulnerabilityEngine(repository);
+  }
+}
+
+// ============================================================================
+// FACADE
+// ============================================================================
+
 class SecurityFacade {
-  final SecurityManager _manager;
-  final SecurityRepository _repository;
-  final EncryptionEngine _encryptionEngine;
-  final ComplianceEngine _complianceEngine;
+  final SecurityManager manager;
 
-  SecurityFacade(
-    this._manager,
-    this._repository,
-    this._encryptionEngine,
-    this._complianceEngine,
-  );
+  SecurityFacade(this.manager);
 
-  /// 暗号化キーのセットアップ
-  Future<void> setupEncryptionKey(String keyName, EncryptionType type) =>
-      _manager.setupEncryptionKey(keyName, type);
+  Future<EncryptionKey> createEncryptionKey(
+    String keyName,
+    EncryptionType encryptionType, {
+    int rotationSchedule = 90,
+  }) async {
+    final key = EncryptionKey(
+      id: 'key_${DateTime.now().millisecondsSinceEpoch}',
+      keyName: keyName,
+      encryptionType: encryptionType,
+      createdAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 365)),
+      rotationSchedule: rotationSchedule,
+    );
+    return manager.repository.createEncryptionKey(key);
+  }
 
-  /// トークンの発行
-  Future<void> issueToken(String userId, List<String> scopes, SecurityLevel level) =>
-      _manager.issueToken(userId, scopes, level);
+  Future<void> logSecurityAction(
+    String userId,
+    SecurityAuditAction action, {
+    String? resourceId,
+    String? details,
+  }) async {
+    await manager.auditEngine.logSecurityAction(
+      userId,
+      action,
+      resourceId,
+      details,
+    );
+  }
 
-  /// トークンの失効
-  Future<void> revokeToken(String tokenId) =>
-      _repository.revokeToken(tokenId);
+  Future<SecurityIncident> reportSecurityIncident(
+    String incidentType,
+    IncidentSeverity severity,
+    String? description,
+  ) async {
+    final incident = SecurityIncident(
+      id: 'incident_${DateTime.now().millisecondsSinceEpoch}',
+      incidentType: incidentType,
+      severity: severity,
+      detectedAt: DateTime.now(),
+      createdAt: DateTime.now(),
+      description: description,
+    );
+    return manager.repository.createSecurityIncident(incident);
+  }
 
-  /// セキュリティイベントの記録
-  Future<void> recordEvent(String userId, String eventType, SecurityLevel severity) =>
-      _manager.recordSecurityEvent(userId, eventType, severity);
+  Future<ComplianceAssessment> createAssessment(
+    ComplianceFramework framework,
+  ) async {
+    final assessment = ComplianceAssessment(
+      id: 'assess_${DateTime.now().millisecondsSinceEpoch}',
+      framework: framework,
+      assessmentDate: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+    return manager.repository.createAssessment(assessment);
+  }
 
-  /// ユーザーの異常検知
-  Future<List<SecurityEvent>> getUserAnomalies(String userId) =>
-      _manager.getUserAnomalies(userId);
+  Future<int> getCriticalIncidentCount() async {
+    final incidents = await manager.repository.getCriticalIncidents();
+    return incidents.length;
+  }
 
-  /// リソースのセキュリティ評価
-  Future<void> assessResourceSecurity(String resourceId, String resourceType) =>
-      _manager.assessResourceSecurity(resourceId, resourceType);
+  Future<double> getComplianceScore() async {
+    return manager.repository.getAverageComplianceScore();
+  }
 
-  /// セキュリティレポート生成
-  Future<SecurityReport> generateReport(DateTime start, DateTime end) =>
-      _manager.generateSecurityReport(start, end);
+  Future<int> getOpenViolationCount() async {
+    final violations = await manager.repository.getOpenViolations();
+    return violations.length;
+  }
 
-  /// 法令準拠ステータス確認
-  Future<ComplianceStatus> checkCompliance() =>
-      _manager.checkComplianceStatus();
-
-  /// 権限変更の承認
-  Future<void> approvePermissionChange(String logId) =>
-      _manager.approvePermissionChange(logId);
-
-  /// セキュリティポリシーの適用
-  Future<void> enforcePolicy(String policyId) =>
-      _manager.enforceSecurityPolicy(policyId);
-
-  /// 全暗号化キー取得
-  Future<List<EncryptionKey>> getAllEncryptionKeys() =>
-      _repository.getAllEncryptionKeys();
-
-  /// 全トークン取得
-  Future<List<TokenInfo>> getUserTokens(String userId) =>
-      _repository.getUserTokens(userId);
-
-  /// 高リスク脆弱性取得
-  Future<List<VulnerabilityAssessment>> getHighRiskVulnerabilities() =>
-      _repository.getHighRiskAssessments();
-
-  /// セキュリティ監査取得
-  Future<SecurityAudit?> getSecurityAudit(String auditId) =>
-      _repository.getSecurityAudit(auditId);
+  Future<List<VulnerabilityReport>> getCriticalVulnerabilities() async {
+    return manager.repository.getCriticalVulnerabilities();
+  }
 }

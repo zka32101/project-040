@@ -1,387 +1,388 @@
-/// Phase 47: Advanced Analytics & ML Integration 分析・機械学習モデル定義
-///
-/// 分析データ、予測、異常検知、レコメンデーション
+/// Phase 90: Advanced AI-Powered Analytics & Insights
+/// Core domain models for AI-powered analytics and predictive systems
+library analytics_models;
 
-/// 分析メトリクスタイプ
-enum AnalyticsMetricType {
-  performance('performance'),
-  reliability('reliability'),
-  efficiency('efficiency'),
-  utilization('utilization'),
-  cost('cost');
+// ============================================================================
+// ENUMS (6 total)
+// ============================================================================
 
-  final String value;
-  const AnalyticsMetricType(this.value);
+enum PredictionType {
+  regression('回帰'),
+  classification('分類'),
+  timeSeries('時系列'),
+  anomaly('異常検出'),
+  clustering('クラスタリング'),
+  forecasting('予測');
+
+  const PredictionType(this.displayName);
+  final String displayName;
 }
 
-/// 予測モデルタイプ
-enum PredictionModelType {
-  linearRegression('linear_regression'),
-  timeSeriesForecasting('time_series_forecasting'),
-  anomalyDetection('anomaly_detection'),
-  clustering('clustering'),
-  classification('classification');
+enum AnomalyType {
+  outlier('外れ値'),
+  trend('トレンド異常'),
+  seasonal('季節性異常'),
+  collective('集合異常'),
+  contextual('文脈異常');
 
-  final String value;
-  const PredictionModelType(this.value);
+  const AnomalyType(this.displayName);
+  final String displayName;
 }
 
-/// 異常レベル
-enum AnomalyLevel {
-  low(1),
-  medium(2),
-  high(3),
-  critical(4);
+enum AlertSeverity {
+  critical('クリティカル'),
+  high('高'),
+  medium('中'),
+  low('低'),
+  info('情報');
 
-  final int value;
-  const AnomalyLevel(this.value);
+  const AlertSeverity(this.displayName);
+  final String displayName;
 }
 
-/// 信頼度レベル
-enum ConfidenceLevel {
-  low('low'),
-  medium('medium'),
-  high('high'),
-  veryHigh('very_high');
+enum PatternType {
+  sequential('シーケンシャル'),
+  parallel('並列'),
+  cyclical('周期的'),
+  trending('トレンド'),
+  oscillating('振動');
 
-  final String value;
-  const ConfidenceLevel(this.value);
+  const PatternType(this.displayName);
+  final String displayName;
 }
 
-/// 分析メトリクス
-class AnalyticsMetric {
-  final String metricId;
-  final String name;
-  final AnalyticsMetricType type;
-  final double currentValue;
-  final double? previousValue;
-  final double? targetValue;
-  final DateTime timestamp;
-  final Map<String, dynamic>? metadata;
-  final String? unit;
+enum CorrelationType {
+  strongPositive('強正相関'),
+  weakPositive('弱正相関'),
+  strongNegative('強負相関'),
+  weakNegative('弱負相関'),
+  noCorrelation('相関なし');
 
-  AnalyticsMetric({
-    required this.metricId,
-    required this.name,
-    required this.type,
-    required this.currentValue,
-    this.previousValue,
-    this.targetValue,
-    required this.timestamp,
-    this.metadata,
-    this.unit,
+  const CorrelationType(this.displayName);
+  final String displayName;
+}
+
+enum FraudRiskLevel {
+  critical('クリティカル'),
+  high('高'),
+  medium('中'),
+  low('低'),
+  minimal('最小');
+
+  const FraudRiskLevel(this.displayName);
+  final String displayName;
+}
+
+// ============================================================================
+// MODELS (12 total)
+// ============================================================================
+
+/// PredictiveModel: 予測モデル
+class PredictiveModel {
+  PredictiveModel({
+    required this.id,
+    required this.modelName,
+    required this.predictionType,
+    required this.createdAt,
+    required this.updatedAt,
+    this.description,
+    this.accuracy = 0.0,
+    this.isActive = true,
+    this.lastTrainedAt,
   });
 
-  /// 目標達成度（%）
-  double? get targetAchievement {
-    if (targetValue == null) return null;
-    return (currentValue / targetValue!) * 100;
-  }
+  final String id;
+  final String modelName;
+  final PredictionType predictionType;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? description;
+  final double accuracy;
+  final bool isActive;
+  final DateTime? lastTrainedAt;
 
-  /// 前回比変化率（%）
-  double? get changePercentage {
-    if (previousValue == null || previousValue == 0) return null;
-    return ((currentValue - previousValue!) / previousValue!) * 100;
-  }
+  bool get isAccurate => accuracy > 0.85;
+  bool get needsRetraining =>
+      lastTrainedAt == null ||
+      DateTime.now().difference(lastTrainedAt!).inDays > 30;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+  int get daysSinceTraining => lastTrainedAt != null
+      ? DateTime.now().difference(lastTrainedAt!).inDays
+      : -1;
 
-  /// 目標達成したか
-  bool get isOnTarget {
-    if (targetValue == null) return false;
-    return currentValue >= targetValue!;
+  PredictiveModel copyWith({
+    String? id,
+    String? modelName,
+    PredictionType? predictionType,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? description,
+    double? accuracy,
+    bool? isActive,
+    DateTime? lastTrainedAt,
+  }) {
+    return PredictiveModel(
+      id: id ?? this.id,
+      modelName: modelName ?? this.modelName,
+      predictionType: predictionType ?? this.predictionType,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      description: description ?? this.description,
+      accuracy: accuracy ?? this.accuracy,
+      isActive: isActive ?? this.isActive,
+      lastTrainedAt: lastTrainedAt ?? this.lastTrainedAt,
+    );
   }
 }
 
-/// 時系列データポイント
-class TimeSeriesDataPoint {
-  final DateTime timestamp;
-  final double value;
-  final Map<String, dynamic>? tags;
-  final double? confidence;
-
-  TimeSeriesDataPoint({
-    required this.timestamp,
-    required this.value,
-    this.tags,
-    this.confidence,
-  });
-}
-
-/// 時系列分析
-class TimeSeriesAnalysis {
-  final String analysisId;
-  final String metricId;
-  final List<TimeSeriesDataPoint> dataPoints;
-  final double trend; // -1.0 ~ 1.0
-  final double seasonality; // 0.0 ~ 1.0
-  final double volatility; // 0.0 ~ 1.0
-  final DateTime analyzedAt;
-
-  TimeSeriesAnalysis({
-    required this.analysisId,
-    required this.metricId,
-    required this.dataPoints,
-    required this.trend,
-    required this.seasonality,
-    required this.volatility,
-    required this.analyzedAt,
-  });
-
-  /// トレンド方向
-  String get trendDirection {
-    if (trend > 0.2) return 'Increasing';
-    if (trend < -0.2) return 'Decreasing';
-    return 'Stable';
-  }
-
-  /// 季節性が強いか
-  bool get hasStrongSeasonality => seasonality > 0.5;
-
-  /// ボラティリティが高いか
-  bool get isHighVolatility => volatility > 0.5;
-}
-
-/// 予測結果
-class PredictionResult {
-  final String predictionId;
-  final String metricId;
-  final PredictionModelType modelType;
-  final double predictedValue;
-  final double confidence; // 0.0-1.0
-  final DateTime predictionTime;
-  final DateTime targetTime;
-  final Map<String, dynamic>? metadata;
-
-  PredictionResult({
-    required this.predictionId,
-    required this.metricId,
-    required this.modelType,
+/// Prediction: 予測結果
+class Prediction {
+  Prediction({
+    required this.id,
+    required this.modelId,
     required this.predictedValue,
     required this.confidence,
     required this.predictionTime,
-    required this.targetTime,
-    this.metadata,
+    required this.createdAt,
+    this.actualValue,
+    this.features,
+    this.error = 0.0,
   });
 
-  /// 信頼度レベル
-  ConfidenceLevel get confidenceLevel {
-    if (confidence >= 0.9) return ConfidenceLevel.veryHigh;
-    if (confidence >= 0.7) return ConfidenceLevel.high;
-    if (confidence >= 0.5) return ConfidenceLevel.medium;
-    return ConfidenceLevel.low;
-  }
+  final String id;
+  final String modelId;
+  final dynamic predictedValue;
+  final double confidence;
+  final DateTime predictionTime;
+  final DateTime createdAt;
+  final dynamic? actualValue;
+  final Map<String, dynamic>? features;
+  final double error;
 
-  /// 信頼できる予測か
-  bool get isReliable => confidence >= 0.7;
+  bool get isHighConfidence => confidence > 0.9;
+  bool get hasActualValue => actualValue != null;
+  int get ageInMinutes => DateTime.now().difference(predictionTime).inMinutes;
 }
 
-/// 異常検知結果
-class AnomalyDetectionResult {
-  final String anomalyId;
-  final String metricId;
-  final double value;
-  final double expectedValue;
-  final double deviation; // (value - expectedValue) / expectedValue
-  final AnomalyLevel level;
-  final double confidence; // 0.0-1.0
-  final DateTime detectedAt;
-  final String? description;
-
-  AnomalyDetectionResult({
-    required this.anomalyId,
-    required this.metricId,
-    required this.value,
-    required this.expectedValue,
-    required this.deviation,
-    required this.level,
-    required this.confidence,
+/// AnomalyDetection: 異常検出
+class AnomalyDetection {
+  AnomalyDetection({
+    required this.id,
+    required this.datasetId,
+    required this.anomalyType,
     required this.detectedAt,
+    required this.createdAt,
+    this.anomalyScore = 0.0,
+    this.description,
+    this.severity = AnomalyType.outlier,
+    this.isInvestigated = false,
+  });
+
+  final String id;
+  final String datasetId;
+  final AnomalyType anomalyType;
+  final DateTime detectedAt;
+  final DateTime createdAt;
+  final double anomalyScore;
+  final String? description;
+  final AnomalyType severity;
+  final bool isInvestigated;
+
+  bool get isCritical => anomalyScore > 0.8;
+  int get ageInHours => DateTime.now().difference(detectedAt).inHours;
+}
+
+/// PatternAnalysis: パターン分析
+class PatternAnalysis {
+  PatternAnalysis({
+    required this.id,
+    required this.datasetId,
+    required this.patternType,
+    required this.detectedAt,
+    required this.createdAt,
+    this.confidence = 0.0,
+    this.frequency = 0,
     this.description,
   });
 
-  /// 逸脱度（%）
-  double get deviationPercentage => deviation * 100;
-
-  /// 重大な異常か
-  bool get isCritical => level == AnomalyLevel.critical;
-}
-
-/// クラスタリング結果
-class ClusteringResult {
-  final String clusteringId;
-  final int numberOfClusters;
-  final List<Map<String, dynamic>> clusters;
-  final Map<String, int> pointAssignments; // pointId -> clusterId
-  final double silhouetteScore; // -1.0 ~ 1.0
-  final DateTime analyzedAt;
-
-  ClusteringResult({
-    required this.clusteringId,
-    required this.numberOfClusters,
-    required this.clusters,
-    required this.pointAssignments,
-    required this.silhouetteScore,
-    required this.analyzedAt,
-  });
-
-  /// クラスタリングの質
-  String get quality {
-    if (silhouetteScore > 0.5) return 'Excellent';
-    if (silhouetteScore > 0.25) return 'Good';
-    if (silhouetteScore > 0) return 'Fair';
-    return 'Poor';
-  }
-}
-
-/// レコメンデーション
-class Recommendation {
-  final String recommendationId;
-  final String entityId;
-  final String title;
-  final String description;
-  final double score; // 0.0-1.0
-  final ConfidenceLevel confidence;
-  final List<String>? actions;
-  final int priority; // 1-5
+  final String id;
+  final String datasetId;
+  final PatternType patternType;
+  final DateTime detectedAt;
   final DateTime createdAt;
-  final DateTime? expiresAt;
-  final Map<String, dynamic>? metadata;
+  final double confidence;
+  final int frequency;
+  final String? description;
 
-  Recommendation({
-    required this.recommendationId,
-    required this.entityId,
-    required this.title,
-    required this.description,
-    required this.score,
-    required this.confidence,
-    this.actions,
-    this.priority = 3,
+  bool get isStrong => confidence > 0.8;
+  bool get isFrequent => frequency > 10;
+  int get ageInDays => DateTime.now().difference(detectedAt).inDays;
+}
+
+/// CorrelationAnalysis: 相関分析
+class CorrelationAnalysis {
+  CorrelationAnalysis({
+    required this.id,
+    required this.variable1,
+    required this.variable2,
+    required this.correlationType,
+    required this.coefficient,
+    required this.analyzedAt,
     required this.createdAt,
-    this.expiresAt,
-    this.metadata,
+    this.pValue = 0.0,
+    this.sampleSize = 0,
   });
 
-  /// 推奨が有効か
-  bool get isValid {
-    if (expiresAt == null) return true;
-    return DateTime.now().isBefore(expiresAt!);
-  }
+  final String id;
+  final String variable1;
+  final String variable2;
+  final CorrelationType correlationType;
+  final double coefficient;
+  final DateTime analyzedAt;
+  final DateTime createdAt;
+  final double pValue;
+  final int sampleSize;
 
-  /// 推奨の重要度
-  String get importance {
-    if (priority >= 4) return 'Critical';
-    if (priority == 3) return 'High';
-    if (priority == 2) return 'Medium';
-    return 'Low';
-  }
+  bool get isSignificant => pValue < 0.05;
+  int get ageInDays => DateTime.now().difference(analyzedAt).inDays;
 }
 
-/// 分析レポート
-class AnalyticsReport {
-  final String reportId;
-  final DateTime generatedAt;
-  final List<AnalyticsMetric> metrics;
-  final List<PredictionResult> predictions;
-  final List<AnomalyDetectionResult> anomalies;
-  final List<Recommendation> recommendations;
-  final Map<String, dynamic>? insights;
+/// IntelligentAlert: インテリジェントアラート
+class IntelligentAlert {
+  IntelligentAlert({
+    required this.id,
+    required this.alertType,
+    required this.severity,
+    required this.triggeredAt,
+    required this.createdAt,
+    this.description,
+    this.recommendation,
+    this.isResolved = false,
+    this.resolvedAt,
+  });
 
-  AnalyticsReport({
-    required this.reportId,
+  final String id;
+  final String alertType;
+  final AlertSeverity severity;
+  final DateTime triggeredAt;
+  final DateTime createdAt;
+  final String? description;
+  final String? recommendation;
+  final bool isResolved;
+  final DateTime? resolvedAt;
+
+  bool get isCritical => severity == AlertSeverity.critical;
+  int get resolutionTimeMinutes => resolvedAt != null
+      ? resolvedAt!.difference(triggeredAt).inMinutes
+      : -1;
+  int get ageInMinutes => DateTime.now().difference(triggeredAt).inMinutes;
+}
+
+/// BehavioralAnalysis: 行動分析
+class BehavioralAnalysis {
+  BehavioralAnalysis({
+    required this.id,
+    required this.entityId,
+    required this.analyzedAt,
+    required this.createdAt,
+    this.normalBehavior,
+    this.deviationScore = 0.0,
+    this.riskLevel = FraudRiskLevel.minimal,
+    this.behaviors,
+  });
+
+  final String id;
+  final String entityId;
+  final DateTime analyzedAt;
+  final DateTime createdAt;
+  final String? normalBehavior;
+  final double deviationScore;
+  final FraudRiskLevel riskLevel;
+  final List<String>? behaviors;
+
+  bool get isAnomalous => deviationScore > 0.7;
+  int get ageInDays => DateTime.now().difference(analyzedAt).inDays;
+}
+
+/// FraudDetection: 不正検出
+class FraudDetection {
+  FraudDetection({
+    required this.id,
+    required this.transactionId,
+    required this.riskLevel,
+    required this.detectedAt,
+    required this.createdAt,
+    this.fraudScore = 0.0,
+    this.reasoning,
+    this.isConfirmed = false,
+  });
+
+  final String id;
+  final String transactionId;
+  final FraudRiskLevel riskLevel;
+  final DateTime detectedAt;
+  final DateTime createdAt;
+  final double fraudScore;
+  final String? reasoning;
+  final bool isConfirmed;
+
+  bool get isSuspicious => fraudScore > 0.6;
+  bool get isCritical => riskLevel == FraudRiskLevel.critical;
+  int get ageInSeconds => DateTime.now().difference(detectedAt).inSeconds;
+}
+
+/// Recommendation: レコメンデーション
+class Recommendation {
+  Recommendation({
+    required this.id,
+    required this.targetId,
+    required this.recommendationType,
+    required this.confidence,
     required this.generatedAt,
-    required this.metrics,
-    required this.predictions,
-    required this.anomalies,
-    required this.recommendations,
-    this.insights,
+    required this.createdAt,
+    this.recommendedValue,
+    this.reasoning,
+    this.isAccepted = false,
   });
 
-  /// 異常数
-  int get anomalyCount => anomalies.length;
+  final String id;
+  final String targetId;
+  final String recommendationType;
+  final double confidence;
+  final DateTime generatedAt;
+  final DateTime createdAt;
+  final dynamic? recommendedValue;
+  final String? reasoning;
+  final bool isAccepted;
 
-  /// 重大異常数
-  int get criticalAnomalyCount => anomalies.where((a) => a.isCritical).length;
-
-  /// 推奨数
-  int get recommendationCount => recommendations.where((r) => r.isValid).length;
-
-  /// Markdown形式でレポートを生成
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# Advanced Analytics Report');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('');
-
-    buffer.writeln('## Summary');
-    buffer.writeln('- Metrics: ${metrics.length}');
-    buffer.writeln('- Predictions: ${predictions.length}');
-    buffer.writeln('- Anomalies: ${anomalyCount}');
-    buffer.writeln('- Critical Anomalies: ${criticalAnomalyCount}');
-    buffer.writeln('- Recommendations: ${recommendationCount}');
-    buffer.writeln('');
-
-    if (anomalies.isNotEmpty) {
-      buffer.writeln('## Anomalies Detected');
-      buffer.writeln('');
-      for (final anomaly in anomalies.take(5)) {
-        buffer.writeln('- **${anomaly.metricId}**: ${anomaly.description}');
-        buffer.writeln('  - Level: ${anomaly.level.name}');
-        buffer.writeln('  - Deviation: ${anomaly.deviationPercentage.toStringAsFixed(1)}%');
-      }
-      buffer.writeln('');
-    }
-
-    if (recommendations.isNotEmpty) {
-      buffer.writeln('## Top Recommendations');
-      buffer.writeln('');
-      for (final rec in recommendations.take(5)) {
-        buffer.writeln('- **${rec.title}** (Priority: ${rec.importance})');
-        buffer.writeln('  - ${rec.description}');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
-  }
+  bool get isHighConfidence => confidence > 0.8;
+  int get ageInHours => DateTime.now().difference(generatedAt).inHours;
 }
 
-/// ML モデルメタデータ
-class MLModelMetadata {
-  final String modelId;
-  final String name;
-  final PredictionModelType type;
-  final String version;
-  final double accuracy; // 0.0-1.0
-  final int trainingDataSize;
-  final DateTime trainedAt;
-  final DateTime? updatedAt;
-  final bool isActive;
-  final Map<String, dynamic>? hyperparameters;
-
-  MLModelMetadata({
-    required this.modelId,
-    required this.name,
-    required this.type,
-    required this.version,
-    required this.accuracy,
-    required this.trainingDataSize,
-    required this.trainedAt,
-    this.updatedAt,
-    this.isActive = true,
-    this.hyperparameters,
+/// InsightGeneration: インサイト生成
+class InsightGeneration {
+  InsightGeneration({
+    required this.id,
+    required this.datasetId,
+    required this.insightType,
+    required this.generatedAt,
+    required this.createdAt,
+    this.title,
+    this.description,
+    this.impact = 'medium',
+    this.actionable = true,
   });
 
-  /// モデルの信頼度
-  ConfidenceLevel get confidenceLevel {
-    if (accuracy >= 0.9) return ConfidenceLevel.veryHigh;
-    if (accuracy >= 0.7) return ConfidenceLevel.high;
-    if (accuracy >= 0.5) return ConfidenceLevel.medium;
-    return ConfidenceLevel.low;
-  }
+  final String id;
+  final String datasetId;
+  final String insightType;
+  final DateTime generatedAt;
+  final DateTime createdAt;
+  final String? title;
+  final String? description;
+  final String impact;
+  final bool actionable;
 
-  /// モデルが古いか（7日以上）
-  bool get isStale {
-    final lastUpdateTime = updatedAt ?? trainedAt;
-    return DateTime.now().difference(lastUpdateTime).inDays > 7;
-  }
+  bool get isHighImpact => impact == 'high';
+  int get ageInDays => DateTime.now().difference(generatedAt).inDays;
 }

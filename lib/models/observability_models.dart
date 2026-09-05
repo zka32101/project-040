@@ -1,368 +1,309 @@
-/// Phase 42: Observability & Tracing 監視可能性モデル定義
-///
-/// 分散トレーシング、スパン、メトリクス、ログ
+/// Observability & Tracing Models
 
-/// スパンの種類
-enum SpanKind {
-  internal('internal'),     // 内部処理
-  server('server'),         // サーバー処理
-  client('client'),         // クライアント処理
-  producer('producer'),     // プロデューサー
-  consumer('consumer');     // コンシューマー
+enum TraceStatus { started, active, completed, failed, cancelled, timeout }
+enum SpanKind { internal, server, client, producer, consumer }
+enum MetricType { gauge, counter, histogram, summary }
+enum LogLevel { trace, debug, info, warn, error, fatal }
+enum SamplingStrategy { always, never, probabilistic, adaptive, rateLimit }
+enum AlertSeverity { critical, high, medium, low, info }
 
-  final String value;
-  const SpanKind(this.value);
-}
-
-/// スパンの状態
-enum SpanStatus {
-  unset('unset'),           // 未設定
-  ok('ok'),                 // 成功
-  error('error'),           // エラー
-  cancelled('cancelled');   // キャンセル
-
-  final String value;
-  const SpanStatus(this.value);
-}
-
-/// ログレベル
-enum LogLevel {
-  debug('debug'),
-  info('info'),
-  warning('warning'),
-  error('error'),
-  fatal('fatal');
-
-  final String value;
-  const LogLevel(this.value);
-}
-
-/// メトリクスタイプ
-enum MetricType {
-  counter('counter'),           // カウンター
-  gauge('gauge'),               // ゲージ
-  histogram('histogram'),       // ヒストグラム
-  summary('summary');           // サマリー
-
-  final String value;
-  const MetricType(this.value);
-}
-
-/// サンプリングタイプ
-enum SamplingType {
-  always('always'),             // 常にサンプリング
-  never('never'),               // サンプリングしない
-  probabilistic('probabilistic'); // 確率的サンプリング
-
-  final String value;
-  const SamplingType(this.value);
-}
-
-/// トレースコンテキスト
-class TraceContext {
+class Trace {
   final String traceId;
-  final String spanId;
-  final String? parentSpanId;
-  final Map<String, String> traceState;
-  final DateTime createdAt;
+  final String parentTraceId;
+  final String serviceName;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final TraceStatus status;
+  final List<String> spanIds;
+  final Map<String, dynamic> tags;
+  final String? errorMessage;
 
-  TraceContext({
+  Trace({
     required this.traceId,
-    required this.spanId,
-    this.parentSpanId,
-    Map<String, String>? traceState,
-    required this.createdAt,
-  }) : traceState = traceState ?? {};
-
-  /// 親スパンIDを設定した新しいコンテキストを作成
-  TraceContext withParentSpan(String parentId) {
-    return TraceContext(
-      traceId: traceId,
-      spanId: 'span:${DateTime.now().millisecondsSinceEpoch}',
-      parentSpanId: parentId,
-      traceState: Map.from(traceState),
-      createdAt: DateTime.now(),
-    );
-  }
-}
-
-/// スパンイベント
-class SpanEvent {
-  final String name;
-  final DateTime timestamp;
-  final Map<String, dynamic>? attributes;
-
-  SpanEvent({
-    required this.name,
-    required this.timestamp,
-    this.attributes,
+    required this.parentTraceId,
+    required this.serviceName,
+    required this.startTime,
+    this.endTime,
+    required this.status,
+    required this.spanIds,
+    required this.tags,
+    this.errorMessage,
   });
+
+  bool get isActive => status == TraceStatus.active || status == TraceStatus.started;
+  bool get isCompleted => status == TraceStatus.completed;
+  bool get isFailed => status == TraceStatus.failed;
+  int get durationMs => endTime != null ? endTime!.difference(startTime).inMilliseconds : -1;
+  int get spanCount => spanIds.length;
 }
 
-/// スパン
 class Span {
   final String spanId;
   final String traceId;
-  final String? parentSpanId;
-  final String name;
+  final String parentSpanId;
+  final String operationName;
   final SpanKind kind;
   final DateTime startTime;
-  DateTime? endTime;
+  final DateTime? endTime;
   final Map<String, dynamic> attributes;
-  final List<SpanEvent> events;
-  SpanStatus status;
-  String? errorMessage;
+  final List<String> eventIds;
+  final String? errorMessage;
 
   Span({
     required this.spanId,
     required this.traceId,
-    this.parentSpanId,
-    required this.name,
+    required this.parentSpanId,
+    required this.operationName,
     required this.kind,
     required this.startTime,
     this.endTime,
-    Map<String, dynamic>? attributes,
-    List<SpanEvent>? events,
-    this.status = SpanStatus.unset,
+    required this.attributes,
+    required this.eventIds,
     this.errorMessage,
-  })  : attributes = attributes ?? {},
-        events = events ?? [];
-
-  /// スパンの経過時間 (ミリ秒)
-  int get durationMs {
-    if (endTime == null) {
-      return DateTime.now().difference(startTime).inMilliseconds;
-    }
-    return endTime!.difference(startTime).inMilliseconds;
-  }
-
-  /// アトリビュート追加
-  void addAttribute(String key, dynamic value) {
-    attributes[key] = value;
-  }
-
-  /// イベント追加
-  void addEvent(SpanEvent event) {
-    events.add(event);
-  }
-
-  /// スパンを終了
-  void end({SpanStatus? status, String? errorMsg}) {
-    endTime = DateTime.now();
-    if (status != null) {
-      this.status = status;
-    }
-    if (errorMsg != null) {
-      errorMessage = errorMsg;
-    }
-  }
-
-  /// エラースパンか
-  bool get isError => status == SpanStatus.error || errorMessage != null;
-}
-
-/// トレース
-class Trace {
-  final String traceId;
-  final String rootSpanId;
-  final List<Span> spans;
-  final DateTime startTime;
-  final DateTime? endTime;
-  final String? serviceName;
-  final Map<String, dynamic>? metadata;
-
-  Trace({
-    required this.traceId,
-    required this.rootSpanId,
-    required this.spans,
-    required this.startTime,
-    this.endTime,
-    this.serviceName,
-    this.metadata,
   });
 
-  /// トレースの経過時間 (ミリ秒)
-  int get durationMs {
-    if (endTime == null) {
-      return DateTime.now().difference(startTime).inMilliseconds;
-    }
-    return endTime!.difference(startTime).inMilliseconds;
-  }
-
-  /// スパン数
-  int get spanCount => spans.length;
-
-  /// エラースパン数
-  int get errorSpanCount => spans.where((s) => s.isError).length;
+  bool get isCompleted => endTime != null;
+  bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
+  int get durationMs => endTime != null ? endTime!.difference(startTime).inMilliseconds : -1;
+  int get eventCount => eventIds.length;
 }
 
-/// メトリクス
 class Metric {
   final String metricId;
-  final String name;
+  final String serviceName;
+  final String metricName;
   final MetricType type;
-  final String? unit;
   final double value;
-  final DateTime timestamp;
-  final Map<String, dynamic>? attributes;
+  final DateTime recordedAt;
+  final Map<String, String> labels;
+  final int unit;
 
   Metric({
     required this.metricId,
-    required this.name,
+    required this.serviceName,
+    required this.metricName,
     required this.type,
-    this.unit,
     required this.value,
-    required this.timestamp,
-    this.attributes,
-  });
-}
-
-/// トレースメトリクス
-class TraceMetrics {
-  final String metricsId;
-  final String traceId;
-  final int totalSpans;
-  final int errorSpans;
-  final double averageLatencyMs;
-  final String? slowestSpan;
-  final int? slowestSpanDurationMs;
-  final DateTime createdAt;
-
-  TraceMetrics({
-    required this.metricsId,
-    required this.traceId,
-    required this.totalSpans,
-    required this.errorSpans,
-    required this.averageLatencyMs,
-    this.slowestSpan,
-    this.slowestSpanDurationMs,
-    required this.createdAt,
+    required this.recordedAt,
+    required this.labels,
+    this.unit = 1,
   });
 
-  /// エラー率
-  double get errorRate {
-    return totalSpans > 0 ? errorSpans / totalSpans : 0.0;
-  }
-
-  /// エラー率パーセント
-  int get errorRatePercentage => (errorRate * 100).toInt();
+  bool get isRecent => DateTime.now().difference(recordedAt).inMinutes < 5;
+  int get ageInMinutes => DateTime.now().difference(recordedAt).inMinutes;
 }
 
-/// 構造化ログ
-class ObservabilityLog {
+class LogEntry {
   final String logId;
-  final String traceId;
-  final String? spanId;
+  final String serviceName;
   final LogLevel level;
   final String message;
   final DateTime timestamp;
-  final Map<String, dynamic>? attributes;
+  final String traceId;
+  final String? spanId;
+  final Map<String, dynamic> context;
+  final String? stackTrace;
 
-  ObservabilityLog({
+  LogEntry({
     required this.logId,
-    required this.traceId,
-    this.spanId,
+    required this.serviceName,
     required this.level,
     required this.message,
     required this.timestamp,
-    this.attributes,
+    required this.traceId,
+    this.spanId,
+    required this.context,
+    this.stackTrace,
   });
+
+  bool get isError => level == LogLevel.error || level == LogLevel.fatal;
+  bool get isWarning => level == LogLevel.warn;
+  int get ageInMinutes => DateTime.now().difference(timestamp).inMinutes;
 }
 
-/// サンプリングポリシー
-class SamplingPolicy {
-  final String policyId;
-  final SamplingType type;
-  final double probability;
+class Sampling {
+  final String samplingId;
+  final SamplingStrategy strategy;
+  final double samplingRate;
+  final int maxTracesPerSecond;
   final DateTime createdAt;
+  final String serviceName;
+  final bool isActive;
 
-  SamplingPolicy({
-    required this.policyId,
-    required this.type,
-    required this.probability,
+  Sampling({
+    required this.samplingId,
+    required this.strategy,
+    required this.samplingRate,
+    required this.maxTracesPerSecond,
     required this.createdAt,
+    required this.serviceName,
+    this.isActive = true,
   });
 
-  /// サンプリング対象か判定
-  bool shouldSample() {
-    switch (type) {
-      case SamplingType.always:
-        return true;
-      case SamplingType.never:
-        return false;
-      case SamplingType.probabilistic:
-        return (DateTime.now().millisecondsSinceEpoch % 1000) / 1000 < probability;
-    }
-  }
+  bool get isProbabilistic => strategy == SamplingStrategy.probabilistic;
+  int get ageInDays => DateTime.now().difference(createdAt).inDays;
 }
 
-/// トレース収集統計
-class TraceCollector {
-  final String collectorId;
-  final int totalTraces;
-  final int totalSpans;
-  final double averageSpansPerTrace;
-  final double averageLatencyMs;
+class ServiceHealth {
+  final String healthId;
+  final String serviceName;
+  final DateTime checkedAt;
+  final double errorRate;
+  final double latencyP99;
+  final double latencyP95;
+  final int requestCount;
+  final int errorCount;
+  final String status;
+
+  ServiceHealth({
+    required this.healthId,
+    required this.serviceName,
+    required this.checkedAt,
+    required this.errorRate,
+    required this.latencyP99,
+    required this.latencyP95,
+    required this.requestCount,
+    required this.errorCount,
+    required this.status,
+  });
+
+  bool get isHealthy => errorRate < 1.0 && latencyP99 < 5000;
+  bool get isDegraded => errorRate < 5.0 && latencyP99 < 10000;
+  bool get isUnhealthy => errorRate >= 5.0 || latencyP99 >= 10000;
+  int get ageInMinutes => DateTime.now().difference(checkedAt).inMinutes;
+}
+
+class Alert {
+  final String alertId;
+  final String serviceName;
+  final String metricName;
+  final AlertSeverity severity;
+  final String description;
+  final DateTime triggeredAt;
+  final DateTime? resolvedAt;
+  final bool isActive;
+  final String? resolution;
+
+  Alert({
+    required this.alertId,
+    required this.serviceName,
+    required this.metricName,
+    required this.severity,
+    required this.description,
+    required this.triggeredAt,
+    this.resolvedAt,
+    this.isActive = true,
+    this.resolution,
+  });
+
+  bool get isResolved => resolvedAt != null;
+  int get durationMinutes => resolvedAt != null
+      ? resolvedAt!.difference(triggeredAt).inMinutes
+      : DateTime.now().difference(triggeredAt).inMinutes;
+}
+
+class TraceAnalysis {
+  final String analysisId;
+  final String traceId;
+  final DateTime analyzedAt;
+  final int spanCount;
+  final int errorSpanCount;
+  final double criticalPath;
+  final List<String> slowestSpans;
+  final List<String> errorSpans;
+  final double spanDetailedLatency;
+
+  TraceAnalysis({
+    required this.analysisId,
+    required this.traceId,
+    required this.analyzedAt,
+    required this.spanCount,
+    required this.errorSpanCount,
+    required this.criticalPath,
+    required this.slowestSpans,
+    required this.errorSpans,
+    required this.spanDetailedLatency,
+  });
+
+  double get errorRate => spanCount > 0 ? (errorSpanCount / spanCount) * 100 : 0.0;
+  bool get hasErrors => errorSpanCount > 0;
+  int get ageInMinutes => DateTime.now().difference(analyzedAt).inMinutes;
+}
+
+class DistributedTraceContext {
+  final String contextId;
+  final String traceId;
+  final String spanId;
+  final bool traceFlags;
+  final String traceState;
   final DateTime createdAt;
-  final DateTime measuredAt;
+  final Map<String, String> baggage;
 
-  TraceCollector({
-    required this.collectorId,
-    required this.totalTraces,
-    required this.totalSpans,
-    required this.averageSpansPerTrace,
-    required this.averageLatencyMs,
+  DistributedTraceContext({
+    required this.contextId,
+    required this.traceId,
+    required this.spanId,
+    required this.traceFlags,
+    required this.traceState,
     required this.createdAt,
-    required this.measuredAt,
+    required this.baggage,
   });
+
+  int get ageInSeconds => DateTime.now().difference(createdAt).inSeconds;
 }
 
-/// 監視可能性レポート
 class ObservabilityReport {
   final String reportId;
   final DateTime generatedAt;
-  final List<TraceMetrics> traceMetrics;
-  final List<Metric> metrics;
+  final DateTime periodStart;
+  final DateTime periodEnd;
   final int totalTraces;
-  final int totalErrors;
-  final double systemHealthScore;
+  final int failedTraces;
+  final double averageLatency;
+  final double p99Latency;
+  final double errorRate;
+  final List<String> topServices;
 
   ObservabilityReport({
     required this.reportId,
     required this.generatedAt,
-    required this.traceMetrics,
-    required this.metrics,
+    required this.periodStart,
+    required this.periodEnd,
     required this.totalTraces,
-    required this.totalErrors,
-    required this.systemHealthScore,
+    required this.failedTraces,
+    required this.averageLatency,
+    required this.p99Latency,
+    required this.errorRate,
+    required this.topServices,
   });
 
-  /// Markdown形式でレポートを生成
-  String toMarkdown() {
-    final buffer = StringBuffer();
-    buffer.writeln('# Observability Report');
-    buffer.writeln('');
-    buffer.writeln('**Generated**: ${generatedAt.toIso8601String()}');
-    buffer.writeln('');
-    buffer.writeln('## Summary');
-    buffer.writeln('');
-    buffer.writeln('- Total Traces: $totalTraces');
-    buffer.writeln('- Total Errors: $totalErrors');
-    buffer.writeln('- Error Rate: ${(totalErrors / (totalTraces > 0 ? totalTraces : 1) * 100).toStringAsFixed(2)}%');
-    buffer.writeln('- System Health Score: ${(systemHealthScore * 100).toStringAsFixed(2)}/100');
-    buffer.writeln('');
+  double get successRate => totalTraces > 0 ? ((totalTraces - failedTraces) / totalTraces) * 100 : 0.0;
+  int get periodInDays => periodEnd.difference(periodStart).inDays;
+}
 
-    if (traceMetrics.isNotEmpty) {
-      buffer.writeln('## Trace Metrics');
-      buffer.writeln('');
-      final avgLatency = traceMetrics.isEmpty
-          ? 0.0
-          : traceMetrics.map((m) => m.averageLatencyMs).reduce((a, b) => a + b) / traceMetrics.length;
-      buffer.writeln('- Average Latency: ${avgLatency.toStringAsFixed(2)}ms');
-      buffer.writeln('- Traces Analyzed: ${traceMetrics.length}');
-      buffer.writeln('');
-    }
+class ObservabilityFilter {
+  final String filterId;
+  final String filterName;
+  final String? serviceName;
+  final LogLevel? minLogLevel;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final bool isActive;
 
-    return buffer.toString();
-  }
+  ObservabilityFilter({
+    required this.filterId,
+    required this.filterName,
+    this.serviceName,
+    this.minLogLevel,
+    this.startTime,
+    this.endTime,
+    this.isActive = true,
+  });
+
+  bool get hasFilters => serviceName != null || minLogLevel != null || startTime != null || endTime != null;
+  int get activeFilterCount =>
+      (serviceName != null ? 1 : 0) +
+      (minLogLevel != null ? 1 : 0) +
+      (startTime != null ? 1 : 0) +
+      (endTime != null ? 1 : 0);
 }

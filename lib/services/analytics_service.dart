@@ -1,442 +1,737 @@
-/// Phase 47: Advanced Analytics & ML Integration Service層
-///
-/// 分析エンジン・予測エンジン・異常検知実装
+/// Phase 90: Advanced AI-Powered Analytics & Insights
+/// Service layer for AI-powered analytics and predictive systems
+library analytics_service;
 
-import '../models/analytics_models.dart';
+import 'dart:async';
+import 'package:project_040/models/analytics_models.dart';
 
-// ======================== Repository パターン ========================
+// ============================================================================
+// REPOSITORY INTERFACE
+// ============================================================================
 
-/// 分析リポジトリインターフェース
 abstract class AnalyticsRepository {
-  Future<void> addMetric(AnalyticsMetric metric);
-  Future<AnalyticsMetric?> getMetric(String metricId);
-  Future<List<AnalyticsMetric>> getMetricsByType(AnalyticsMetricType type);
-  Future<List<TimeSeriesDataPoint>> getTimeSeries(String metricId);
-  Future<void> addPrediction(PredictionResult prediction);
-  Future<List<PredictionResult>> getPredictions(String metricId);
-  Future<void> addAnomaly(AnomalyDetectionResult anomaly);
-  Future<List<AnomalyDetectionResult>> getAnomalies(String metricId);
-  Future<void> addRecommendation(Recommendation recommendation);
-  Future<List<Recommendation>> getRecommendations(String entityId);
-  Future<void> addModel(MLModelMetadata model);
-  Future<MLModelMetadata?> getModel(String modelId);
-  Future<List<MLModelMetadata>> getActiveModels();
-  Future<void> clearAll();
+  // ========== Predictive Models (10 methods) ==========
+  Future<PredictiveModel> createModel(PredictiveModel model);
+  Future<PredictiveModel?> getModelById(String id);
+  Future<List<PredictiveModel>> getModelsByType(PredictionType type);
+  Future<List<PredictiveModel>> getActiveModels();
+  Future<List<PredictiveModel>> getModelsNeedingRetraining();
+  Future<PredictiveModel> updateModel(PredictiveModel model);
+  Future<void> deleteModel(String id);
+  Future<List<PredictiveModel>> listModels();
+  Future<int> getModelCount();
+  Future<double> getAverageModelAccuracy();
+
+  // ========== Predictions (12 methods) ==========
+  Future<Prediction> createPrediction(Prediction prediction);
+  Future<Prediction?> getPredictionById(String id);
+  Future<List<Prediction>> getPredictionsByModelId(String modelId);
+  Future<List<Prediction>> getHighConfidencePredictions(double threshold);
+  Future<List<Prediction>> getPredictionsByTimeRange(DateTime start, DateTime end);
+  Future<Prediction> updatePrediction(Prediction prediction);
+  Future<void> deletePrediction(String id);
+  Future<List<Prediction>> listPredictions();
+  Future<int> getPredictionCount();
+  Future<double> getAveragePredictionConfidence();
+  Future<List<Prediction>> getVerifiedPredictions();
+  Future<int> getAccuratePredicationCount();
+
+  // ========== Anomalies (10 methods) ==========
+  Future<AnomalyDetection> createAnomaly(AnomalyDetection anomaly);
+  Future<AnomalyDetection?> getAnomalyById(String id);
+  Future<List<AnomalyDetection>> getAnomaliesByDatasetId(String datasetId);
+  Future<List<AnomalyDetection>> getCriticalAnomalies();
+  Future<List<AnomalyDetection>> getUninvestigatedAnomalies();
+  Future<AnomalyDetection> updateAnomaly(AnomalyDetection anomaly);
+  Future<void> deleteAnomaly(String id);
+  Future<List<AnomalyDetection>> listAnomalies();
+  Future<int> getAnomalyCount();
+  Future<List<AnomalyDetection>> getAnomaliesByType(AnomalyType type);
+
+  // ========== Patterns (10 methods) ==========
+  Future<PatternAnalysis> createPattern(PatternAnalysis pattern);
+  Future<PatternAnalysis?> getPatternById(String id);
+  Future<List<PatternAnalysis>> getPatternsByDatasetId(String datasetId);
+  Future<List<PatternAnalysis>> getStrongPatterns(double threshold);
+  Future<List<PatternAnalysis>> getFrequentPatterns();
+  Future<PatternAnalysis> updatePattern(PatternAnalysis pattern);
+  Future<void> deletePattern(String id);
+  Future<List<PatternAnalysis>> listPatterns();
+  Future<int> getPatternCount();
+  Future<List<PatternAnalysis>> getPatternsByType(PatternType type);
+
+  // ========== Correlations (8 methods) ==========
+  Future<CorrelationAnalysis> createCorrelation(CorrelationAnalysis correlation);
+  Future<CorrelationAnalysis?> getCorrelationById(String id);
+  Future<List<CorrelationAnalysis>> getSignificantCorrelations();
+  Future<List<CorrelationAnalysis>> getCorrelationsByVariable(String variable);
+  Future<CorrelationAnalysis> updateCorrelation(CorrelationAnalysis correlation);
+  Future<void> deleteCorrelation(String id);
+  Future<List<CorrelationAnalysis>> listCorrelations();
+  Future<int> getCorrelationCount();
+
+  // ========== Alerts (10 methods) ==========
+  Future<IntelligentAlert> createAlert(IntelligentAlert alert);
+  Future<IntelligentAlert?> getAlertById(String id);
+  Future<List<IntelligentAlert>> getOpenAlerts();
+  Future<List<IntelligentAlert>> getCriticalAlerts();
+  Future<List<IntelligentAlert>> getAlertsBySeverity(AlertSeverity severity);
+  Future<IntelligentAlert> updateAlert(IntelligentAlert alert);
+  Future<void> deleteAlert(String id);
+  Future<List<IntelligentAlert>> listAlerts();
+  Future<int> getAlertCount();
+  Future<List<IntelligentAlert>> getUnresolvedAlerts();
+
+  // ========== Behavior Analysis (8 methods) ==========
+  Future<BehavioralAnalysis> createBehaviorAnalysis(BehavioralAnalysis analysis);
+  Future<BehavioralAnalysis?> getBehaviorAnalysisById(String id);
+  Future<List<BehavioralAnalysis>> getAnomalousBehaviors();
+  Future<List<BehavioralAnalysis>> getBehaviorsByRiskLevel(FraudRiskLevel level);
+  Future<BehavioralAnalysis> updateBehaviorAnalysis(BehavioralAnalysis analysis);
+  Future<void> deleteBehaviorAnalysis(String id);
+  Future<List<BehavioralAnalysis>> listBehaviorAnalyses();
+  Future<int> getBehaviorAnalysisCount();
+
+  // ========== Fraud Detection (10 methods) ==========
+  Future<FraudDetection> createFraudDetection(FraudDetection detection);
+  Future<FraudDetection?> getFraudDetectionById(String id);
+  Future<List<FraudDetection>> getSuspiciousTransactions();
+  Future<List<FraudDetection>> getCriticalFraudCases();
+  Future<List<FraudDetection>> getFraudByRiskLevel(FraudRiskLevel level);
+  Future<FraudDetection> updateFraudDetection(FraudDetection detection);
+  Future<void> deleteFraudDetection(String id);
+  Future<List<FraudDetection>> listFraudDetections();
+  Future<int> getFraudDetectionCount();
+  Future<List<FraudDetection>> getConfirmedFraudCases();
+
+  // ========== Recommendations (8 methods) ==========
+  Future<Recommendation> createRecommendation(Recommendation recommendation);
+  Future<Recommendation?> getRecommendationById(String id);
+  Future<List<Recommendation>> getHighConfidenceRecommendations();
+  Future<List<Recommendation>> getRecommendationsByTarget(String targetId);
+  Future<Recommendation> updateRecommendation(Recommendation recommendation);
+  Future<void> deleteRecommendation(String id);
+  Future<List<Recommendation>> listRecommendations();
+  Future<int> getRecommendationCount();
+
+  // ========== Insights (8 methods) ==========
+  Future<InsightGeneration> createInsight(InsightGeneration insight);
+  Future<InsightGeneration?> getInsightById(String id);
+  Future<List<InsightGeneration>> getHighImpactInsights();
+  Future<List<InsightGeneration>> getActionableInsights();
+  Future<InsightGeneration> updateInsight(InsightGeneration insight);
+  Future<void> deleteInsight(String id);
+  Future<List<InsightGeneration>> listInsights();
+  Future<int> getInsightCount();
 }
 
-/// メモリベースの分析リポジトリ実装
-class MemoryAnalyticsRepository implements AnalyticsRepository {
-  final Map<String, AnalyticsMetric> _metrics = {};
-  final Map<String, List<TimeSeriesDataPoint>> _timeSeries = {};
-  final Map<String, PredictionResult> _predictions = {};
-  final Map<String, AnomalyDetectionResult> _anomalies = {};
+// ============================================================================
+// IN-MEMORY IMPLEMENTATION
+// ============================================================================
+
+class InMemoryAnalyticsRepository implements AnalyticsRepository {
+  final Map<String, PredictiveModel> _models = {};
+  final Map<String, Prediction> _predictions = {};
+  final Map<String, AnomalyDetection> _anomalies = {};
+  final Map<String, PatternAnalysis> _patterns = {};
+  final Map<String, CorrelationAnalysis> _correlations = {};
+  final Map<String, IntelligentAlert> _alerts = {};
+  final Map<String, BehavioralAnalysis> _behaviors = {};
+  final Map<String, FraudDetection> _frauds = {};
   final Map<String, Recommendation> _recommendations = {};
-  final Map<String, MLModelMetadata> _models = {};
+  final Map<String, InsightGeneration> _insights = {};
 
   @override
-  Future<void> addMetric(AnalyticsMetric metric) async {
-    _metrics[metric.metricId] = metric;
-  }
-
-  @override
-  Future<AnalyticsMetric?> getMetric(String metricId) async {
-    return _metrics[metricId];
+  Future<PredictiveModel> createModel(PredictiveModel model) async {
+    _models[model.id] = model;
+    return model;
   }
 
   @override
-  Future<List<AnalyticsMetric>> getMetricsByType(AnalyticsMetricType type) async {
-    return _metrics.values.where((m) => m.type == type).toList();
+  Future<PredictiveModel?> getModelById(String id) async => _models[id];
+
+  @override
+  Future<List<PredictiveModel>> getModelsByType(PredictionType type) async =>
+      _models.values.where((m) => m.predictionType == type).toList();
+
+  @override
+  Future<List<PredictiveModel>> getActiveModels() async =>
+      _models.values.where((m) => m.isActive).toList();
+
+  @override
+  Future<List<PredictiveModel>> getModelsNeedingRetraining() async =>
+      _models.values.where((m) => m.needsRetraining).toList();
+
+  @override
+  Future<PredictiveModel> updateModel(PredictiveModel model) async {
+    _models[model.id] = model;
+    return model;
   }
 
   @override
-  Future<List<TimeSeriesDataPoint>> getTimeSeries(String metricId) async {
-    return _timeSeries[metricId] ?? [];
+  Future<void> deleteModel(String id) async => _models.remove(id);
+
+  @override
+  Future<List<PredictiveModel>> listModels() async => _models.values.toList();
+
+  @override
+  Future<int> getModelCount() async => _models.length;
+
+  @override
+  Future<double> getAverageModelAccuracy() async {
+    if (_models.isEmpty) return 0.0;
+    final total =
+        _models.values.fold<double>(0, (sum, m) => sum + m.accuracy);
+    return total / _models.length;
   }
 
   @override
-  Future<void> addPrediction(PredictionResult prediction) async {
-    _predictions[prediction.predictionId] = prediction;
-  }
-
-  @override
-  Future<List<PredictionResult>> getPredictions(String metricId) async {
-    return _predictions.values.where((p) => p.metricId == metricId).toList();
-  }
-
-  @override
-  Future<void> addAnomaly(AnomalyDetectionResult anomaly) async {
-    _anomalies[anomaly.anomalyId] = anomaly;
-  }
-
-  @override
-  Future<List<AnomalyDetectionResult>> getAnomalies(String metricId) async {
-    return _anomalies.values.where((a) => a.metricId == metricId).toList();
-  }
-
-  @override
-  Future<void> addRecommendation(Recommendation recommendation) async {
-    _recommendations[recommendation.recommendationId] = recommendation;
-  }
-
-  @override
-  Future<List<Recommendation>> getRecommendations(String entityId) async {
-    return _recommendations.values
-        .where((r) => r.entityId == entityId && r.isValid)
-        .toList();
-  }
-
-  @override
-  Future<void> addModel(MLModelMetadata model) async {
-    _models[model.modelId] = model;
-  }
-
-  @override
-  Future<MLModelMetadata?> getModel(String modelId) async {
-    return _models[modelId];
-  }
-
-  @override
-  Future<List<MLModelMetadata>> getActiveModels() async {
-    return _models.values.where((m) => m.isActive).toList();
-  }
-
-  @override
-  Future<void> clearAll() async {
-    _metrics.clear();
-    _timeSeries.clear();
-    _predictions.clear();
-    _anomalies.clear();
-    _recommendations.clear();
-    _models.clear();
-  }
-}
-
-// ======================== Engine パターン ========================
-
-/// 分析エンジンインターフェース
-abstract class AnalyticsEngine {
-  Future<TimeSeriesAnalysis> analyzeTimeSeries(String metricId, List<TimeSeriesDataPoint> data);
-  Future<PredictionResult> predict(String metricId, PredictionModelType modelType);
-  Future<AnomalyDetectionResult> detectAnomaly(String metricId, double value, double expected);
-  Future<List<Recommendation>> generateRecommendations(String entityId, List<AnalyticsMetric> metrics);
-}
-
-/// メモリベースの分析エンジン実装
-class MemoryAnalyticsEngine implements AnalyticsEngine {
-  @override
-  Future<TimeSeriesAnalysis> analyzeTimeSeries(
-    String metricId,
-    List<TimeSeriesDataPoint> data,
-  ) async {
-    if (data.isEmpty) {
-      return TimeSeriesAnalysis(
-        analysisId: 'ts_$metricId',
-        metricId: metricId,
-        dataPoints: [],
-        trend: 0.0,
-        seasonality: 0.0,
-        volatility: 0.0,
-        analyzedAt: DateTime.now(),
-      );
-    }
-
-    final values = data.map((d) => d.value).toList();
-    final trend = _calculateTrend(values);
-    final seasonality = _calculateSeasonality(values);
-    final volatility = _calculateVolatility(values);
-
-    return TimeSeriesAnalysis(
-      analysisId: 'ts_$metricId',
-      metricId: metricId,
-      dataPoints: data,
-      trend: trend,
-      seasonality: seasonality,
-      volatility: volatility,
-      analyzedAt: DateTime.now(),
-    );
-  }
-
-  @override
-  Future<PredictionResult> predict(
-    String metricId,
-    PredictionModelType modelType,
-  ) async {
-    final now = DateTime.now();
-    final predictedValue = 100.0 + (DateTime.now().millisecondsSinceEpoch % 50).toDouble();
-    final confidence = 0.7 + (DateTime.now().millisecondsSinceEpoch % 30) / 100.0;
-
-    return PredictionResult(
-      predictionId: 'pred_$metricId',
-      metricId: metricId,
-      modelType: modelType,
-      predictedValue: predictedValue,
-      confidence: confidence.clamp(0.0, 1.0),
-      predictionTime: now,
-      targetTime: now.add(Duration(days: 1)),
-    );
-  }
-
-  @override
-  Future<AnomalyDetectionResult> detectAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) async {
-    final deviation = (value - expected) / expected;
-    final absDeviation = deviation.abs();
-    
-    AnomalyLevel level;
-    if (absDeviation > 0.5) {
-      level = AnomalyLevel.critical;
-    } else if (absDeviation > 0.3) {
-      level = AnomalyLevel.high;
-    } else if (absDeviation > 0.15) {
-      level = AnomalyLevel.medium;
-    } else {
-      level = AnomalyLevel.low;
-    }
-
-    return AnomalyDetectionResult(
-      anomalyId: 'anom_$metricId',
-      metricId: metricId,
-      value: value,
-      expectedValue: expected,
-      deviation: deviation,
-      level: level,
-      confidence: 0.8,
-      detectedAt: DateTime.now(),
-      description: 'Value deviation of ${(deviation * 100).toStringAsFixed(1)}%',
-    );
-  }
-
-  @override
-  Future<List<Recommendation>> generateRecommendations(
-    String entityId,
-    List<AnalyticsMetric> metrics,
-  ) async {
-    final recommendations = <Recommendation>[];
-
-    for (final metric in metrics) {
-      if (metric.changePercentage != null && metric.changePercentage! < -10) {
-        recommendations.add(Recommendation(
-          recommendationId: 'rec_${metric.metricId}',
-          entityId: entityId,
-          title: 'Investigate Decline in ${metric.name}',
-          description: 'The metric has declined by ${metric.changePercentage!.toStringAsFixed(1)}%',
-          score: 0.85,
-          confidence: ConfidenceLevel.high,
-          priority: 4,
-          createdAt: DateTime.now(),
-        ));
-      }
-    }
-
-    return recommendations;
-  }
-
-  double _calculateTrend(List<double> values) {
-    if (values.length < 2) return 0.0;
-    final first = values.first;
-    final last = values.last;
-    return ((last - first) / first).clamp(-1.0, 1.0);
-  }
-
-  double _calculateSeasonality(List<double> values) {
-    if (values.length < 10) return 0.0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean)) / values.length;
-    final periodVariation = variance / (mean * mean + 1);
-    return periodVariation.clamp(0.0, 1.0);
-  }
-
-  double _calculateVolatility(List<double> values) {
-    if (values.length < 2) return 0.0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean)) / values.length;
-    final stdDev = variance > 0 ? variance.sqrt() : 0;
-    return (stdDev / (mean + 1)).clamp(0.0, 1.0);
-  }
-}
-
-extension on double {
-  double sqrt() => this < 0 ? 0 : (this == 0 ? 0 : _sqrt());
-  double _sqrt() {
-    var x = this;
-    var y = (x + 1) / 2;
-    while ((y - x).abs() > 1e-10) {
-      x = y;
-      y = (y + this / y) / 2;
-    }
-    return y;
-  }
-}
-
-// ======================== Manager パターン ========================
-
-/// 分析管理インターフェース
-abstract class AnalyticsManager {
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  });
-  Future<PredictionResult> runPrediction(String metricId, PredictionModelType modelType);
-  Future<AnomalyDetectionResult> checkAnomaly(String metricId, double value, double expected);
-  Future<List<Recommendation>> getRecommendations(String entityId);
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  });
-}
-
-/// メモリベースの分析管理実装
-class MemoryAnalyticsManager implements AnalyticsManager {
-  final AnalyticsRepository repository;
-  final AnalyticsEngine engine;
-
-  MemoryAnalyticsManager({
-    required this.repository,
-    required this.engine,
-  });
-
-  @override
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  }) async {
-    final metric = AnalyticsMetric(
-      metricId: metricId,
-      name: name,
-      type: type,
-      currentValue: value,
-      previousValue: previousValue,
-      targetValue: targetValue,
-      timestamp: DateTime.now(),
-      unit: unit,
-    );
-    await repository.addMetric(metric);
-    return metric;
-  }
-
-  @override
-  Future<PredictionResult> runPrediction(
-    String metricId,
-    PredictionModelType modelType,
-  ) async {
-    final prediction = await engine.predict(metricId, modelType);
-    await repository.addPrediction(prediction);
+  Future<Prediction> createPrediction(Prediction prediction) async {
+    _predictions[prediction.id] = prediction;
     return prediction;
   }
 
   @override
-  Future<AnomalyDetectionResult> checkAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) async {
-    final anomaly = await engine.detectAnomaly(metricId, value, expected);
-    await repository.addAnomaly(anomaly);
+  Future<Prediction?> getPredictionById(String id) async =>
+      _predictions[id];
+
+  @override
+  Future<List<Prediction>> getPredictionsByModelId(String modelId) async =>
+      _predictions.values.where((p) => p.modelId == modelId).toList();
+
+  @override
+  Future<List<Prediction>> getHighConfidencePredictions(double threshold) async =>
+      _predictions.values.where((p) => p.confidence > threshold).toList();
+
+  @override
+  Future<List<Prediction>> getPredictionsByTimeRange(DateTime start, DateTime end) async =>
+      _predictions.values
+          .where((p) => p.predictionTime.isAfter(start) && p.predictionTime.isBefore(end))
+          .toList();
+
+  @override
+  Future<Prediction> updatePrediction(Prediction prediction) async {
+    _predictions[prediction.id] = prediction;
+    return prediction;
+  }
+
+  @override
+  Future<void> deletePrediction(String id) async => _predictions.remove(id);
+
+  @override
+  Future<List<Prediction>> listPredictions() async => _predictions.values.toList();
+
+  @override
+  Future<int> getPredictionCount() async => _predictions.length;
+
+  @override
+  Future<double> getAveragePredictionConfidence() async {
+    if (_predictions.isEmpty) return 0.0;
+    final total =
+        _predictions.values.fold<double>(0, (sum, p) => sum + p.confidence);
+    return total / _predictions.length;
+  }
+
+  @override
+  Future<List<Prediction>> getVerifiedPredictions() async =>
+      _predictions.values.where((p) => p.hasActualValue).toList();
+
+  @override
+  Future<int> getAccuratePredicationCount() async =>
+      _predictions.values.where((p) => p.error < 0.1).length;
+
+  @override
+  Future<AnomalyDetection> createAnomaly(AnomalyDetection anomaly) async {
+    _anomalies[anomaly.id] = anomaly;
     return anomaly;
   }
 
   @override
-  Future<List<Recommendation>> getRecommendations(String entityId) async {
-    return await repository.getRecommendations(entityId);
+  Future<AnomalyDetection?> getAnomalyById(String id) async =>
+      _anomalies[id];
+
+  @override
+  Future<List<AnomalyDetection>> getAnomaliesByDatasetId(String datasetId) async =>
+      _anomalies.values.where((a) => a.datasetId == datasetId).toList();
+
+  @override
+  Future<List<AnomalyDetection>> getCriticalAnomalies() async =>
+      _anomalies.values.where((a) => a.isCritical).toList();
+
+  @override
+  Future<List<AnomalyDetection>> getUninvestigatedAnomalies() async =>
+      _anomalies.values.where((a) => !a.isInvestigated).toList();
+
+  @override
+  Future<AnomalyDetection> updateAnomaly(AnomalyDetection anomaly) async {
+    _anomalies[anomaly.id] = anomaly;
+    return anomaly;
   }
 
   @override
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  }) async {
-    final metrics = <AnalyticsMetric>[];
-    final predictions = <PredictionResult>[];
-    final anomalies = <AnomalyDetectionResult>[];
+  Future<void> deleteAnomaly(String id) async => _anomalies.remove(id);
 
-    for (final metricId in metricIds) {
-      final metric = await repository.getMetric(metricId);
-      if (metric != null) metrics.add(metric);
+  @override
+  Future<List<AnomalyDetection>> listAnomalies() async =>
+      _anomalies.values.toList();
 
-      final preds = await repository.getPredictions(metricId);
-      predictions.addAll(preds);
+  @override
+  Future<int> getAnomalyCount() async => _anomalies.length;
 
-      final anoms = await repository.getAnomalies(metricId);
-      anomalies.addAll(anoms);
-    }
+  @override
+  Future<List<AnomalyDetection>> getAnomaliesByType(AnomalyType type) async =>
+      _anomalies.values.where((a) => a.anomalyType == type).toList();
 
-    final recommendations = await engine.generateRecommendations('report', metrics);
+  @override
+  Future<PatternAnalysis> createPattern(PatternAnalysis pattern) async {
+    _patterns[pattern.id] = pattern;
+    return pattern;
+  }
 
-    return AnalyticsReport(
-      reportId: reportId,
-      generatedAt: DateTime.now(),
-      metrics: metrics,
-      predictions: predictions,
-      anomalies: anomalies,
-      recommendations: recommendations,
+  @override
+  Future<PatternAnalysis?> getPatternById(String id) async =>
+      _patterns[id];
+
+  @override
+  Future<List<PatternAnalysis>> getPatternsByDatasetId(String datasetId) async =>
+      _patterns.values.where((p) => p.datasetId == datasetId).toList();
+
+  @override
+  Future<List<PatternAnalysis>> getStrongPatterns(double threshold) async =>
+      _patterns.values.where((p) => p.confidence > threshold).toList();
+
+  @override
+  Future<List<PatternAnalysis>> getFrequentPatterns() async =>
+      _patterns.values.where((p) => p.isFrequent).toList();
+
+  @override
+  Future<PatternAnalysis> updatePattern(PatternAnalysis pattern) async {
+    _patterns[pattern.id] = pattern;
+    return pattern;
+  }
+
+  @override
+  Future<void> deletePattern(String id) async => _patterns.remove(id);
+
+  @override
+  Future<List<PatternAnalysis>> listPatterns() async =>
+      _patterns.values.toList();
+
+  @override
+  Future<int> getPatternCount() async => _patterns.length;
+
+  @override
+  Future<List<PatternAnalysis>> getPatternsByType(PatternType type) async =>
+      _patterns.values.where((p) => p.patternType == type).toList();
+
+  @override
+  Future<CorrelationAnalysis> createCorrelation(CorrelationAnalysis correlation) async {
+    _correlations[correlation.id] = correlation;
+    return correlation;
+  }
+
+  @override
+  Future<CorrelationAnalysis?> getCorrelationById(String id) async =>
+      _correlations[id];
+
+  @override
+  Future<List<CorrelationAnalysis>> getSignificantCorrelations() async =>
+      _correlations.values.where((c) => c.isSignificant).toList();
+
+  @override
+  Future<List<CorrelationAnalysis>> getCorrelationsByVariable(String variable) async =>
+      _correlations.values
+          .where((c) => c.variable1 == variable || c.variable2 == variable)
+          .toList();
+
+  @override
+  Future<CorrelationAnalysis> updateCorrelation(CorrelationAnalysis correlation) async {
+    _correlations[correlation.id] = correlation;
+    return correlation;
+  }
+
+  @override
+  Future<void> deleteCorrelation(String id) async => _correlations.remove(id);
+
+  @override
+  Future<List<CorrelationAnalysis>> listCorrelations() async =>
+      _correlations.values.toList();
+
+  @override
+  Future<int> getCorrelationCount() async => _correlations.length;
+
+  @override
+  Future<IntelligentAlert> createAlert(IntelligentAlert alert) async {
+    _alerts[alert.id] = alert;
+    return alert;
+  }
+
+  @override
+  Future<IntelligentAlert?> getAlertById(String id) async =>
+      _alerts[id];
+
+  @override
+  Future<List<IntelligentAlert>> getOpenAlerts() async =>
+      _alerts.values.where((a) => !a.isResolved).toList();
+
+  @override
+  Future<List<IntelligentAlert>> getCriticalAlerts() async =>
+      _alerts.values.where((a) => a.isCritical).toList();
+
+  @override
+  Future<List<IntelligentAlert>> getAlertsBySeverity(AlertSeverity severity) async =>
+      _alerts.values.where((a) => a.severity == severity).toList();
+
+  @override
+  Future<IntelligentAlert> updateAlert(IntelligentAlert alert) async {
+    _alerts[alert.id] = alert;
+    return alert;
+  }
+
+  @override
+  Future<void> deleteAlert(String id) async => _alerts.remove(id);
+
+  @override
+  Future<List<IntelligentAlert>> listAlerts() async =>
+      _alerts.values.toList();
+
+  @override
+  Future<int> getAlertCount() async => _alerts.length;
+
+  @override
+  Future<List<IntelligentAlert>> getUnresolvedAlerts() async =>
+      _alerts.values.where((a) => !a.isResolved).toList();
+
+  @override
+  Future<BehavioralAnalysis> createBehaviorAnalysis(BehavioralAnalysis analysis) async {
+    _behaviors[analysis.id] = analysis;
+    return analysis;
+  }
+
+  @override
+  Future<BehavioralAnalysis?> getBehaviorAnalysisById(String id) async =>
+      _behaviors[id];
+
+  @override
+  Future<List<BehavioralAnalysis>> getAnomalousBehaviors() async =>
+      _behaviors.values.where((b) => b.isAnomalous).toList();
+
+  @override
+  Future<List<BehavioralAnalysis>> getBehaviorsByRiskLevel(FraudRiskLevel level) async =>
+      _behaviors.values.where((b) => b.riskLevel == level).toList();
+
+  @override
+  Future<BehavioralAnalysis> updateBehaviorAnalysis(BehavioralAnalysis analysis) async {
+    _behaviors[analysis.id] = analysis;
+    return analysis;
+  }
+
+  @override
+  Future<void> deleteBehaviorAnalysis(String id) async => _behaviors.remove(id);
+
+  @override
+  Future<List<BehavioralAnalysis>> listBehaviorAnalyses() async =>
+      _behaviors.values.toList();
+
+  @override
+  Future<int> getBehaviorAnalysisCount() async => _behaviors.length;
+
+  @override
+  Future<FraudDetection> createFraudDetection(FraudDetection detection) async {
+    _frauds[detection.id] = detection;
+    return detection;
+  }
+
+  @override
+  Future<FraudDetection?> getFraudDetectionById(String id) async =>
+      _frauds[id];
+
+  @override
+  Future<List<FraudDetection>> getSuspiciousTransactions() async =>
+      _frauds.values.where((f) => f.isSuspicious).toList();
+
+  @override
+  Future<List<FraudDetection>> getCriticalFraudCases() async =>
+      _frauds.values.where((f) => f.isCritical).toList();
+
+  @override
+  Future<List<FraudDetection>> getFraudByRiskLevel(FraudRiskLevel level) async =>
+      _frauds.values.where((f) => f.riskLevel == level).toList();
+
+  @override
+  Future<FraudDetection> updateFraudDetection(FraudDetection detection) async {
+    _frauds[detection.id] = detection;
+    return detection;
+  }
+
+  @override
+  Future<void> deleteFraudDetection(String id) async => _frauds.remove(id);
+
+  @override
+  Future<List<FraudDetection>> listFraudDetections() async =>
+      _frauds.values.toList();
+
+  @override
+  Future<int> getFraudDetectionCount() async => _frauds.length;
+
+  @override
+  Future<List<FraudDetection>> getConfirmedFraudCases() async =>
+      _frauds.values.where((f) => f.isConfirmed).toList();
+
+  @override
+  Future<Recommendation> createRecommendation(Recommendation recommendation) async {
+    _recommendations[recommendation.id] = recommendation;
+    return recommendation;
+  }
+
+  @override
+  Future<Recommendation?> getRecommendationById(String id) async =>
+      _recommendations[id];
+
+  @override
+  Future<List<Recommendation>> getHighConfidenceRecommendations() async =>
+      _recommendations.values.where((r) => r.isHighConfidence).toList();
+
+  @override
+  Future<List<Recommendation>> getRecommendationsByTarget(String targetId) async =>
+      _recommendations.values.where((r) => r.targetId == targetId).toList();
+
+  @override
+  Future<Recommendation> updateRecommendation(Recommendation recommendation) async {
+    _recommendations[recommendation.id] = recommendation;
+    return recommendation;
+  }
+
+  @override
+  Future<void> deleteRecommendation(String id) async =>
+      _recommendations.remove(id);
+
+  @override
+  Future<List<Recommendation>> listRecommendations() async =>
+      _recommendations.values.toList();
+
+  @override
+  Future<int> getRecommendationCount() async => _recommendations.length;
+
+  @override
+  Future<InsightGeneration> createInsight(InsightGeneration insight) async {
+    _insights[insight.id] = insight;
+    return insight;
+  }
+
+  @override
+  Future<InsightGeneration?> getInsightById(String id) async =>
+      _insights[id];
+
+  @override
+  Future<List<InsightGeneration>> getHighImpactInsights() async =>
+      _insights.values.where((i) => i.isHighImpact).toList();
+
+  @override
+  Future<List<InsightGeneration>> getActionableInsights() async =>
+      _insights.values.where((i) => i.actionable).toList();
+
+  @override
+  Future<InsightGeneration> updateInsight(InsightGeneration insight) async {
+    _insights[insight.id] = insight;
+    return insight;
+  }
+
+  @override
+  Future<void> deleteInsight(String id) async => _insights.remove(id);
+
+  @override
+  Future<List<InsightGeneration>> listInsights() async =>
+      _insights.values.toList();
+
+  @override
+  Future<int> getInsightCount() async => _insights.length;
+}
+
+// ============================================================================
+// ENGINES
+// ============================================================================
+
+class PredictionEngine {
+  final AnalyticsRepository repository;
+  PredictionEngine(this.repository);
+
+  Future<void> validatePrediction(String predictionId) async {
+    final prediction = await repository.getPredictionById(predictionId);
+    if (prediction == null || !prediction.hasActualValue) return;
+
+    final error = (prediction.predictedValue as num - prediction.actualValue as num).abs();
+    await repository.updatePrediction(prediction.copyWith(error: error.toDouble()));
+  }
+}
+
+class AnomalyEngine {
+  final AnalyticsRepository repository;
+  AnomalyEngine(this.repository);
+
+  Future<int> getCriticalAnomalyCount() async {
+    final anomalies = await repository.getCriticalAnomalies();
+    return anomalies.length;
+  }
+}
+
+class PatternEngine {
+  final AnalyticsRepository repository;
+  PatternEngine(this.repository);
+
+  Future<List<PatternAnalysis>> detectPatterns(String datasetId) async {
+    return repository.getPatternsByDatasetId(datasetId);
+  }
+}
+
+class AlertEngine {
+  final AnalyticsRepository repository;
+  AlertEngine(this.repository);
+
+  Future<void> resolveAlert(String alertId) async {
+    final alert = await repository.getAlertById(alertId);
+    if (alert == null) return;
+
+    await repository.updateAlert(
+      alert.copyWith(
+        isResolved: true,
+        resolvedAt: DateTime.now(),
+      ),
     );
   }
 }
 
-// ======================== Facade パターン ========================
-
-/// 分析管理ファサード
-class AnalyticsManagerFacade {
+class FraudEngine {
   final AnalyticsRepository repository;
-  final AnalyticsEngine engine;
+  FraudEngine(this.repository);
+
+  Future<int> getSuspiciousTransactionCount() async {
+    final frauds = await repository.getSuspiciousTransactions();
+    return frauds.length;
+  }
+}
+
+// ============================================================================
+// MANAGER
+// ============================================================================
+
+class AnalyticsManager {
+  final AnalyticsRepository repository;
+  late final PredictionEngine predictionEngine;
+  late final AnomalyEngine anomalyEngine;
+  late final PatternEngine patternEngine;
+  late final AlertEngine alertEngine;
+  late final FraudEngine fraudEngine;
+
+  AnalyticsManager(this.repository) {
+    predictionEngine = PredictionEngine(repository);
+    anomalyEngine = AnomalyEngine(repository);
+    patternEngine = PatternEngine(repository);
+    alertEngine = AlertEngine(repository);
+    fraudEngine = FraudEngine(repository);
+  }
+}
+
+// ============================================================================
+// FACADE
+// ============================================================================
+
+class AnalyticsFacade {
   final AnalyticsManager manager;
 
-  AnalyticsManagerFacade({
-    AnalyticsRepository? repository,
-    AnalyticsEngine? engine,
-    AnalyticsManager? manager,
-  })  : repository = repository ?? MemoryAnalyticsRepository(),
-        engine = engine ?? MemoryAnalyticsEngine(),
-        manager = manager ?? MemoryAnalyticsManager(
-          repository: repository ?? MemoryAnalyticsRepository(),
-          engine: engine ?? MemoryAnalyticsEngine(),
-        );
+  AnalyticsFacade(this.manager);
 
-  Future<AnalyticsMetric> recordMetric({
-    required String metricId,
-    required String name,
-    required AnalyticsMetricType type,
-    required double value,
-    double? previousValue,
-    double? targetValue,
-    String? unit,
-  }) =>
-      manager.recordMetric(
-        metricId: metricId,
-        name: name,
-        type: type,
-        value: value,
-        previousValue: previousValue,
-        targetValue: targetValue,
-        unit: unit,
-      );
+  Future<PredictiveModel> createPredictiveModel(
+    String modelName,
+    PredictionType predictionType,
+  ) async {
+    final model = PredictiveModel(
+      id: 'model_${DateTime.now().millisecondsSinceEpoch}',
+      modelName: modelName,
+      predictionType: predictionType,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return manager.repository.createModel(model);
+  }
 
-  Future<PredictionResult> predict(String metricId, PredictionModelType modelType) =>
-      manager.runPrediction(metricId, modelType);
+  Future<Prediction> makePrediction(
+    String modelId,
+    dynamic predictedValue,
+    double confidence,
+  ) async {
+    final prediction = Prediction(
+      id: 'pred_${DateTime.now().millisecondsSinceEpoch}',
+      modelId: modelId,
+      predictedValue: predictedValue,
+      confidence: confidence,
+      predictionTime: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+    return manager.repository.createPrediction(prediction);
+  }
 
-  Future<AnomalyDetectionResult> detectAnomaly(
-    String metricId,
-    double value,
-    double expected,
-  ) =>
-      manager.checkAnomaly(metricId, value, expected);
+  Future<AnomalyDetection> detectAnomaly(
+    String datasetId,
+    AnomalyType anomalyType,
+    double anomalyScore,
+  ) async {
+    final anomaly = AnomalyDetection(
+      id: 'anom_${DateTime.now().millisecondsSinceEpoch}',
+      datasetId: datasetId,
+      anomalyType: anomalyType,
+      detectedAt: DateTime.now(),
+      createdAt: DateTime.now(),
+      anomalyScore: anomalyScore,
+    );
+    return manager.repository.createAnomaly(anomaly);
+  }
 
-  Future<AnalyticsReport> generateReport({
-    required String reportId,
-    required List<String> metricIds,
-  }) =>
-      manager.generateReport(reportId: reportId, metricIds: metricIds);
+  Future<FraudDetection> reportFraud(
+    String transactionId,
+    FraudRiskLevel riskLevel,
+    double fraudScore,
+  ) async {
+    final fraud = FraudDetection(
+      id: 'fraud_${DateTime.now().millisecondsSinceEpoch}',
+      transactionId: transactionId,
+      riskLevel: riskLevel,
+      detectedAt: DateTime.now(),
+      createdAt: DateTime.now(),
+      fraudScore: fraudScore,
+    );
+    return manager.repository.createFraudDetection(fraud);
+  }
+
+  Future<IntelligentAlert> generateAlert(
+    String alertType,
+    AlertSeverity severity,
+    String? recommendation,
+  ) async {
+    final alert = IntelligentAlert(
+      id: 'alert_${DateTime.now().millisecondsSinceEpoch}',
+      alertType: alertType,
+      severity: severity,
+      triggeredAt: DateTime.now(),
+      createdAt: DateTime.now(),
+      recommendation: recommendation,
+    );
+    return manager.repository.createAlert(alert);
+  }
+
+  Future<double> getAverageModelAccuracy() async {
+    return manager.repository.getAverageModelAccuracy();
+  }
+
+  Future<int> getCriticalAnomalyCount() async {
+    return manager.anomalyEngine.getCriticalAnomalyCount();
+  }
+
+  Future<int> getSuspiciousFraudCount() async {
+    return manager.fraudEngine.getSuspiciousTransactionCount();
+  }
+
+  Future<List<IntelligentAlert>> getUnresolvedAlerts() async {
+    return manager.repository.getUnresolvedAlerts();
+  }
 }
