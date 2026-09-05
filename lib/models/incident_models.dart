@@ -1,334 +1,671 @@
-/// Incident Management & Response Models
+import 'package:flutter/foundation.dart';
 
-enum IncidentSeverity { critical, high, medium, low, info }
-enum IncidentStatus { open, acknowledged, investigating, resolved, closed, reopened }
-enum IncidentPriority { p0, p1, p2, p3, p4 }
-enum ImpactScope { global, regional, service, component, user }
-enum ResolutionType { fix, workaround, rollback, scaling, configuration, investigation }
-enum PostmortemStatus { pending, draft, review, published, archived }
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum IncidentSeverity {
+  low('低'),
+  medium('中程度'),
+  high('高'),
+  critical('重大'),
+  catastrophic('壊滅的');
+
+  final String displayName;
+  const IncidentSeverity(this.displayName);
+}
+
+enum IncidentStatus {
+  reported('報告済み'),
+  investigating('調査中'),
+  contained('封じ込め済み'),
+  mitigating('軽減中'),
+  resolved('解決済み'),
+  closed('クローズ');
+
+  final String displayName;
+  const IncidentStatus(this.displayName);
+}
+
+enum IncidentType {
+  security('セキュリティ'),
+  operational('運用'),
+  infrastructure('インフラ'),
+  dataLoss('データ損失'),
+  performance('パフォーマンス'),
+  compliance('準拠性');
+
+  final String displayName;
+  const IncidentType(this.displayName);
+}
+
+enum ResponsePhase {
+  detection('検出'),
+  triage('トリアージ'),
+  containment('封じ込め'),
+  eradication('根絶'),
+  recovery('復旧'),
+  postIncident('インシデント後');
+
+  final String displayName;
+  const ResponsePhase(this.displayName);
+}
+
+enum CommunicationChannel {
+  email('メール'),
+  slack('Slack'),
+  sms('SMS'),
+  voiceCall('音声通話'),
+  dashboard('ダッシュボード'),
+  publicStatement('公式声明');
+
+  final String displayName;
+  const CommunicationChannel(this.displayName);
+}
+
+enum RecoveryStrategy {
+  failover('フェイルオーバー'),
+  restoration('復元'),
+  reconstruction('再構築'),
+  migration('マイグレーション'),
+  workaround('ワークアラウンド');
+
+  final String displayName;
+  const RecoveryStrategy(this.displayName);
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
 
 class Incident {
-  final String incidentId;
+  final String id;
   final String title;
   final String description;
+  final IncidentType type;
   final IncidentSeverity severity;
+  final DateTime reportedAt;
+  final String reportedBy;
   final IncidentStatus status;
-  final IncidentPriority priority;
-  final DateTime createdAt;
-  final DateTime? resolvedAt;
-  final String? resolvedBy;
-  final String assignedTo;
-  final List<String> affectedServices;
-  final List<String> affectedUsers;
+  final List<String> affectedSystems;
 
   Incident({
-    required this.incidentId,
+    required this.id,
     required this.title,
     required this.description,
+    required this.type,
     required this.severity,
+    required this.reportedAt,
+    required this.reportedBy,
     required this.status,
-    required this.priority,
-    required this.createdAt,
-    this.resolvedAt,
-    this.resolvedBy,
-    required this.assignedTo,
-    required this.affectedServices,
-    required this.affectedUsers,
+    required this.affectedSystems,
   });
 
-  bool get isOpen => status == IncidentStatus.open || status == IncidentStatus.investigating;
-  bool get isCritical => severity == IncidentSeverity.critical;
-  bool get isResolved => status == IncidentStatus.resolved || status == IncidentStatus.closed;
-  int get durationMinutes => resolvedAt != null ? resolvedAt!.difference(createdAt).inMinutes : -1;
-  int get ageInMinutes => DateTime.now().difference(createdAt).inMinutes;
-  double get impactScore => (severity.index + 1) * (affectedUsers.length + 1) * (affectedServices.length + 1) / 100;
+  bool get isCritical => severity == IncidentSeverity.critical || severity == IncidentSeverity.catastrophic;
+  int get minutesElapsed => DateTime.now().difference(reportedAt).inMinutes;
+  bool get isActive => status != IncidentStatus.closed;
+
+  Incident copyWith({
+    String? id,
+    String? title,
+    String? description,
+    IncidentType? type,
+    IncidentSeverity? severity,
+    DateTime? reportedAt,
+    String? reportedBy,
+    IncidentStatus? status,
+    List<String>? affectedSystems,
+  }) {
+    return Incident(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      type: type ?? this.type,
+      severity: severity ?? this.severity,
+      reportedAt: reportedAt ?? this.reportedAt,
+      reportedBy: reportedBy ?? this.reportedBy,
+      status: status ?? this.status,
+      affectedSystems: affectedSystems ?? this.affectedSystems,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Incident &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class IncidentTimeline {
-  final String timelineId;
+  final String id;
   final String incidentId;
-  final DateTime timestamp;
-  final String eventType;
+  final DateTime eventTime;
+  final ResponsePhase phase;
   final String description;
-  final String triggeredBy;
-  final Map<String, dynamic> metadata;
+  final String actor;
+  final List<String> notes;
 
   IncidentTimeline({
-    required this.timelineId,
+    required this.id,
     required this.incidentId,
-    required this.timestamp,
-    required this.eventType,
+    required this.eventTime,
+    required this.phase,
     required this.description,
-    required this.triggeredBy,
-    required this.metadata,
+    required this.actor,
+    required this.notes,
   });
 
-  bool get isRecent => DateTime.now().difference(timestamp).inHours < 24;
-  int get ageInHours => DateTime.now().difference(timestamp).inHours;
+  int get ageInMinutes => DateTime.now().difference(eventTime).inMinutes;
+
+  IncidentTimeline copyWith({
+    String? id,
+    String? incidentId,
+    DateTime? eventTime,
+    ResponsePhase? phase,
+    String? description,
+    String? actor,
+    List<String>? notes,
+  }) {
+    return IncidentTimeline(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      eventTime: eventTime ?? this.eventTime,
+      phase: phase ?? this.phase,
+      description: description ?? this.description,
+      actor: actor ?? this.actor,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is IncidentTimeline &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentImpactAnalysis {
-  final String analysisId;
+class ImpactAssessment {
+  final String id;
   final String incidentId;
-  final ImpactScope scope;
-  final int estimatedAffectedUsers;
-  final List<String> affectedServices;
-  final List<String> dependentServices;
-  final double estimatedRevenueLoss;
-  final DateTime analyzedAt;
+  final int usersAffected;
+  final int systemsAffected;
+  final double estimatedDataLossPercent;
+  final Duration estimatedRecoveryTime;
+  final double financialImpactDollars;
+  final DateTime assessmentTime;
+  final String assessedBy;
 
-  IncidentImpactAnalysis({
-    required this.analysisId,
+  ImpactAssessment({
+    required this.id,
     required this.incidentId,
-    required this.scope,
-    required this.estimatedAffectedUsers,
-    required this.affectedServices,
-    required this.dependentServices,
-    required this.estimatedRevenueLoss,
-    required this.analyzedAt,
+    required this.usersAffected,
+    required this.systemsAffected,
+    required this.estimatedDataLossPercent,
+    required this.estimatedRecoveryTime,
+    required this.financialImpactDollars,
+    required this.assessmentTime,
+    required this.assessedBy,
   });
 
-  bool get isGlobal => scope == ImpactScope.global;
-  bool get hasHighImpact => estimatedAffectedUsers > 10000 || estimatedRevenueLoss > 10000;
-  int get totalAffectedServices => affectedServices.length + dependentServices.length;
-  int get ageInMinutes => DateTime.now().difference(analyzedAt).inMinutes;
+  bool get isHighImpact => usersAffected > 1000 || financialImpactDollars > 100000;
+  bool get hasDataLoss => estimatedDataLossPercent > 0.0;
+
+  ImpactAssessment copyWith({
+    String? id,
+    String? incidentId,
+    int? usersAffected,
+    int? systemsAffected,
+    double? estimatedDataLossPercent,
+    Duration? estimatedRecoveryTime,
+    double? financialImpactDollars,
+    DateTime? assessmentTime,
+    String? assessedBy,
+  }) {
+    return ImpactAssessment(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      usersAffected: usersAffected ?? this.usersAffected,
+      systemsAffected: systemsAffected ?? this.systemsAffected,
+      estimatedDataLossPercent: estimatedDataLossPercent ?? this.estimatedDataLossPercent,
+      estimatedRecoveryTime: estimatedRecoveryTime ?? this.estimatedRecoveryTime,
+      financialImpactDollars: financialImpactDollars ?? this.financialImpactDollars,
+      assessmentTime: assessmentTime ?? this.assessmentTime,
+      assessedBy: assessedBy ?? this.assessedBy,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImpactAssessment &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentEscalation {
-  final String escalationId;
+class ResponseAction {
+  final String id;
   final String incidentId;
-  final int escalationLevel;
-  final String escalatedTo;
-  final String reason;
-  final DateTime escalatedAt;
-  final DateTime? acknowledgedAt;
-  final bool isResolved;
+  final String title;
+  final String description;
+  final DateTime initiatedAt;
+  final DateTime? completedAt;
+  final String assignedTo;
+  final double progressPercent;
+  final List<String> outcomes;
 
-  IncidentEscalation({
-    required this.escalationId,
+  ResponseAction({
+    required this.id,
     required this.incidentId,
-    required this.escalationLevel,
-    required this.escalatedTo,
-    required this.reason,
-    required this.escalatedAt,
-    this.acknowledgedAt,
-    this.isResolved = false,
+    required this.title,
+    required this.description,
+    required this.initiatedAt,
+    this.completedAt,
+    required this.assignedTo,
+    required this.progressPercent,
+    required this.outcomes,
   });
 
-  bool get isAcknowledged => acknowledgedAt != null;
-  bool get isPending => !isAcknowledged;
-  int get responseTimeMinutes => acknowledgedAt != null 
-      ? acknowledgedAt!.difference(escalatedAt).inMinutes 
-      : DateTime.now().difference(escalatedAt).inMinutes;
-  int get ageInMinutes => DateTime.now().difference(escalatedAt).inMinutes;
+  bool get isCompleted => progressPercent >= 100.0;
+  int get durationMinutes => completedAt != null
+      ? completedAt!.difference(initiatedAt).inMinutes
+      : DateTime.now().difference(initiatedAt).inMinutes;
+
+  ResponseAction copyWith({
+    String? id,
+    String? incidentId,
+    String? title,
+    String? description,
+    DateTime? initiatedAt,
+    DateTime? completedAt,
+    String? assignedTo,
+    double? progressPercent,
+    List<String>? outcomes,
+  }) {
+    return ResponseAction(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      initiatedAt: initiatedAt ?? this.initiatedAt,
+      completedAt: completedAt ?? this.completedAt,
+      assignedTo: assignedTo ?? this.assignedTo,
+      progressPercent: progressPercent ?? this.progressPercent,
+      outcomes: outcomes ?? this.outcomes,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ResponseAction &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentCommunication {
-  final String communicationId;
+class CrisisCommunication {
+  final String id;
   final String incidentId;
-  final String channelType;
+  final CommunicationChannel channel;
   final String recipient;
   final String message;
   final DateTime sentAt;
+  final bool acknowledged;
+  final DateTime? acknowledgedAt;
   final String sentBy;
-  final bool isRead;
-  final String? responseMessage;
 
-  IncidentCommunication({
-    required this.communicationId,
+  CrisisCommunication({
+    required this.id,
     required this.incidentId,
-    required this.channelType,
+    required this.channel,
     required this.recipient,
     required this.message,
     required this.sentAt,
+    required this.acknowledged,
+    this.acknowledgedAt,
     required this.sentBy,
-    this.isRead = false,
-    this.responseMessage,
   });
 
-  bool get hasResponse => responseMessage != null && responseMessage!.isNotEmpty;
-  bool get isPending => !isRead;
-  int get ageInMinutes => DateTime.now().difference(sentAt).inMinutes;
+  bool get isPending => !acknowledged;
+  int get minutesSinceSent => DateTime.now().difference(sentAt).inMinutes;
+
+  CrisisCommunication copyWith({
+    String? id,
+    String? incidentId,
+    CommunicationChannel? channel,
+    String? recipient,
+    String? message,
+    DateTime? sentAt,
+    bool? acknowledged,
+    DateTime? acknowledgedAt,
+    String? sentBy,
+  }) {
+    return CrisisCommunication(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      channel: channel ?? this.channel,
+      recipient: recipient ?? this.recipient,
+      message: message ?? this.message,
+      sentAt: sentAt ?? this.sentAt,
+      acknowledged: acknowledged ?? this.acknowledged,
+      acknowledgedAt: acknowledgedAt ?? this.acknowledgedAt,
+      sentBy: sentBy ?? this.sentBy,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CrisisCommunication &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentResolution {
-  final String resolutionId;
+class RecoveryPlan {
+  final String id;
   final String incidentId;
-  final ResolutionType resolutionType;
+  final RecoveryStrategy strategy;
   final String description;
-  final DateTime implementedAt;
-  final String implementedBy;
-  final bool isVerified;
-  final String? verificationDetails;
+  final DateTime plannedStartTime;
+  final Duration estimatedDuration;
+  final List<String> steps;
+  final List<String> dependencies;
+  final String owner;
 
-  IncidentResolution({
-    required this.resolutionId,
+  RecoveryPlan({
+    required this.id,
     required this.incidentId,
-    required this.resolutionType,
+    required this.strategy,
     required this.description,
-    required this.implementedAt,
-    required this.implementedBy,
-    this.isVerified = false,
-    this.verificationDetails,
+    required this.plannedStartTime,
+    required this.estimatedDuration,
+    required this.steps,
+    required this.dependencies,
+    required this.owner,
   });
 
-  bool get isPending => !isVerified;
-  int get ageInMinutes => DateTime.now().difference(implementedAt).inMinutes;
+  DateTime get estimatedCompletionTime => plannedStartTime.add(estimatedDuration);
+  bool get isDue => DateTime.now().isAfter(plannedStartTime);
+
+  RecoveryPlan copyWith({
+    String? id,
+    String? incidentId,
+    RecoveryStrategy? strategy,
+    String? description,
+    DateTime? plannedStartTime,
+    Duration? estimatedDuration,
+    List<String>? steps,
+    List<String>? dependencies,
+    String? owner,
+  }) {
+    return RecoveryPlan(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      strategy: strategy ?? this.strategy,
+      description: description ?? this.description,
+      plannedStartTime: plannedStartTime ?? this.plannedStartTime,
+      estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      steps: steps ?? this.steps,
+      dependencies: dependencies ?? this.dependencies,
+      owner: owner ?? this.owner,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecoveryPlan &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentPostmortem {
-  final String postmortemId;
+class PostIncidentReview {
+  final String id;
   final String incidentId;
-  final String title;
-  final String rootCauseAnalysis;
+  final DateTime reviewDate;
+  final String reviewedBy;
+  final String rootCause;
   final List<String> contributingFactors;
+  final List<String> lessons;
   final List<String> actionItems;
-  final List<String> preventionMeasures;
-  final PostmortemStatus status;
-  final DateTime createdAt;
-  final DateTime? publishedAt;
-  final String createdBy;
+  final bool completed;
 
-  IncidentPostmortem({
-    required this.postmortemId,
+  PostIncidentReview({
+    required this.id,
     required this.incidentId,
-    required this.title,
-    required this.rootCauseAnalysis,
+    required this.reviewDate,
+    required this.reviewedBy,
+    required this.rootCause,
     required this.contributingFactors,
+    required this.lessons,
     required this.actionItems,
-    required this.preventionMeasures,
-    required this.status,
-    required this.createdAt,
-    this.publishedAt,
-    required this.createdBy,
+    required this.completed,
   });
 
-  bool get isPublished => status == PostmortemStatus.published;
-  bool get isPending => status == PostmortemStatus.pending || status == PostmortemStatus.draft;
-  int get actionItemCount => actionItems.length;
-  int get ageInDays => DateTime.now().difference(createdAt).inDays;
+  int get daysSinceReview => DateTime.now().difference(reviewDate).inDays;
+  int get pendingActionItems => actionItems.length;
+
+  PostIncidentReview copyWith({
+    String? id,
+    String? incidentId,
+    DateTime? reviewDate,
+    String? reviewedBy,
+    String? rootCause,
+    List<String>? contributingFactors,
+    List<String>? lessons,
+    List<String>? actionItems,
+    bool? completed,
+  }) {
+    return PostIncidentReview(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      reviewDate: reviewDate ?? this.reviewDate,
+      reviewedBy: reviewedBy ?? this.reviewedBy,
+      rootCause: rootCause ?? this.rootCause,
+      contributingFactors: contributingFactors ?? this.contributingFactors,
+      lessons: lessons ?? this.lessons,
+      actionItems: actionItems ?? this.actionItems,
+      completed: completed ?? this.completed,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PostIncidentReview &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentNotification {
-  final String notificationId;
+class EscalationPath {
+  final String id;
   final String incidentId;
-  final String notificationType;
-  final List<String> recipients;
-  final String subject;
-  final String body;
-  final DateTime createdAt;
-  final DateTime? sentAt;
-  final int sentCount;
-  final int failedCount;
+  final List<String> escalationOrder;
+  final DateTime escalatedAt;
+  final IncidentSeverity escalationReason;
+  final String escalatedBy;
+  final String? currentEscalationLevel;
 
-  IncidentNotification({
-    required this.notificationId,
+  EscalationPath({
+    required this.id,
     required this.incidentId,
-    required this.notificationType,
-    required this.recipients,
-    required this.subject,
-    required this.body,
-    required this.createdAt,
-    this.sentAt,
-    this.sentCount = 0,
-    this.failedCount = 0,
+    required this.escalationOrder,
+    required this.escalatedAt,
+    required this.escalationReason,
+    required this.escalatedBy,
+    this.currentEscalationLevel,
   });
 
-  bool get isSent => sentAt != null;
-  bool get hasFailed => failedCount > 0;
-  double get successRate => sentCount > 0 ? ((sentCount - failedCount) / sentCount) * 100 : 0.0;
-  int get ageInMinutes => DateTime.now().difference(createdAt).inMinutes;
+  int get escalationCount => escalationOrder.length;
+  int get minutesElapsedSinceEscalation => DateTime.now().difference(escalatedAt).inMinutes;
+
+  EscalationPath copyWith({
+    String? id,
+    String? incidentId,
+    List<String>? escalationOrder,
+    DateTime? escalatedAt,
+    IncidentSeverity? escalationReason,
+    String? escalatedBy,
+    String? currentEscalationLevel,
+  }) {
+    return EscalationPath(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      escalationOrder: escalationOrder ?? this.escalationOrder,
+      escalatedAt: escalatedAt ?? this.escalatedAt,
+      escalationReason: escalationReason ?? this.escalationReason,
+      escalatedBy: escalatedBy ?? this.escalatedBy,
+      currentEscalationLevel: currentEscalationLevel ?? this.currentEscalationLevel,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EscalationPath &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-class IncidentTrendAnalysis {
-  final String analysisId;
-  final DateTime analyzedAt;
-  final int incidentsInPeriod;
-  final double averageDuration;
-  final double averageTimeToResolution;
-  final Map<IncidentSeverity, int> severityDistribution;
-  final List<String> topAffectedServices;
-  final double mtbf; // Mean Time Between Failures
-  final double mttr; // Mean Time To Resolution
-  final double mtrc; // Mean Time To Restoration
-
-  IncidentTrendAnalysis({
-    required this.analysisId,
-    required this.analyzedAt,
-    required this.incidentsInPeriod,
-    required this.averageDuration,
-    required this.averageTimeToResolution,
-    required this.severityDistribution,
-    required this.topAffectedServices,
-    required this.mtbf,
-    required this.mttr,
-    required this.mtrc,
-  });
-
-  bool get hasIncidents => incidentsInPeriod > 0;
-  int get criticalIncidents => severityDistribution[IncidentSeverity.critical] ?? 0;
-  double get improvementRate => mttr > 0 ? (mtbf / mttr) * 100 : 0.0;
-  int get ageInDays => DateTime.now().difference(analyzedAt).inDays;
-}
-
-class IncidentReport {
-  final String reportId;
-  final DateTime generatedAt;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final int totalIncidents;
-  final int resolvedIncidents;
-  final int unresolved;
-  final int escalatedIncidents;
-  final Map<IncidentSeverity, int> severityBreakdown;
-  final double averageResolutionTime;
-
-  IncidentReport({
-    required this.reportId,
-    required this.generatedAt,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.totalIncidents,
-    required this.resolvedIncidents,
-    required this.unresolved,
-    required this.escalatedIncidents,
-    required this.severityBreakdown,
-    required this.averageResolutionTime,
-  });
-
-  double get resolutionRate => totalIncidents > 0 ? (resolvedIncidents / totalIncidents) * 100 : 0.0;
-  int get criticalCount => severityBreakdown[IncidentSeverity.critical] ?? 0;
-  int get periodInDays => periodEnd.difference(periodStart).inDays;
-  bool get hasHighUnresolved => unresolved > (totalIncidents * 0.1);
-}
-
-class IncidentFilter {
-  final String filterId;
-  final String filterName;
-  final IncidentSeverity? severity;
-  final IncidentStatus? status;
-  final String? assignedTo;
-  final DateTime? startDate;
-  final DateTime? endDate;
+class ResourceAllocation {
+  final String id;
+  final String incidentId;
+  final String resourceType;
+  final int quantityAllocated;
+  final DateTime allocationTime;
+  final String allocatedBy;
+  final List<String> assignments;
   final bool isActive;
 
-  IncidentFilter({
-    required this.filterId,
-    required this.filterName,
-    this.severity,
-    this.status,
-    this.assignedTo,
-    this.startDate,
-    this.endDate,
-    this.isActive = true,
+  ResourceAllocation({
+    required this.id,
+    required this.incidentId,
+    required this.resourceType,
+    required this.quantityAllocated,
+    required this.allocationTime,
+    required this.allocatedBy,
+    required this.assignments,
+    required this.isActive,
   });
 
-  bool get hasFilters =>
-      severity != null || status != null || assignedTo != null || startDate != null || endDate != null;
-  int get activeFilterCount =>
-      (severity != null ? 1 : 0) +
-      (status != null ? 1 : 0) +
-      (assignedTo != null ? 1 : 0) +
-      (startDate != null ? 1 : 0) +
-      (endDate != null ? 1 : 0);
+  int get hoursElapsed => DateTime.now().difference(allocationTime).inHours;
+  bool get needsReallocation => !isActive;
+
+  ResourceAllocation copyWith({
+    String? id,
+    String? incidentId,
+    String? resourceType,
+    int? quantityAllocated,
+    DateTime? allocationTime,
+    String? allocatedBy,
+    List<String>? assignments,
+    bool? isActive,
+  }) {
+    return ResourceAllocation(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      resourceType: resourceType ?? this.resourceType,
+      quantityAllocated: quantityAllocated ?? this.quantityAllocated,
+      allocationTime: allocationTime ?? this.allocationTime,
+      allocatedBy: allocatedBy ?? this.allocatedBy,
+      assignments: assignments ?? this.assignments,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ResourceAllocation &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+class IncidentMetrics {
+  final String id;
+  final String incidentId;
+  final Duration timeToDetection;
+  final Duration timeToContainment;
+  final Duration timeToResolution;
+  final int personalInvolved;
+  final int meetingsHeld;
+  final double costPerMinute;
+  final DateTime metricsComputedAt;
+
+  IncidentMetrics({
+    required this.id,
+    required this.incidentId,
+    required this.timeToDetection,
+    required this.timeToContainment,
+    required this.timeToResolution,
+    required this.personalInvolved,
+    required this.meetingsHeld,
+    required this.costPerMinute,
+    required this.metricsComputedAt,
+  });
+
+  double get totalCost => timeToResolution.inMinutes * costPerMinute;
+  Duration get totalTime => timeToResolution;
+
+  IncidentMetrics copyWith({
+    String? id,
+    String? incidentId,
+    Duration? timeToDetection,
+    Duration? timeToContainment,
+    Duration? timeToResolution,
+    int? personalInvolved,
+    int? meetingsHeld,
+    double? costPerMinute,
+    DateTime? metricsComputedAt,
+  }) {
+    return IncidentMetrics(
+      id: id ?? this.id,
+      incidentId: incidentId ?? this.incidentId,
+      timeToDetection: timeToDetection ?? this.timeToDetection,
+      timeToContainment: timeToContainment ?? this.timeToContainment,
+      timeToResolution: timeToResolution ?? this.timeToResolution,
+      personalInvolved: personalInvolved ?? this.personalInvolved,
+      meetingsHeld: meetingsHeld ?? this.meetingsHeld,
+      costPerMinute: costPerMinute ?? this.costPerMinute,
+      metricsComputedAt: metricsComputedAt ?? this.metricsComputedAt,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is IncidentMetrics &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
